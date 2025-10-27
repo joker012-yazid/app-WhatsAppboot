@@ -1,0 +1,62 @@
+flowchart TD
+    Start([Customer Datang Ke Kedai]) --> Discuss[Perbincangan Masalah<br/>Laptop/PC/Printer]
+    Discuss --> Agree{Customer Setuju<br/>Tinggalkan Barang?}
+    
+    Agree -->|Ya| QR[Technician Sediakan<br/>QR Code]
+    QR --> Scan[Customer Scan & Masukkan Data:<br/>• Nama<br/>• No Telefon<br/>• Jenis Barang<br/>• Model<br/>• Tick T&C]
+    
+    Scan --> BotThanks[Bot Hantar:<br/>Terima kasih nama<br/>Barang akan dicek<br/>Update akan dihantar]
+    
+    BotThanks --> TechCheck[Technician Periksa<br/>Laptop/PC/Printer]
+    TechCheck --> TechPrompt[Tech Prompt Bot:<br/>• Masalah<br/>• Harga Repair]
+    
+    TechPrompt --> BotQuote[Bot Hantar Quotation:<br/>Masalah + Harga]
+    BotQuote --> WaitConfirm{Tunggu Customer<br/>Confirmation}
+    
+    WaitConfirm -->|No Response 1 Day| Remind1[Bot Hantar<br/>Reminder 1]
+    Remind1 --> WaitConfirm
+    
+    WaitConfirm -->|No Response 20 Days| Remind2[Bot Hantar<br/>Reminder 2]
+    Remind2 --> WaitConfirm
+    
+    WaitConfirm -->|No Response 30 Days| Remind3[Bot Hantar<br/>Reminder 3]
+    Remind3 --> WaitConfirm
+    
+    WaitConfirm -->|Customer Reply| Decision{Customer<br/>Setuju?}
+    
+    Decision -->|Tak Setuju| BotReject[Bot Hantar:<br/>Boleh ambil semula<br/>laptop]
+    BotReject --> CustResponse[Customer Bagi Tahu<br/>Bila Nak Ambil]
+    CustResponse --> End1([Customer Ambil Barang])
+    
+    Decision -->|Setuju| BotApprove[Bot Hantar:<br/>Laptop akan dibaiki<br/>Tunggu update]
+    
+    BotApprove --> TechRepair[Technician Mula<br/>Repair]
+    TechRepair --> TechProgress[Tech Prompt Bot:<br/>Gambar Progress<br/>Kerja Yang Dilakukan]
+    
+    TechProgress --> BotProgress[Bot Hantar:<br/>Update Progress<br/>+ Gambar]
+    
+    BotProgress --> TechComplete[Tech Prompt Bot:<br/>Gambar Laptop Siap]
+    TechComplete --> BotComplete[Bot Hantar:<br/>• Gambar Laptop Siap<br/>• Invoice<br/>• Boleh Ambil]
+    
+    BotComplete --> CustPickup[Customer Datang<br/>Ambil & Payment]
+    CustPickup --> TechUpdate[Tech Update Bot:<br/>Customer Ambil & Bayar]
+    
+    TechUpdate --> BotReview[Bot Hantar:<br/>Terima Kasih<br/>+ Link Review]
+    BotReview --> End2([Selesai])
+    
+    style Start fill:#4CAF50
+    style End1 fill:#f44336
+    style End2 fill:#4CAF50
+    style Decision fill:#FF9800
+    style Agree fill:#FF9800
+    style WaitConfirm fill:#2196F3
+    style BotThanks fill:#9C27B0
+    style BotQuote fill:#9C27B0
+    style BotApprove fill:#9C27B0
+    style BotReject fill:#9C27B0
+    style BotProgress fill:#9C27B0
+    style BotComplete fill:#9C27B0
+    style BotReview fill:#9C27B0
+    style Remind1 fill:#FFC107
+    style Remind2 fill:#FFC107
+    style Remind3 fill:#FFC107
