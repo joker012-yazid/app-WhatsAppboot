@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Repair Job Registration</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; line-height: 1.6; }
+      main { max-width: 680px; margin: 0 auto; }
+      h1 { color: #0f172a; }
+      p { color: #334155; }
+      code { background: #e2e8f0; padding: 0.125rem 0.25rem; border-radius: 4px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Repair Job Registration</h1>
+      <p>
+        This static page is a placeholder for the public registration flow. The API endpoint
+        <code>POST /api/jobs/register/:token</code> accepts the customer details and device notes that
+        were collected from the QR code workflow described in <em>development_roadmap.md</em>.
+      </p>
+      <p>
+        Integrate this page with your frontend framework of choice. It only needs to collect the
+        following fields from the customer:
+      </p>
+      <ul>
+        <li>Full name</li>
+        <li>Phone number</li>
+        <li>Device type</li>
+        <li>Device model</li>
+        <li>Terms and conditions acceptance</li>
+      </ul>
+      <p>
+        The backend already validates the submission and links the details to the repair job that
+        generated the QR code.
+      </p>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,36 @@
+{
+  "name": "whatsapp-bot-pos-superapp",
+  "version": "1.0.0",
+  "description": "Service repair workflow API with WhatsApp automation hooks",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "migrate": "node src/scripts/migrate.js",
+    "seed": "node src/scripts/seed.js"
+  },
+  "keywords": [
+    "whatsapp",
+    "repair",
+    "pos",
+    "workflow"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "better-sqlite3": "^12.4.1",
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.18",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "qrcode": "^1.5.4",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
