@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Bot POS SuperApp - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #1a202c;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 1.1rem;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .status-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .status-card h3 {
+            color: #4a5568;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .status-card .value {
+            color: #2d3748;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .status-card .label {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            color: #1a202c;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .login-section {
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #4a5568;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #48bb78;
+        }
+
+        .btn-danger {
+            background: #f56565;
+        }
+
+        .data-section {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .data-item {
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            transition: background 0.2s;
+        }
+
+        .data-item:hover {
+            background: #f7fafc;
+        }
+
+        .data-item:last-child {
+            border-bottom: none;
+        }
+
+        .data-item strong {
+            color: #2d3748;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .data-item span {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .badge-pending {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .badge-progress {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+
+        .badge-completed {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #fc8181;
+        }
+
+        .alert-info {
+            background: #bee3f8;
+            color: #2c5282;
+            border: 1px solid #90cdf4;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #718096;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 WhatsApp Bot POS SuperApp</h1>
+            <p>Repair Service Management System Dashboard</p>
+        </div>
+
+        <div class="status-bar" id="statusBar">
+            <div class="status-card">
+                <h3>System Status</h3>
+                <div class="value" id="systemStatus">Checking...</div>
+                <div class="label">Server Health</div>
+            </div>
+            <div class="status-card">
+                <h3>Total Users</h3>
+                <div class="value" id="userCount">-</div>
+                <div class="label">Registered Users</div>
+            </div>
+            <div class="status-card">
+                <h3>Total Customers</h3>
+                <div class="value" id="customerCount">-</div>
+                <div class="label">Customer Database</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="card">
+                <h2>🔐 Authentication</h2>
+                <div id="loginSection" class="login-section">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="email" value="admin@repairhub.local" placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="password" value="admin123" placeholder="Enter your password">
+                    </div>
+                    <button class="btn" onclick="login()">Login</button>
+                    <div id="loginAlert"></div>
+                </div>
+                <div id="loggedInSection" class="hidden">
+                    <div class="alert alert-success">
+                        ✅ Logged in successfully!
+                    </div>
+                    <button class="btn btn-danger" onclick="logout()">Logout</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📊 Quick Actions</h2>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="loadCustomers()" id="loadCustomersBtn" disabled>Load Customers</button>
+                    <button class="btn btn-secondary" onclick="loadJobs()" id="loadJobsBtn" disabled>Load Repair Jobs</button>
+                    <button class="btn btn-secondary" onclick="loadTemplates()" id="loadTemplatesBtn" disabled>Load Templates</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="whatsappCard" style="display: none;">
+            <h2>📱 WhatsApp Connection</h2>
+            <div id="whatsappStatus" class="alert alert-info">
+                Checking connection status...
+            </div>
+            <div id="whatsappQR" style="text-align: center; margin: 20px 0; display: none;">
+                <p style="margin-bottom: 10px; color: #4a5568; font-weight: 600;">Scan QR code dengan WhatsApp anda:</p>
+                <img id="qrImage" src="" alt="QR Code" style="max-width: 300px; border: 2px solid #e2e8f0; border-radius: 8px; padding: 10px; background: white;">
+                <p style="margin-top: 10px; font-size: 0.9rem; color: #718096;">QR code akan expire dalam beberapa minit</p>
+                <p style="margin-top: 5px; font-size: 0.85rem; color: #a0aec0; font-style: italic;">💡 Tip: QR code juga muncul di terminal/console server</p>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-secondary" onclick="initializeWhatsApp()" id="initWhatsAppBtn">Initialize WhatsApp</button>
+                <button class="btn btn-secondary" onclick="getWhatsAppQR()" id="getQRBtn" disabled>Get QR Code</button>
+                <button class="btn btn-secondary" onclick="checkWhatsAppStatus()" id="checkStatusBtn">Check Status</button>
+                <button class="btn btn-danger" onclick="disconnectWhatsApp()" id="disconnectBtn" disabled>Disconnect</button>
+                <button class="btn" style="background: #ed8936; color: white;" onclick="clearAndInitialize()" id="clearAndInitBtn">Clear & Initialize</button>
+            </div>
+            <p style="margin-top: 10px; font-size: 0.85rem; color: #718096;">
+                💡 <strong>Tip:</strong> Jika QR code tidak muncul, klik "Clear & Initialize" untuk force generate QR code baru
+            </p>
+            <div id="whatsappAlert" style="margin-top: 15px;"></div>
+        </div>
+
+        <div class="card" id="dataCard" style="display: none;">
+            <h2 id="dataTitle">Data</h2>
+            <div class="data-section" id="dataContent">
+                <div class="loading">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('authToken') || null;
+
+        // Check system health on load
+        async function checkHealth() {
+            try {
+                const response = await fetch('http://localhost:4000/health');
+                const data = await response.json();
+                
+                document.getElementById('systemStatus').textContent = '✅ Online';
+                document.getElementById('userCount').textContent = data.users || 0;
+                document.getElementById('customerCount').textContent = data.customers || 0;
+            } catch (error) {
+                document.getElementById('systemStatus').textContent = '❌ Offline';
+                console.error('Health check failed:', error);
+            }
+        }
+
+        // Login function
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const alertDiv = document.getElementById('loginAlert');
+
+            try {
+                const response = await fetch('http://localhost:4000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    authToken = data.token;
+                    localStorage.setItem('authToken', authToken);
+                    
+                    document.getElementById('loginSection').classList.add('hidden');
+                    document.getElementById('loggedInSection').classList.remove('hidden');
+                    
+                    // Enable buttons
+                    document.getElementById('loadCustomersBtn').disabled = false;
+                    document.getElementById('loadJobsBtn').disabled = false;
+                    document.getElementById('loadTemplatesBtn').disabled = false;
+                    document.getElementById('whatsappCard').style.display = 'block';
+                    
+                    // Check WhatsApp status after login
+                    checkWhatsAppStatus();
+
+                    alertDiv.innerHTML = '<div class="alert alert-success">Login successful!</div>';
+                } else {
+                    alertDiv.innerHTML = `<div class="alert alert-error">${data.message || 'Login failed'}</div>`;
+                }
+            } catch (error) {
+                alertDiv.innerHTML = '<div class="alert alert-error">Connection error. Make sure the server is running.</div>';
+                console.error('Login error:', error);
+            }
+        }
+
+        // Logout function
+        function logout() {
+            authToken = null;
+            localStorage.removeItem('authToken');
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('loggedInSection').classList.add('hidden');
+            document.getElementById('dataCard').style.display = 'none';
+            document.getElementById('whatsappCard').style.display = 'none';
+            
+            // Disable buttons
+            document.getElementById('loadCustomersBtn').disabled = true;
+            document.getElementById('loadJobsBtn').disabled = true;
+            document.getElementById('loadTemplatesBtn').disabled = true;
+        }
+
+        // Load customers
+        async function loadCustomers() {
+            if (!authToken) {
+                alert('Please login first');
+                return;
+            }
+
+            const dataCard = document.getElementById('dataCard');
+            const dataTitle = document.getElementById('dataTitle');
+            const dataContent = document.getElementById('dataContent');
+
+            dataCard.style.display = 'block';
+            dataTitle.textContent = '👥 Customers';
+            dataContent.innerHTML = '<div class="loading">Loading customers...</div>';
+
+            try {
+                const response = await fetch('http://localhost:4000/api/customers', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (Array.isArray(data)) {
+                    if (data.length === 0) {
+                        dataContent.innerHTML = '<div class="alert alert-info">No customers found.</div>';
+                    } else {
+                        dataContent.innerHTML = data.map(customer => `
+                            <div class="data-item">
+                                <strong>${customer.name}</strong>
+                                <span>📞 ${customer.phone || 'N/A'}</span><br>
+                                <span>📧 ${customer.email || 'N/A'}</span>
+                            </div>
+                        `).join('');
+                    }
+                } else {
+                    dataContent.innerHTML = `
+                        <div class="data-item">
+                            <strong>${data.name}</strong>
+                            <span>📞 ${data.phone || 'N/A'}</span><br>
+                            <span>📧 ${data.email || 'N/A'}</span>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                dataContent.innerHTML = '<div class="alert alert-error">Failed to load customers. Check console for details.</div>';
+                console.error('Load customers error:', error);
+            }
+        }
+
+        // Load jobs
+        async function loadJobs() {
+            if (!authToken) {
+                alert('Please login first');
+                return;
+            }
+
+            const dataCard = document.getElementById('dataCard');
+            const dataTitle = document.getElementById('dataTitle');
+            const dataContent = document.getElementById('dataContent');
+
+            dataCard.style.display = 'block';
+            dataTitle.textContent = '🔧 Repair Jobs';
+            dataContent.innerHTML = '<div class="loading">Loading jobs...</div>';
+
+            try {
+                const response = await fetch('http://localhost:4000/api/jobs', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (Array.isArray(data)) {
+                    if (data.length === 0) {
+                        dataContent.innerHTML = '<div class="alert alert-info">No jobs found.</div>';
+                    } else {
+                        dataContent.innerHTML = data.map(job => {
+                            const statusClass = job.status === 'completed' ? 'badge-completed' : 
+                                              job.status === 'in_progress' ? 'badge-progress' : 'badge-pending';
+                            return `
+                                <div class="data-item">
+                                    <strong>${job.title || 'Untitled Job'}</strong>
+                                    <span>👤 Customer: ${job.customer_name || 'N/A'}</span><br>
+                                    <span>📱 Device: ${job.device_type || 'N/A'} - ${job.brand || ''} ${job.model || ''}</span><br>
+                                    <span class="badge ${statusClass}">${job.status || 'pending'}</span>
+                                    ${job.quoted_amount ? `<br><span>💰 Quoted: RM ${job.quoted_amount}</span>` : ''}
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                } else {
+                    const statusClass = data.status === 'completed' ? 'badge-completed' : 
+                                      data.status === 'in_progress' ? 'badge-progress' : 'badge-pending';
+                    dataContent.innerHTML = `
+                        <div class="data-item">
+                            <strong>${data.title || 'Untitled Job'}</strong>
+                            <span>👤 Customer: ${data.customer_name || 'N/A'}</span><br>
+                            <span>📱 Device: ${data.device_type || 'N/A'} - ${data.brand || ''} ${data.model || ''}</span><br>
+                            <span class="badge ${statusClass}">${data.status || 'pending'}</span>
+                            ${data.quoted_amount ? `<br><span>💰 Quoted: RM ${data.quoted_amount}</span>` : ''}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                dataContent.innerHTML = '<div class="alert alert-error">Failed to load jobs. Check console for details.</div>';
+                console.error('Load jobs error:', error);
+            }
+        }
+
+        // Load templates
+        async function loadTemplates() {
+            if (!authToken) {
+                alert('Please login first');
+                return;
+            }
+
+            const dataCard = document.getElementById('dataCard');
+            const dataTitle = document.getElementById('dataTitle');
+            const dataContent = document.getElementById('dataContent');
+
+            dataCard.style.display = 'block';
+            dataTitle.textContent = '📝 Message Templates';
+            dataContent.innerHTML = '<div class="loading">Loading templates...</div>';
+
+            try {
+                const response = await fetch('http://localhost:4000/api/templates', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (Array.isArray(data)) {
+                    if (data.length === 0) {
+                        dataContent.innerHTML = '<div class="alert alert-info">No templates found.</div>';
+                    } else {
+                        dataContent.innerHTML = data.map(template => `
+                            <div class="data-item">
+                                <strong>${template.name || 'Unnamed Template'}</strong>
+                                <span>Type: ${template.type || 'N/A'}</span><br>
+                                <span style="font-size: 0.85rem; color: #4a5568; margin-top: 5px; display: block;">
+                                    ${template.content || 'No content'}
+                                </span>
+                            </div>
+                        `).join('');
+                    }
+                } else {
+                    dataContent.innerHTML = `
+                        <div class="data-item">
+                            <strong>${data.name || 'Unnamed Template'}</strong>
+                            <span>Type: ${data.type || 'N/A'}</span><br>
+                            <span style="font-size: 0.85rem; color: #4a5568; margin-top: 5px; display: block;">
+                                ${data.content || 'No content'}
+                            </span>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                dataContent.innerHTML = '<div class="alert alert-error">Failed to load templates. Check console for details.</div>';
+                console.error('Load templates error:', error);
+            }
+        }
+
+        // WhatsApp Functions
+        let qrPollingInterval = null;
+
+        async function initializeWhatsApp() {
+            if (!authToken) {
+                alert('Please login first');
+                return;
+            }
+
+            const alertDiv = document.getElementById('whatsappAlert');
+            const initBtn = document.getElementById('initWhatsAppBtn');
+            const getQRBtn = document.getElementById('getQRBtn');
+            
+            initBtn.disabled = true;
+            alertDiv.innerHTML = '<div class="alert alert-info">🔄 Initializing WhatsApp connection... This may take 10-15 seconds...</div>';
+
+            try {
+                const response = await fetch('http://localhost:4000/api/whatsapp/initialize', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        forceNewSession: false // Set to true if you want to force new session
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    alertDiv.innerHTML = '<div class="alert alert-info">✅ WhatsApp initialized! Auto-checking for QR code every 2 seconds...</div>';
+                    getQRBtn.disabled = false;
+                    initBtn.disabled = false;
+                    
+                    // Start auto-polling for QR code immediately
+                    startQRPolling();
+                } else {
+                    alertDiv.innerHTML = `<div class="alert alert-error">❌ ${data.message}</div>`;
+                    initBtn.disabled = false;
+                }
+            } catch (error) {
+                alertDiv.innerHTML = '<div class="alert alert-error">❌ Failed to initialize WhatsApp. Check console for details.</div>';
+                console.error('Initialize WhatsApp error:', error);
+                initBtn.disabled = false;
+            }
+        }
+
+        function startQRPolling() {
+            // Stop any existing polling
+            if (qrPollingInterval) {
+                clearInterval(qrPollingInterval);
+            }
+
+            // Poll every 2 seconds for QR code
+            let attempts = 0;
+            const maxAttempts = 30; // 60 seconds total
+
+            qrPollingInterval = setInterval(async () => {
+                attempts++;
+                
+                console.log(`🔄 QR Polling attempt ${attempts}/${maxAttempts}`);
+                
+                try {
+                    const response = await fetch('http://localhost:4000/api/whatsapp/qr', {
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`
+                        }
+                    });
+
+                    const data = await response.json();
+                    
+                    console.log('📊 QR Poll response:', {
+                        success: data.success,
+                        hasQR: !!data.qr,
+                        hasQRImage: !!data.qrImage,
+                        status: data.status,
+                        message: data.message
+                    });
+                    
+                    if (data.success && data.qrImage) {
+                        // QR code found!
+                        console.log('✅✅✅ QR CODE FOUND IN UI! ✅✅✅');
+                        clearInterval(qrPollingInterval);
+                        qrPollingInterval = null;
+                        
+                        const qrDiv = document.getElementById('whatsappQR');
+                        const qrImage = document.getElementById('qrImage');
+                        const alertDiv = document.getElementById('whatsappAlert');
+                        
+                        qrImage.src = data.qrImage;
+                        qrDiv.style.display = 'block';
+                        alertDiv.innerHTML = '<div class="alert alert-success">✅ QR Code ready! Scan dengan WhatsApp anda</div>';
+                        document.getElementById('getQRBtn').disabled = false;
+                    } else if (data.success && data.qr) {
+                        // QR string available but image generation might have failed
+                        console.log('⚠️ QR string available but no image. Trying to generate...');
+                        // Try to generate image client-side if possible
+                        if (data.qr && data.qr.length > 0) {
+                            const alertDiv = document.getElementById('whatsappAlert');
+                            alertDiv.innerHTML = `<div class="alert alert-warning">⚠️ QR code string available but image generation failed. QR: ${data.qr.substring(0, 50)}...<br>Please check terminal for QR code.</div>`;
+                        }
+                    } else if (data.status === 'connected') {
+                        // Already connected
+                        console.log('✅ Already connected');
+                        clearInterval(qrPollingInterval);
+                        qrPollingInterval = null;
+                        
+                        const alertDiv = document.getElementById('whatsappAlert');
+                        alertDiv.innerHTML = '<div class="alert alert-success">✅ WhatsApp sudah connected!</div>';
+                        document.getElementById('whatsappQR').style.display = 'none';
+                        document.getElementById('disconnectBtn').disabled = false;
+                    } else if (attempts >= maxAttempts) {
+                        // Timeout
+                        console.log('❌ QR polling timeout');
+                        clearInterval(qrPollingInterval);
+                        qrPollingInterval = null;
+                        
+                        const alertDiv = document.getElementById('whatsappAlert');
+                        let timeoutMessage = `<div class="alert alert-warning">⚠️ QR code tidak muncul selepas 60 saat.<br><br><strong>Status:</strong> ${data.status || 'unknown'}<br><strong>Message:</strong> ${data.message || 'No message'}<br><br>`;
+                        
+                        if (data.needsClearSession || data.status === 'connecting') {
+                            timeoutMessage += '<strong>💡 SOLUSI:</strong><br>1. Klik "Clear & Initialize" untuk force generate QR code baru<br>';
+                            timeoutMessage += '2. Atau check terminal output - QR code mungkin sudah muncul di sana<br>';
+                            timeoutMessage += '3. Pastikan session sudah di-clear sebelum initialize';
+                        } else {
+                            timeoutMessage += 'Sila:<br>1. Check terminal output - QR code mungkin sudah muncul di sana<br>';
+                            timeoutMessage += '2. Klik "Clear & Initialize" dan cuba lagi<br>';
+                            timeoutMessage += '3. Atau klik "Get QR Code" manually';
+                        }
+                        
+                        timeoutMessage += '</div>';
+                        alertDiv.innerHTML = timeoutMessage;
+                        document.getElementById('getQRBtn').disabled = false;
+                    } else {
+                        // Still waiting - update status
+                        if (attempts % 5 === 0) {
+                            const alertDiv = document.getElementById('whatsappAlert');
+                            let statusMessage = data.message || 'Please wait...';
+                            if (data.needsClearSession) {
+                                statusMessage += '<br><br>💡 <strong>Tip:</strong> Jika QR tidak muncul, cuba klik "Clear & Initialize"';
+                            }
+                            alertDiv.innerHTML = `<div class="alert alert-info">🔄 Waiting for QR code... (${attempts * 2}s / 60s)<br>Status: <strong>${data.status || 'connecting'}</strong><br>${statusMessage}</div>`;
+                        }
+                    }
+                } catch (error) {
+                    console.error('QR polling error:', error);
+                    if (attempts >= maxAttempts) {
+                        clearInterval(qrPollingInterval);
+                        qrPollingInterval = null;
+                        
+                        const alertDiv = document.getElementById('whatsappAlert');
+                        alertDiv.innerHTML = `<div class="alert alert-error">❌ Error during QR polling: ${error.message}<br><br>Please try "Clear & Initialize" again.</div>`;
+                        document.getElementById('getQRBtn').disabled = false;
+                    }
+                }
+            }, 2000); // Poll every 2 seconds
+        }
+
+        function stopQRPolling() {
+            if (qrPollingInterval) {
+                clearInterval(qrPollingInterval);
+                qrPollingInterval = null;
+            }
+        }
+
+        async function getWhatsAppQR() {
+            if (!authToken) {
+                alert('Please login first');
+                return;
+            }
+
+            const alertDiv = document.getElementById('whatsappAlert');
+            const qrDiv = document.getElementById('whatsappQR');
+            const qrImage = document.getElementById('qrImage');
+            const getQRBtn = document.getElementById('getQRBtn');
+
+            // Disable button while loading
+            getQRBtn.disabled = true;
+            alertDiv.innerHTML = '<div class="alert alert-info">🔄 Getting QR code... Please wait...</div>';
+
+            try {
+                const response = await fetch('http://localhost:4000/api/whatsapp/qr', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success && data.qrImage) {
+                    // Stop polling if running
+                    stopQRPolling();
+                    
+                    qrImage.src = data.qrImage;
+                    qrDiv.style.display = 'block';
+                    alertDiv.innerHTML = '<div class="alert alert-success">✅ QR Code ready! Scan dengan WhatsApp anda</div>';
+                    getQRBtn.disabled = false;
+                } else if (data.success && data.qr) {
+                    // QR string available but image generation failed - try to generate manually
+                    stopQRPolling();
+                    
+                    // Try to generate QR image using QRCode.js library if available
+                    try {
+                        // If QRCode library is loaded, generate image
+                        if (typeof QRCode !== 'undefined') {
+                            QRCode.toDataURL(data.qr, (err, url) => {
+                                if (!err) {
+                                    qrImage.src = url;
+                                    qrDiv.style.display = 'block';
+                                    alertDiv.innerHTML = '<div class="alert alert-success">✅ QR Code ready! Scan dengan WhatsApp anda</div>';
+                                } else {
+                                    alertDiv.innerHTML = `<div class="alert alert-warning">⚠️ QR Code string available but image generation failed. QR: ${data.qr.substring(0, 50)}...</div>`;
+                                }
+                                getQRBtn.disabled = false;
+                            });
+                        } else {
+                            alertDiv.innerHTML = `<div class="alert alert-info">QR Code string: ${data.qr.substring(0, 100)}... (Image generation failed)</div>`;
+                            getQRBtn.disabled = false;
+                        }
+                    } catch (e) {
+                        alertDiv.innerHTML = `<div class="alert alert-info">QR Code string: ${data.qr.substring(0, 100)}...</div>`;
+                        getQRBtn.disabled = false;
+                    }
+                } else {
+                    if (data.status === 'connected') {
+                        stopQRPolling();
+                        alertDiv.innerHTML = '<div class="alert alert-success">✅ WhatsApp sudah connected!</div>';
+                        qrDiv.style.display = 'none';
+                        document.getElementById('disconnectBtn').disabled = false;
+                        getQRBtn.disabled = true;
+                    } else {
+                        // Start polling if not already started
+                        if (!qrPollingInterval) {
+                            startQRPolling();
+                        }
+                        
+                        let message = data.message || 'QR code belum ready. Auto-checking...';
+                        alertDiv.innerHTML = `<div class="alert alert-info">🔄 ${message}<br>Status: <strong>${data.status}</strong><br>Auto-checking setiap 2 saat...</div>`;
+                        qrDiv.style.display = 'none';
+                        getQRBtn.disabled = false;
+                    }
+                }
+            } catch (error) {
+                alertDiv.innerHTML = '<div class="alert alert-error">❌ Failed to get QR code. Check console for details.</div>';
+                console.error('Get QR error:', error);
+                getQRBtn.disabled = false;
+            }
+        }
+
+        async function checkWhatsAppStatus() {
+            if (!authToken) {
+                alert('Please login first');
+                return;
+            }
+
+            const statusDiv = document.getElementById('whatsappStatus');
+            const alertDiv = document.getElementById('whatsappAlert');
+            const qrDiv = document.getElementById('whatsappQR');
+
+            try {
+                const response = await fetch('http://localhost:4000/api/whatsapp/status', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.isConnected) {
+                    statusDiv.className = 'alert alert-success';
+                    statusDiv.textContent = '✅ WhatsApp Connected';
+                    qrDiv.style.display = 'none';
+                    document.getElementById('disconnectBtn').disabled = false;
+                    document.getElementById('getQRBtn').disabled = true;
+                } else if (data.isConnecting) {
+                    statusDiv.className = 'alert alert-info';
+                    statusDiv.textContent = '🔄 Connecting...';
+                    document.getElementById('getQRBtn').disabled = false;
+                } else if (data.status === 'qr_ready') {
+                    statusDiv.className = 'alert alert-info';
+                    statusDiv.textContent = '📱 QR Code Ready - Scan to connect';
+                    document.getElementById('getQRBtn').disabled = false;
+                    getWhatsAppQR();
+                } else {
+                    statusDiv.className = 'alert alert-error';
+                    statusDiv.textContent = '❌ Disconnected';
+                    qrDiv.style.display = 'none';
+                    document.getElementById('disconnectBtn').disabled = true;
+                    document.getElementById('getQRBtn').disabled = true;
+                }
+            } catch (error) {
+                statusDiv.className = 'alert alert-error';
+                statusDiv.textContent = '❌ Error checking status';
+                console.error('Check status error:', error);
+            }
+        }
+
+        async function disconnectWhatsApp() {
+            if (!authToken) {
+                alert('Please login first');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to disconnect WhatsApp?')) {
+                return;
+            }
+
+            // Stop polling
+            stopQRPolling();
+
+            const alertDiv = document.getElementById('whatsappAlert');
+
+            try {
+                const response = await fetch('http://localhost:4000/api/whatsapp/disconnect', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    alertDiv.innerHTML = '<div class="alert alert-success">WhatsApp disconnected</div>';
+                    document.getElementById('whatsappQR').style.display = 'none';
+                    document.getElementById('disconnectBtn').disabled = true;
+                    checkWhatsAppStatus();
+                } else {
+                    alertDiv.innerHTML = `<div class="alert alert-error">${data.message}</div>`;
+                }
+            } catch (error) {
+                alertDiv.innerHTML = '<div class="alert alert-error">Failed to disconnect</div>';
+                console.error('Disconnect error:', error);
+            }
+        }
+
+        async function clearWhatsAppSession() {
+            if (!authToken) {
+                alert('Please login first');
+                return;
+            }
+
+            // Stop polling
+            stopQRPolling();
+
+            const alertDiv = document.getElementById('whatsappAlert');
+            
+            alertDiv.innerHTML = '<div class="alert alert-info">🔄 Clearing session...</div>';
+
+            try {
+                const response = await fetch('http://localhost:4000/api/whatsapp/clear-session', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    alertDiv.innerHTML = '<div class="alert alert-success">✅ Session cleared!</div>';
+                    document.getElementById('whatsappQR').style.display = 'none';
+                    document.getElementById('disconnectBtn').disabled = true;
+                    document.getElementById('getQRBtn').disabled = true;
+                    checkWhatsAppStatus();
+                    return true;
+                } else {
+                    alertDiv.innerHTML = `<div class="alert alert-error">${data.message}</div>`;
+                    return false;
+                }
+            } catch (error) {
+                alertDiv.innerHTML = '<div class="alert alert-error">Failed to clear session</div>';
+                console.error('Clear session error:', error);
+                return false;
+            }
+        }
+
+        async function clearAndInitialize() {
+            if (!authToken) {
+                alert('Please login first');
+                return;
+            }
+
+            if (!confirm('Clear session dan initialize akan delete semua WhatsApp session data dan force generate QR code baru. Continue?')) {
+                return;
+            }
+
+            const alertDiv = document.getElementById('whatsappAlert');
+            const clearBtn = document.getElementById('clearAndInitBtn');
+            
+            // Stop any existing polling
+            stopQRPolling();
+            
+            clearBtn.disabled = true;
+            alertDiv.innerHTML = '<div class="alert alert-info">🔄 Step 1/2: Clearing session...</div>';
+
+            // Clear session first
+            const cleared = await clearWhatsAppSession();
+            
+            if (cleared) {
+                alertDiv.innerHTML = '<div class="alert alert-success">✅ Session cleared! Step 2/2: Initializing...</div>';
+                
+                // Wait a bit then initialize with force new session
+                setTimeout(async () => {
+                    try {
+                        const response = await fetch('http://localhost:4000/api/whatsapp/initialize', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${authToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                forceNewSession: true
+                            })
+                        });
+
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            alertDiv.innerHTML = '<div class="alert alert-success">✅✅✅ Session cleared dan WhatsApp initialized!<br><br>🔄 Auto-checking for QR code setiap 2 saat...<br><br>💡 QR code akan muncul di UI dalam 5-15 saat. Jika tidak muncul, check terminal output.</div>';
+                            document.getElementById('getQRBtn').disabled = false;
+                            clearBtn.disabled = false;
+                            
+                            // Start auto-polling for QR code immediately
+                            startQRPolling();
+                        } else {
+                            alertDiv.innerHTML = `<div class="alert alert-error">❌ ${data.message}</div>`;
+                            clearBtn.disabled = false;
+                        }
+                    } catch (error) {
+                        alertDiv.innerHTML = '<div class="alert alert-error">❌ Failed to initialize. Check console for details.</div>';
+                        console.error('Initialize error:', error);
+                        clearBtn.disabled = false;
+                    }
+                }, 2000); // Wait 2 seconds after clearing
+            } else {
+                alertDiv.innerHTML = '<div class="alert alert-error">❌ Failed to clear session. Please try again.</div>';
+                clearBtn.disabled = false;
+            }
+        }
+
+        // Initialize on page load
+        window.onload = function() {
+            checkHealth();
+            
+            // Check if already logged in
+            if (authToken) {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('loggedInSection').classList.remove('hidden');
+                document.getElementById('loadCustomersBtn').disabled = false;
+                document.getElementById('loadJobsBtn').disabled = false;
+                document.getElementById('loadTemplatesBtn').disabled = false;
+                document.getElementById('whatsappCard').style.display = 'block';
+                checkWhatsAppStatus();
+            }
+
+            // Auto-refresh health every 30 seconds
+            setInterval(checkHealth, 30000);
+            
+            // Auto-check WhatsApp status every 10 seconds if logged in
+            if (authToken) {
+                setInterval(checkWhatsAppStatus, 10000);
+            }
+
+            // Cleanup polling on page unload
+            window.addEventListener('beforeunload', () => {
+                stopQRPolling();
+            });
+        };
+    </script>
+</body>
+</html>
+

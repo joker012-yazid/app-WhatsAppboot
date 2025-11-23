@@ -9,6 +9,9 @@ const templateService = require('../services/templateService');
 
 const db = getDb();
 
+const buildQrUrl = (req, token) =>
+  `${req.protocol}://${req.get('host') || 'localhost'}/public/register/index.html?token=${token}`;
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.resolve(process.cwd(), 'uploads');
@@ -101,13 +104,13 @@ const createJob = async (req, res) => {
     .run(uuidv4(), id, 'pending', 'Job created');
 
   const job = db.prepare('SELECT * FROM jobs WHERE id = ?').get(id);
-  const qrUrl = `${req.protocol}://${req.get('host') || 'localhost'}/public/register/index.html?token=${qrToken}`;
+  const qrUrl = buildQrUrl(req, qrToken);
   const qrImage = await QRCode.toDataURL(qrUrl);
 
   res.status(201).json({ job, qr_url: qrUrl, qr_image: qrImage });
 };
 
-const getJob = (req, res) => {
+const getJob = async (req, res) => {
   const { id } = req.params;
   const job = db.prepare('SELECT * FROM jobs WHERE id = ?').get(id);
   if (!job) {
@@ -120,7 +123,19 @@ const getJob = (req, res) => {
   const statusHistory = db.prepare('SELECT * FROM job_status_history WHERE job_id = ? ORDER BY created_at DESC').all(id);
   const messages = db.prepare('SELECT * FROM job_messages WHERE job_id = ? ORDER BY created_at DESC').all(id);
 
-  res.json({ job, customer, device, photos, status_history: statusHistory, messages });
+  const qrUrl = buildQrUrl(req, job.qr_token);
+  const qrImage = await QRCode.toDataURL(qrUrl);
+
+  res.json({
+    ...job,
+    qr_url: qrUrl,
+    qr_image: qrImage,
+    customer,
+    device,
+    photos,
+    status_history: statusHistory,
+    messages
+  });
 };
 
 const updateJob = (req, res) => {

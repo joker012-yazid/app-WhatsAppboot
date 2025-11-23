@@ -19,6 +19,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "@whiskeysockets/baileys": "^7.0.0-rc.9",
     "bcryptjs": "^3.0.2",
     "better-sqlite3": "^12.4.1",
     "cors": "^2.8.5",
@@ -27,7 +29,9 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
+    "pino": "^10.1.0",
     "qrcode": "^1.5.4",
+    "qrcode-terminal": "^0.12.0",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

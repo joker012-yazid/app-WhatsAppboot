@@ -12,6 +12,7 @@ const customerRoutes = require('./routes/customerRoutes');
 const deviceRoutes = require('./routes/deviceRoutes');
 const jobRoutes = require('./routes/jobRoutes');
 const templateRoutes = require('./routes/templateRoutes');
+const whatsappRoutes = require('./routes/whatsappRoutes');
 
 const app = express();
 
@@ -26,6 +27,10 @@ if (!fs.existsSync(publicDir)) {
 app.use('/public', express.static(publicDir));
 app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
 
+app.get('/', (req, res) => {
+  res.sendFile(path.resolve(process.cwd(), 'public/index.html'));
+});
+
 app.get('/health', (req, res) => {
   const db = getDb();
   const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
@@ -38,6 +43,7 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/devices', deviceRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/templates', templateRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
