@@ -101,7 +101,7 @@ const createJob = async (req, res) => {
     .run(uuidv4(), id, 'pending', 'Job created');
 
   const job = db.prepare('SELECT * FROM jobs WHERE id = ?').get(id);
-  const qrUrl = `${req.protocol}://${req.get('host') || 'localhost'}/public/register/${qrToken}`;
+  const qrUrl = `${req.protocol}://${req.get('host') || 'localhost'}/public/register/index.html?token=${qrToken}`;
   const qrImage = await QRCode.toDataURL(qrUrl);
 
   res.status(201).json({ job, qr_url: qrUrl, qr_image: qrImage });
@@ -234,6 +234,10 @@ const completeRegistration = (req, res) => {
   const job = db.prepare('SELECT * FROM jobs WHERE qr_token = ?').get(token);
   if (!job) {
     return res.status(404).json({ message: 'Invalid or expired QR token' });
+  }
+
+  if (job.qr_expires_at && dayjs(job.qr_expires_at).isBefore(dayjs())) {
+    return res.status(410).json({ message: 'Registration link has expired' });
   }
 
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(job.customer_id);
