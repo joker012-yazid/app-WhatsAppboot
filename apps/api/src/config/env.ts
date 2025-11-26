@@ -1,7 +1,13 @@
 import { config } from 'dotenv';
+import path from 'node:path';
 import { z } from 'zod';
 
+// Load .env from workspace; then fallback to repo root if needed
 config();
+if (!process.env.DATABASE_URL || !process.env.REDIS_URL) {
+  const rootEnv = path.resolve(process.cwd(), '../../.env');
+  config({ path: rootEnv });
+}
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),

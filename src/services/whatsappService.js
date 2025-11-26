@@ -6,6 +6,38 @@ const fs = require('fs');
 const { getDb } = require('../utils/database');
 const templateService = require('./templateService');
 
+// Sanitize logs to strip broken emoji/mojibake for cross-platform consoles
+const LOG_SANITIZE = (process.env.LOG_SANITIZE ?? '1') !== '0';
+if (LOG_SANITIZE) {
+  const stripNonAscii = (s) => {
+    let out = String(s);
+    // Remove non-ASCII (emoji, replacement chars)
+    out = out.replace(/[^\x00-\x7F]/g, '');
+    // Trim leading spaces
+    out = out.replace(/^\s+/, '');
+    // Drop known mojibake prefixes like dY-`, dY"?, dYs?, etc.
+    out = out.replace(/^dY[\-`"'\?S]*/i, '');
+    // Remove any remaining non-alnum junk at the very start (allow [ or ()
+    out = out.replace(/^[^A-Za-z0-9\[\(]+/, '');
+    // Collapse multiple spaces
+    out = out.replace(/\s{2,}/g, ' ');
+    return out;
+  };
+
+  const sanitizeArgs = (args) =>
+    args.map((a) => (typeof a === 'string' ? stripNonAscii(a) : a));
+
+  const _log = console.log.bind(console);
+  const _error = console.error.bind(console);
+  const _warn = console.warn.bind(console);
+  const _info = console.info.bind(console);
+
+  console.log = (...args) => _log(...sanitizeArgs(args));
+  console.error = (...args) => _error(...sanitizeArgs(args));
+  console.warn = (...args) => _warn(...sanitizeArgs(args));
+  console.info = (...args) => _info(...sanitizeArgs(args));
+}
+
 const db = getDb();
 
 // Session storage path
