@@ -1,64 +1,61 @@
 # WhatsApp Bot POS SuperApp
 
-This repository now includes the first working backend slice for the device repair automation
-platform described in `development_roadmap.md`. The service is an Express.js API backed by a
-SQLite database (via better-sqlite3) that covers the early roadmap milestones:
+This repository is now organised as a JavaScript/TypeScript monorepo that hosts the Phase 1
+implementation described in `development_roadmap.md`. The legacy Express + SQLite server is still
+parked inside `src/` for reference, but the active work happens inside the new `apps/*` workspaces:
 
-- Authentication with JWT for admins and staff.
-- Customer and device management.
-- Repair job lifecycle with QR-code powered public registration links.
-- Photo upload endpoints for repair documentation.
-- Message template storage and preview rendering ready for WhatsApp delivery logic.
+- **apps/api** – TypeScript Express server with Prisma, PostgreSQL, and Redis helpers.
+- **apps/web** – Next.js App Router client with Tailwind CSS, shadcn/ui primitives, and theming.
+- **prisma/** – shared schema + migrations for the Postgres database.
+- **docker/** – Dockerfiles and compose stack for Postgres, Redis, API, and Web during local dev.
+
+Refer to `docs/phase1-plan.md` for the current scope of Phase 1 (auth, protected UI shell, Redis
+session cache, etc.).
 
 ## Getting started
 
 ```bash
+# install workspace deps
 npm install
-npm run migrate
-npm run seed
-npm run dev
+
+# copy environment defaults
+cp .env.example .env
+
+# generate Prisma client (migrations/seed scripts will arrive later in Phase 1)
+npm run prisma:generate
+
+# boot both the API and Web dev servers
+npm start   # alias for `npm run dev`
 ```
 
-The server listens on port `4000` by default. Override the following environment variables by
-creating a `.env` file:
+The default development ports are:
 
-```ini
-PORT=4000
-JWT_SECRET=super-secret-key
-DATABASE_PATH=storage/data.db
+| Service | Port | Notes |
+| ------- | ---- | ----- |
+| API     | 4000 | `/health` route already available |
+| Web     | 3000 | Next.js App Router skeleton with theme toggle |
+| Redis   | 6379 | Provided via `docker-compose.yml` |
+| Postgres| 5432 | Provided via `docker-compose.yml` |
+
+You can run each workspace independently when you only need one side running:
+
+```bash
+npm run dev:api   # Express/Prisma server only
+npm run dev:web   # Next.js app only
 ```
 
-## Core API endpoints
+To spin up the Postgres + Redis services that the API expects, use:
 
-| Endpoint | Method | Description |
-| --- | --- | --- |
-| `/api/auth/login` | `POST` | Authenticate with email and password to receive a JWT. |
-| `/api/customers` | CRUD | Manage customers and inspect their linked devices/jobs. |
-| `/api/devices` | CRUD | Manage devices tied to customers. |
-| `/api/jobs` | CRUD | Manage repair jobs, including QR token generation. |
-| `/api/jobs/:id/photos` | `POST` | Upload up to 6 photos per request for a job. |
-| `/api/jobs/register/:token` | `GET/POST` | Public registration flow triggered by QR codes. |
-| `/api/templates` | CRUD | Manage WhatsApp message templates and preview rendered messages. |
+```bash
+docker compose up -d postgres redis
+```
 
-The public registration placeholder lives in `public/register/index.html` and can be replaced with a
-full client according to the roadmap.
+## Legacy implementation
 
-## Database seeding
+Everything inside `src/` (and its SQLite migrations + seed scripts) belongs to the previous
+monolithic server. Those scripts are no longer invoked by `npm start`. If you still need to inspect
+that code while the new stack is being built, run `node src/server.js` manually after installing its
+missing dependencies.
 
-Running `npm run seed` after migrations adds a default admin user:
-
-- **Email**: `admin@repairhub.local`
-- **Password**: `admin123`
-
-It also seeds a demo customer, device, and job so the UI can show real data during development.
-
-## Next steps
-
-The roadmap continues with WhatsApp connectivity, POS integration, marketing automation, and
-reporting. The current codebase is structured to grow into those areas:
-
-- Add WhatsApp services inside `src/services/`.
-- Expand `job_messages` to persist inbound/outbound chat history.
-- Layer in POS and inventory models using new migrations under `src/scripts`.
-
-Refer to `development_roadmap.md` for the detailed staged rollout plan.
+A thorough README + ops guide for the refreshed stack will land once the Phase 1 API and frontend
+routes are complete.

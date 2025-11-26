@@ -1,0 +1,64 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: whatsappbot
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      target: dev
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/whatsappbot
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: super-secret-access
+      JWT_REFRESH_SECRET: super-secret-refresh
+      ACCESS_TOKEN_TTL: 15m
+      REFRESH_TOKEN_TTL: 7d
+      PORT: 4000
+    volumes:
+      - ./apps/api/src:/app/src
+      - ./prisma:/app/prisma
+    ports:
+      - '4000:4000'
+    depends_on:
+      - postgres
+      - redis
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      target: dev
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:4000
+    volumes:
+      - ./apps/web/src:/app/src
+      - ./apps/web/public:/app/public
+      - ./apps/web/tailwind.config.ts:/app/tailwind.config.ts
+      - ./apps/web/tsconfig.json:/app/tsconfig.json
+      - ./apps/web/next.config.mjs:/app/next.config.mjs
+      - ./apps/web/postcss.config.cjs:/app/postcss.config.cjs
+    ports:
+      - '3000:3000'
+    depends_on:
+      - api
+
+volumes:
+  postgres-data:

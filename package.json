@@ -1,40 +1,42 @@
 {
   "name": "whatsapp-bot-pos-superapp",
   "version": "1.0.0",
-  "description": "Service repair workflow API with WhatsApp automation hooks",
-  "main": "src/server.js",
-  "type": "commonjs",
+  "private": true,
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "dev:monorepo": "concurrently \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
+    "dev:api": "npm run dev -w apps/api",
+    "dev:web": "npm run dev -w apps/web",
+    "build": "npm run build -w apps/api && npm run build -w apps/web",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "npm run format --workspaces --if-present",
+    "prisma:generate": "npm run prisma:generate -w apps/api",
+    "prisma:migrate": "npm run prisma:migrate -w apps/api",
     "migrate": "node src/scripts/migrate.js",
     "seed": "node src/scripts/seed.js"
   },
-  "keywords": [
-    "whatsapp",
-    "repair",
-    "pos",
-    "workflow"
-  ],
-  "author": "",
-  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.1.10"
+  },
   "dependencies": {
     "@hapi/boom": "^10.0.1",
     "@whiskeysockets/baileys": "^7.0.0-rc.9",
-    "bcryptjs": "^3.0.2",
-    "better-sqlite3": "^12.4.1",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.4.6",
     "cors": "^2.8.5",
-    "dayjs": "^1.11.18",
+    "dayjs": "^1.11.19",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "pino": "^10.1.0",
     "qrcode": "^1.5.4",
-    "qrcode-terminal": "^0.12.0",
     "uuid": "^13.0.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.10"
   }
 }
