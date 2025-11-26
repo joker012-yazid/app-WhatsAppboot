@@ -7,8 +7,8 @@
     "apps/web"
   ],
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
+    "start": "npm run dev:monorepo",
+    "dev": "npm run dev:monorepo",
     "dev:monorepo": "concurrently \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
     "dev:api": "npm run dev -w apps/api",
     "dev:web": "npm run dev -w apps/web",
@@ -17,6 +17,8 @@
     "format": "npm run format --workspaces --if-present",
     "prisma:generate": "npm run prisma:generate -w apps/api",
     "prisma:migrate": "npm run prisma:migrate -w apps/api",
+    "legacy:start": "node src/server.js",
+    "legacy:dev": "nodemon src/server.js",
     "migrate": "node src/scripts/migrate.js",
     "seed": "node src/scripts/seed.js"
   },

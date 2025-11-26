@@ -4,10 +4,10 @@ This repository is now organised as a JavaScript/TypeScript monorepo that hosts 
 implementation described in `development_roadmap.md`. The legacy Express + SQLite server is still
 parked inside `src/` for reference, but the active work happens inside the new `apps/*` workspaces:
 
-- **apps/api** – TypeScript Express server with Prisma, PostgreSQL, and Redis helpers.
-- **apps/web** – Next.js App Router client with Tailwind CSS, shadcn/ui primitives, and theming.
-- **prisma/** – shared schema + migrations for the Postgres database.
-- **docker/** – Dockerfiles and compose stack for Postgres, Redis, API, and Web during local dev.
+- **apps/api**  TypeScript Express server with Prisma, PostgreSQL, and Redis helpers.
+- **apps/web**  Next.js App Router client with Tailwind CSS, shadcn/ui primitives, and theming.
+- **prisma/**  shared schema + migrations for the Postgres database.
+- **docker/**  Dockerfiles and compose stack for Postgres, Redis, API, and Web during local dev.
 
 Refer to `docs/phase1-plan.md` for the current scope of Phase 1 (auth, protected UI shell, Redis
 session cache, etc.).
@@ -24,8 +24,8 @@ cp .env.example .env
 # generate Prisma client (migrations/seed scripts will arrive later in Phase 1)
 npm run prisma:generate
 
-# boot both the API and Web dev servers
-npm start   # alias for `npm run dev`
+# boot both the API and Web dev servers (monorepo: API + Web)
+npm start   # alias for `npm run dev` -> `npm run dev:monorepo`
 ```
 
 The default development ports are:
@@ -44,6 +44,13 @@ npm run dev:api   # Express/Prisma server only
 npm run dev:web   # Next.js app only
 ```
 
+Legacy server scripts are still parked for reference if you need to inspect the old `src/` code:
+
+```bash
+npm run legacy:start  # run src/server.js once
+npm run legacy:dev    # run src/server.js with nodemon
+```
+
 To spin up the Postgres + Redis services that the API expects, use:
 
 ```bash
@@ -56,6 +63,14 @@ Everything inside `src/` (and its SQLite migrations + seed scripts) belongs to t
 monolithic server. Those scripts are no longer invoked by `npm start`. If you still need to inspect
 that code while the new stack is being built, run `node src/server.js` manually after installing its
 missing dependencies.
+
+## Future cleanup / legacy notes
+
+The following root-level dependencies only support the legacy `src/` server and can be removed once
+we fully retire that stack: `express@5`, `better-sqlite3`, `@hapi/boom`, `bcryptjs`, `jsonwebtoken`,
+`multer`, `pino`, and `@whiskeysockets/baileys`. We can later move the legacy server into a
+`legacy/` folder or separate package to keep the monorepo lean once we confirm no consumers rely on
+it.
 
 A thorough README + ops guide for the refreshed stack will land once the Phase 1 API and frontend
 routes are complete.
