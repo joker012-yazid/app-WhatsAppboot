@@ -6,6 +6,7 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
+import { useToast } from '@/components/toast-provider';
 
 export default function LoginPage() {
   const { login, loading } = useAuth();
@@ -14,6 +15,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('admin123');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,9 +23,12 @@ export default function LoginPage() {
     setError(null);
     try {
       await login(email, password);
+      toast.success('Welcome back');
       router.replace('/');
     } catch (err: any) {
-      setError(err?.message || 'Login failed');
+      const msg = err?.message || 'Login failed';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }

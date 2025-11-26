@@ -49,3 +49,137 @@ model RefreshToken {
   expiresAt   DateTime
   revokedAt   DateTime?
 }
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String   @unique
+  email     String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  devices   Device[]
+  jobs      Job[]
+}
+
+enum JobStatus {
+  PENDING
+  QUOTED
+  APPROVED
+  REJECTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum JobPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model Device {
+  id           String   @id @default(uuid())
+  customerId   String
+  customer     Customer @relation(fields: [customerId], references: [id])
+  deviceType   String
+  brand        String?
+  model        String?
+  serialNumber String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  jobs         Job[]
+}
+
+model Job {
+  id             String      @id @default(uuid())
+  customerId     String
+  deviceId       String
+  customer       Customer    @relation(fields: [customerId], references: [id])
+  device         Device      @relation(fields: [deviceId], references: [id])
+  title          String
+  description    String?
+  status         JobStatus   @default(PENDING)
+  priority       JobPriority @default(NORMAL)
+  quotedAmount   Decimal?
+  approvedAmount Decimal?
+  diagnosis      String?
+  dueDate        DateTime?
+  qrToken        String      @unique
+  qrExpiresAt    DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  history        JobStatusHistory[]
+  photos         JobPhoto[]
+  messages       JobMessage[]
+  reminders      Reminder[]
+}
+
+model JobStatusHistory {
+  id        String    @id @default(uuid())
+  jobId     String
+  job       Job       @relation(fields: [jobId], references: [id])
+  status    JobStatus
+  notes     String?
+  createdAt DateTime  @default(now())
+}
+
+model JobPhoto {
+  id        String   @id @default(uuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id])
+  label     String?
+  filePath  String
+  createdAt DateTime @default(now())
+}
+
+enum MessageRole {
+  SYSTEM
+  USER
+  ASSISTANT
+  AGENT
+}
+
+model JobMessage {
+  id        String      @id @default(uuid())
+  jobId     String
+  job       Job         @relation(fields: [jobId], references: [id])
+  role      MessageRole
+  content   String
+  createdAt DateTime    @default(now())
+}
+
+model AiConversation {
+  id        String   @id @default(uuid())
+  jobId     String?
+  customerId String?
+  createdAt DateTime @default(now())
+  messages  AiMessage[]
+}
+
+model AiMessage {
+  id        String        @id @default(uuid())
+  conversationId String
+  conversation   AiConversation @relation(fields: [conversationId], references: [id])
+  role      MessageRole
+  content   String
+  createdAt DateTime      @default(now())
+}
+
+enum ReminderKind {
+  QUOTE_DAY_1
+  QUOTE_DAY_20
+  QUOTE_DAY_30
+}
+
+model Reminder {
+  id        String       @id @default(uuid())
+  jobId     String
+  job       Job          @relation(fields: [jobId], references: [id])
+  kind      ReminderKind
+  sentAt    DateTime     @default(now())
+}

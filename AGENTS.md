@@ -1,39 +1,23 @@
-# Repository Guidelines
-
-This repository is a JavaScript/TypeScript monorepo. Active development happens in `apps/*`; the legacy Express + SQLite code in `src/` remains for reference only.
+﻿# Repository Guidelines
 
 ## Project Structure & Module Organization
-- `apps/api` — TypeScript Express API (Prisma, Redis). Entrypoints: `apps/api/src/server.ts`, `apps/api/src/app.ts`; routes in `apps/api/src/routes`.
-- `apps/web` — Next.js App Router UI (Tailwind). Pages in `apps/web/src/app`; components in `apps/web/src/components`.
-- `prisma/` — Shared Prisma schema (`prisma/schema.prisma`).
-- `docker/` & `docker-compose.yml` — Local Postgres/Redis and dev containers.
-- `src/` — Legacy monolith. Avoid extending; only touch for urgent fixes.
+Active work lives in `apps/*`. `apps/api` hosts the TypeScript Express API (entrypoints `apps/api/src/server.ts` and `apps/api/src/app.ts`; routes in `apps/api/src/routes`). `apps/web` covers the Next.js App Router UI with pages in `apps/web/src/app` and components in `apps/web/src/components`. Shared database models live in `prisma/schema.prisma`, while `docker/` plus `docker-compose.yml` hold local infra definitions. The legacy `src/` Express + SQLite code is reference-only; touch it only for urgent fixes.
 
 ## Build, Test, and Development Commands
-- Install: `npm install`
-- Infra (dev): `docker compose up -d postgres redis`
-- Dev (both): `npm run dev:monorepo`
-- Dev (single app): `npm run dev:api` or `npm run dev:web`
-- Build (both): `npm run build`
-- Prisma (API): `npm run prisma:generate`, `npm run prisma:migrate`
-- Legacy server (manual only): `node src/server.js`
+- `npm install` installs workspace dependencies.
+- `docker compose up -d postgres redis` starts local Postgres and Redis containers.
+- `npm run dev:monorepo`, `npm run dev:api`, or `npm run dev:web` run dev servers.
+- `npm run build` compiles both applications for production use.
+- Prisma tooling: `npm run prisma:generate` refreshes the client, and `npm run prisma:migrate` applies schema changes.
 
 ## Coding Style & Naming Conventions
-- Languages: TypeScript in `apps/*`; JavaScript allowed only in `src/`.
-- Formatting: Prettier + ESLint per workspace. In `apps/api`, Prettier uses single quotes, semicolons, trailing commas. Run `npm run lint -w apps/api` or `npm run lint -w apps/web`.
-- Naming: camelCase for variables/functions; PascalCase for types and React components; prefer kebab-case filenames (e.g., `theme-toggle.tsx` exporting `ThemeToggle`).
-- Imports: follow eslint import/order with alphabetized groups and blank lines between groups.
+Use TypeScript in `apps/*` and JavaScript only inside the legacy `src/`. Prettier + ESLint enforce formatting per workspace; run `npm run lint -w apps/api` or `npm run lint -w apps/web`. The API workspace standardizes on single quotes, semicolons, and trailing commas. Use camelCase for variables/functions, PascalCase for React components and types, and kebab-case filenames (for example `theme-toggle.tsx`). Keep imports alphabetized with blank lines between groups.
 
 ## Testing Guidelines
-- No test runner is configured yet. Prefer Vitest/Jest + Supertest for API; React Testing Library for Web.
-- Place tests alongside sources or under `__tests__`; name files `*.test.ts` / `*.spec.tsx`.
-- Keep tests fast and deterministic; document any manual verification steps in the PR.
+A default runner is not installed yet. Prefer Vitest or Jest with Supertest for the API and React Testing Library for the UI. Store specs next to source files or in `__tests__` directories using `*.test.ts` or `*.spec.tsx` names. Mock Prisma, Redis, and network calls to keep tests deterministic. Document any manual verification steps in pull requests when automated tests are missing.
 
 ## Commit & Pull Request Guidelines
-- Use Conventional Commits where possible: `feat:`, `fix:`, `chore:`, `docs:` (e.g., `feat(api): add health route`).
-- PRs must include: clear description, linked issues, local run/build steps, screenshots for UI changes, and any doc updates (`README.md`, `docs/`).
+Follow Conventional Commits such as `feat(api): add health route` or `fix(web): handle auth error`. Pull requests must include a concise summary, linked issues, local run/build steps, and UI screenshots or GIFs when applicable. Mention any documentation updates (`README.md`, `docs/`) and keep scope focused on a single concern.
 
 ## Security & Configuration Tips
-- Do not commit secrets. Configure `.env` as required by `apps/api/src/config/env.ts` (e.g., `DATABASE_URL`, `REDIS_URL`, JWT secrets).
-- Prefer `docker-compose.yml` services for local Postgres/Redis during development.
-
+Never commit secrets. Populate `.env` with the variables expected by `apps/api/src/config/env.ts` (for example `DATABASE_URL`, `REDIS_URL`, JWT secrets). Use the Docker Compose Postgres and Redis services for local parity, and regenerate the Prisma client whenever `prisma/schema.prisma` changes.

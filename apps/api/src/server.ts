@@ -1,7 +1,9 @@
-import { createServer } from 'http';
+﻿import { createServer } from 'http';
 
 import env from './config/env';
 import { createApp } from './app';
+import { startReminderScheduler } from './scheduler/reminders';
+import { startBackupScheduler } from './scheduler/backups';
 
 const app = createApp();
 const server = createServer(app);
@@ -12,6 +14,10 @@ server.listen(port, () => {
   console.log(`API listening on port ${port}`);
 });
 
+// Start background schedulers & queues
+startReminderScheduler();
+startBackupScheduler().catch((error) => console.error('[backup] scheduler error', error));
+
 const shutdown = (signal: NodeJS.Signals) => {
   console.log(`Received ${signal}, shutting down...`);
   server.close(() => process.exit(0));
@@ -19,3 +25,4 @@ const shutdown = (signal: NodeJS.Signals) => {
 
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
+

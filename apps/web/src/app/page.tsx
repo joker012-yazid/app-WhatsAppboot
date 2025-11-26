@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import AuthGuard from '@/components/auth-guard';
 import { useAuth } from '@/lib/auth';
+import { useToast } from '@/components/toast-provider';
 
 export default function HomePage() {
   const { user, logout } = useAuth();
+  const toast = useToast();
   return (
     <AuthGuard>
       <section className="space-y-6 rounded-xl border bg-card px-6 py-8 shadow-sm">
@@ -19,7 +21,19 @@ export default function HomePage() {
               Authenticated as <span className="font-medium">{user?.email}</span> ({user?.role})
             </p>
           </div>
-          <Button variant="outline" onClick={logout}>Logout</Button>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              try {
+                await logout();
+                toast.success('Logged out');
+              } catch (e: any) {
+                toast.error(e?.message || 'Logout failed');
+              }
+            }}
+          >
+            Logout
+          </Button>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button asChild>

@@ -59,3 +59,17 @@ missing dependencies.
 
 A thorough README + ops guide for the refreshed stack will land once the Phase 1 API and frontend
 routes are complete.
+## Marketing campaigns (Phase 5)
+
+The API now exposes `/api/campaigns` for managing outbound WhatsApp broadcasts plus the
+`/api/campaigns/preview` helper to evaluate target filters. The worker enforces anti-ban rules
+(daily cap, random delay, business hours, and opt-out tags) while logging each delivery attempt in
+Prisma. Use the new Next.js page at `/campaigns` to:
+
+1. Compose templates that support placeholders (`{name}`, `{phone}`, etc.).
+2. Build recipient segments by type, tags, recent activity, and manual phone lists.
+3. Save drafts, schedule future launches, and start/pause/resume/cancel existing campaigns.
+4. Monitor target/sent/failed counts plus the enforcement settings applied to each blast.
+
+Make sure Redis is running before starting the API so that the BullMQ queues powering reminders and
+campaign sends remain active.

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { Space_Grotesk } from 'next/font/google';
 import './globals.css';
@@ -35,6 +35,12 @@ export default function RootLayout({
                   <nav className="hidden sm:flex items-center gap-3 text-sm">
                     <Link href="/" className="text-muted-foreground hover:text-foreground">Home</Link>
                     <Link href="/dashboard" className="text-muted-foreground hover:text-foreground">Dashboard</Link>
+                    <Link href="/customers" className="text-muted-foreground hover:text-foreground">Customers</Link>
+                    <Link href="/devices" className="text-muted-foreground hover:text-foreground">Devices</Link>
+                    <Link href="/jobs" className="text-muted-foreground hover:text-foreground">Jobs</Link>
+                    <Link href="/campaigns" className="text-muted-foreground hover:text-foreground">Campaigns</Link>
+                    <Link href="/reports" className="text-muted-foreground hover:text-foreground">Reports</Link>
+                    <Link href="/settings" className="text-muted-foreground hover:text-foreground">Settings</Link>
                     <Link href="/docs/roadmap" className="text-muted-foreground hover:text-foreground">Roadmap</Link>
                   </nav>
                 </div>
@@ -51,3 +57,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+

@@ -8,7 +8,9 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const env_1 = __importDefault(require("../config/env"));
 const requireAuth = (req, res, next) => {
     const hdr = req.headers.authorization || '';
-    const token = hdr.startsWith('Bearer ') ? hdr.substring(7) : undefined;
+    const bearer = hdr.startsWith('Bearer ') ? hdr.substring(7) : undefined;
+    const cookieToken = req.cookies?.access_token;
+    const token = bearer || cookieToken;
     if (!token)
         return res.status(401).json({ message: 'Missing Authorization header' });
     try {

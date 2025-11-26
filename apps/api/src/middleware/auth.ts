@@ -21,7 +21,9 @@ declare global {
 
 export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
   const hdr = req.headers.authorization || '';
-  const token = hdr.startsWith('Bearer ') ? hdr.substring(7) : undefined;
+  const bearer = hdr.startsWith('Bearer ') ? hdr.substring(7) : undefined;
+  const cookieToken = (req as any).cookies?.access_token as string | undefined;
+  const token = bearer || cookieToken;
   if (!token) return res.status(401).json({ message: 'Missing Authorization header' });
   try {
     const payload = jwt.verify(token, env.JWT_ACCESS_SECRET) as AccessPayload;
@@ -39,4 +41,3 @@ export const requireRole = (...roles: AccessPayload['role'][]) => {
     return next();
   };
 };
-

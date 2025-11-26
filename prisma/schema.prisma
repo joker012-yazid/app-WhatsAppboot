@@ -24,6 +24,8 @@ model User {
   updatedAt      DateTime        @updatedAt
   sessions       Session[]
   refreshTokens  RefreshToken[]
+  campaigns      Campaign[]
+  campaignPresets CampaignPreset[]
 }
 
 model Session {
@@ -48,4 +50,253 @@ model RefreshToken {
   createdAt   DateTime  @default(now())
   expiresAt   DateTime
   revokedAt   DateTime?
+}
+
+enum CustomerType {
+  VIP
+  REGULAR
+  NEW
+  PROSPECT
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String   @unique
+  email     String?
+  notes     String?
+  type      CustomerType @default(REGULAR)
+  tags      String[] @default([])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  devices   Device[]
+  jobs      Job[]
+  campaignRecipients CampaignRecipient[]
+}
+
+enum JobStatus {
+  PENDING
+  QUOTED
+  APPROVED
+  REJECTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum JobPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model Device {
+  id           String   @id @default(uuid())
+  customerId   String
+  customer     Customer @relation(fields: [customerId], references: [id])
+  deviceType   String
+  brand        String?
+  model        String?
+  serialNumber String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  jobs         Job[]
+}
+
+model Job {
+  id             String      @id @default(uuid())
+  customerId     String
+  deviceId       String
+  customer       Customer    @relation(fields: [customerId], references: [id])
+  device         Device      @relation(fields: [deviceId], references: [id])
+  title          String
+  description    String?
+  status         JobStatus   @default(PENDING)
+  priority       JobPriority @default(NORMAL)
+  quotedAmount   Decimal?
+  approvedAmount Decimal?
+  diagnosis      String?
+  dueDate        DateTime?
+  qrToken        String      @unique
+  qrExpiresAt    DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  history        JobStatusHistory[]
+  photos         JobPhoto[]
+  messages       JobMessage[]
+  reminders      Reminder[]
+}
+
+model JobStatusHistory {
+  id        String    @id @default(uuid())
+  jobId     String
+  job       Job       @relation(fields: [jobId], references: [id])
+  status    JobStatus
+  notes     String?
+  createdAt DateTime  @default(now())
+}
+
+model JobPhoto {
+  id        String   @id @default(uuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id])
+  label     String?
+  filePath  String
+  createdAt DateTime @default(now())
+}
+
+enum MessageRole {
+  SYSTEM
+  USER
+  ASSISTANT
+  AGENT
+}
+
+model JobMessage {
+  id        String      @id @default(uuid())
+  jobId     String
+  job       Job         @relation(fields: [jobId], references: [id])
+  role      MessageRole
+  content   String
+  createdAt DateTime    @default(now())
+}
+
+model AiConversation {
+  id        String   @id @default(uuid())
+  jobId     String?
+  customerId String?
+  createdAt DateTime @default(now())
+  messages  AiMessage[]
+}
+
+model AiMessage {
+  id        String        @id @default(uuid())
+  conversationId String
+  conversation   AiConversation @relation(fields: [conversationId], references: [id])
+  role      MessageRole
+  content   String
+  createdAt DateTime      @default(now())
+}
+
+enum ReminderKind {
+  QUOTE_DAY_1
+  QUOTE_DAY_20
+  QUOTE_DAY_30
+}
+
+model Reminder {
+  id        String       @id @default(uuid())
+  jobId     String
+  job       Job          @relation(fields: [jobId], references: [id])
+  kind      ReminderKind
+  sentAt    DateTime     @default(now())
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  RUNNING
+  PAUSED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum CampaignKind {
+  PROMOTIONAL
+  ANNOUNCEMENT
+  FOLLOW_UP
+  CUSTOM
+}
+
+enum CampaignRecipientStatus {
+  PENDING
+  SCHEDULED
+  SKIPPED
+  SENT
+  DELIVERED
+  FAILED
+  CANCELLED
+}
+
+model Campaign {
+  id                String             @id @default(uuid())
+  name              String
+  kind              CampaignKind       @default(PROMOTIONAL)
+  status            CampaignStatus     @default(DRAFT)
+  message           String
+  mediaUrl          String?
+  variables         String[]           @default([])
+  filters           Json?
+  scheduledFor      DateTime?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  targetCount      Int                @default(0)
+  sentCount        Int                @default(0)
+  failedCount      Int                @default(0)
+  dailyLimit        Int                @default(150)
+  randomDelayMin    Int                @default(30)
+  randomDelayMax    Int                @default(60)
+  businessHoursStart Int?
+  businessHoursEnd  Int?
+  createdById       String?
+  createdBy         User?              @relation(fields: [createdById], references: [id])
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  recipients        CampaignRecipient[]
+  events            CampaignEvent[]
+}
+
+model CampaignRecipient {
+  id          String                   @id @default(uuid())
+  campaignId  String
+  campaign    Campaign                 @relation(fields: [campaignId], references: [id])
+  customerId  String?
+  customer    Customer?                @relation(fields: [customerId], references: [id])
+  phone       String
+  name        String?
+  status      CampaignRecipientStatus  @default(PENDING)
+  error       String?
+  attempts    Int                      @default(0)
+  lastAttemptAt DateTime?
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  readAt      DateTime?
+  respondedAt DateTime?
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+}
+
+model CampaignPreset {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  filters     Json
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CampaignEvent {
+  id          String   @id @default(uuid())
+  campaignId  String
+  campaign    Campaign @relation(fields: [campaignId], references: [id])
+  type        String
+  details     Json?
+  createdAt   DateTime @default(now())
+}
+model SystemSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  group       String?
+  value       Json
+  updatedById String?
+  updatedBy   User?    @relation(fields: [updatedById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
