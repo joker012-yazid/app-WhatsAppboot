@@ -1,90 +1,73 @@
 # WhatsApp Bot POS SuperApp
 
-This repository is now organised as a JavaScript/TypeScript monorepo that hosts the Phase 1
-implementation described in `development_roadmap.md`. The legacy Express + SQLite server is still
-parked inside `src/` for reference, but the active work happens inside the new `apps/*` workspaces:
+Monorepo ini ialah sistem aktif yang terdiri daripada API (Express + Prisma di `apps/api`) dan Web (Next.js di `apps/web`). Infrastruktur tempatan menggunakan Postgres dan Redis melalui `docker-compose.yml`. Kod legasi Express + SQLite dalam folder `src/` masih dikekalkan untuk rujukan sahaja dan tidak berjalan melalui skrip utama.
 
-- **apps/api**  TypeScript Express server with Prisma, PostgreSQL, and Redis helpers.
-- **apps/web**  Next.js App Router client with Tailwind CSS, shadcn/ui primitives, and theming.
-- **prisma/**  shared schema + migrations for the Postgres database.
-- **docker/**  Dockerfiles and compose stack for Postgres, Redis, API, and Web during local dev.
-
-Refer to `docs/phase1-plan.md` for the current scope of Phase 1 (auth, protected UI shell, Redis
-session cache, etc.).
-
-## Getting started
+## Cara Jalankan Projek (Monorepo)
 
 ```bash
-# install workspace deps
 npm install
 
-# copy environment defaults
+# Salin konfigurasi asas jika perlu
 cp .env.example .env
 
-# generate Prisma client (migrations/seed scripts will arrive later in Phase 1)
+# Jana Prisma client
 npm run prisma:generate
 
-# boot both the API and Web dev servers (monorepo: API + Web)
-npm start   # alias for `npm run dev` -> `npm run dev:monorepo`
+# Jalankan kedua-dua API dan Web serentak
+npm start   # alias kepada "npm run dev" -> "npm run dev:monorepo"
 ```
 
-The default development ports are:
+Perkhidmatan tersedia di:
 
-| Service | Port | Notes |
-| ------- | ---- | ----- |
-| API     | 4000 | `/health` route already available |
-| Web     | 3000 | Next.js App Router skeleton with theme toggle |
-| Redis   | 6379 | Provided via `docker-compose.yml` |
-| Postgres| 5432 | Provided via `docker-compose.yml` |
+| Service | URL | Nota |
+| ------- | --- | ---- |
+| API | http://localhost:4000 | `/health` tersedia untuk semakan cepat |
+| Web | http://localhost:3000 | Next.js App Router UI |
+| Postgres | localhost:5432 | Disediakan oleh `docker compose` |
+| Redis | localhost:6379 | Disediakan oleh `docker compose` |
 
-You can run each workspace independently when you only need one side running:
+Jalankan komponen secara berasingan jika perlu:
 
 ```bash
-npm run dev:api   # Express/Prisma server only
-npm run dev:web   # Next.js app only
+npm run dev:api   # API sahaja
+npm run dev:web   # Web sahaja
 ```
 
-Legacy server scripts are still parked for reference if you need to inspect the old `src/` code:
-
-```bash
-npm run legacy:start  # run src/server.js once
-npm run legacy:dev    # run src/server.js with nodemon
-```
-
-To spin up the Postgres + Redis services that the API expects, use:
+Untuk melancarkan Postgres + Redis yang diperlukan oleh API:
 
 ```bash
 docker compose up -d postgres redis
 ```
 
-## Legacy implementation
+## Legacy Server (Deprecated)
 
-Everything inside `src/` (and its SQLite migrations + seed scripts) belongs to the previous
-monolithic server. Those scripts are no longer invoked by `npm start`. If you still need to inspect
-that code while the new stack is being built, run `node src/server.js` manually after installing its
-missing dependencies.
+Server lama dalam `src/` berasaskan Express + SQLite dan hanya disimpan untuk rujukan. Gunakan skrip berikut jika perlu meninjau atau menguji kod lama secara manual:
 
-## Future cleanup / legacy notes
+```bash
+npm run legacy:start  # node src/server.js
+npm run legacy:dev    # nodemon src/server.js
+```
 
-The following root-level dependencies only support the legacy `src/` server and can be removed once
-we fully retire that stack: `express@5`, `better-sqlite3`, `@hapi/boom`, `bcryptjs`, `jsonwebtoken`,
-`multer`, `pino`, and `@whiskeysockets/baileys`. We can later move the legacy server into a
-`legacy/` folder or separate package to keep the monorepo lean once we confirm no consumers rely on
-it.
+## Future Cleanup Plan (Dependencies / Legacy)
 
-A thorough README + ops guide for the refreshed stack will land once the Phase 1 API and frontend
-routes are complete.
-## Marketing campaigns (Phase 5)
+Pakej berikut berada di akar kerana menyokong server legasi dan boleh dinyahaktifkan selepas migrasi penuh ke monorepo baharu:
 
-The API now exposes `/api/campaigns` for managing outbound WhatsApp broadcasts plus the
-`/api/campaigns/preview` helper to evaluate target filters. The worker enforces anti-ban rules
-(daily cap, random delay, business hours, and opt-out tags) while logging each delivery attempt in
-Prisma. Use the new Next.js page at `/campaigns` to:
+- `express@5`
+- `better-sqlite3`
+- `@hapi/boom`
+- `bcryptjs`
+- `jsonwebtoken`
+- `multer`
+- `pino`
+- `@whiskeysockets/baileys`
+- `dotenv`
+- `qrcode`
+- `uuid`
+- `dayjs`
+- `cors`
 
-1. Compose templates that support placeholders (`{name}`, `{phone}`, etc.).
-2. Build recipient segments by type, tags, recent activity, and manual phone lists.
-3. Save drafts, schedule future launches, and start/pause/resume/cancel existing campaigns.
-4. Monitor target/sent/failed counts plus the enforcement settings applied to each blast.
+Selepas memastikan tiada lagi kebergantungan pada kod `src/`, kita boleh memindahkan legasi ke folder `legacy/` atau pakej berasingan sebelum membuang dependensi tersebut.
 
-Make sure Redis is running before starting the API so that the BullMQ queues powering reminders and
-campaign sends remain active.
+## Dokumentasi Tambahan
+
+Latar belakang fasa pembangunan terkini tersedia dalam `development_roadmap.md` dan `docs/phase1-plan.md`. Gunakan `apps/api` dan `apps/web` sebagai rujukan utama untuk kod aktif.
