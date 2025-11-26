@@ -69,7 +69,13 @@ export const isRefreshTokenValid = async (token: string) => {
       exp?: number;
     };
     // Check DB for token existence and non-revoked
-    const tokens = await prisma.refreshToken.findMany({ where: { sessionId: payload.sid } });
+    const tokens = await prisma.refreshToken.findMany({
+      where: {
+        sessionId: payload.sid,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
     const match = await Promise.all(tokens.map((t: { tokenHash: string }) => bcrypt.compare(token, t.tokenHash)));
     const matched = match.findIndex((v) => v === true);
     if (matched === -1) return null;
