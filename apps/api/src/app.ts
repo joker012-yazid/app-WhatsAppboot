@@ -55,7 +55,16 @@ export const createApp = () => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
-  app.use((_req, res) => {
+  // Handle 404 - provide helpful message for common web app routes
+  app.use((req, res) => {
+    // Common Next.js routes that might be requested from API server
+    const webAppRoutes = ['/login', '/dashboard', '/customers', '/devices', '/jobs'];
+    if (webAppRoutes.includes(req.path)) {
+      return res.status(404).json({
+        message: `Route '${req.path}' is a web app route, not an API endpoint. Use '/api/*' for API endpoints.`,
+        hint: `For authentication, use POST /api/auth/login instead of ${req.path}`,
+      });
+    }
     res.status(404).json({ message: 'Not found' });
   });
 

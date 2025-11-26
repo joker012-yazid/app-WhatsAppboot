@@ -3,7 +3,7 @@ import env from '../config/env';
 
 const redis = new Redis(env.REDIS_URL, {
   lazyConnect: true,
-  maxRetriesPerRequest: 2,
+  maxRetriesPerRequest: null, // Required by BullMQ - must be null
 });
 
 redis.on('error', (err) => {

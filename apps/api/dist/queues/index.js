@@ -12,7 +12,9 @@ const client_1 = require("@prisma/client");
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const env_1 = __importDefault(require("../config/env"));
 const campaigns_1 = require("../services/campaigns");
-const connection = new ioredis_1.default(env_1.default.REDIS_URL);
+const connection = new ioredis_1.default(env_1.default.REDIS_URL, {
+    maxRetriesPerRequest: null, // Required by BullMQ - must be null
+});
 exports.reminderQueue = new bullmq_1.Queue('reminders', { connection });
 exports.messageQueue = new bullmq_1.Queue('messages', { connection });
 exports.campaignQueue = new bullmq_1.Queue('campaign-messages', { connection });

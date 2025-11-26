@@ -23,25 +23,51 @@ type FetchOptions = {
 
 export async function apiFetch<T = unknown>(path: string, opts: FetchOptions = {}): Promise<T> {
   const { method = 'GET', body, headers } = opts;
-  const res = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(headers || {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-    credentials: 'include',
-  });
-  const text = await res.text();
-  const data = text ? (JSON.parse(text) as T) : ({} as T);
-  if (!res.ok) {
-    const msg = (data as any)?.message || `HTTP ${res.status}`;
-    try {
-      (globalThis as any).__toast?.error?.(msg);
-    } catch {}
+  const url = `${API_BASE}${path}`;
+  
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(headers || {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      credentials: 'include',
+    });
+    
+    const text = await res.text();
+    let data: any = {};
+    
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        // If response is not JSON, use text as message
+        data = { message: text };
+      }
+    }
+    
+    if (!res.ok) {
+      const msg = data?.message || `HTTP ${res.status}: ${res.statusText}`;
+      console.error(`[API] Request failed: ${method} ${url} - ${msg}`);
+      try {
+        (globalThis as any).__toast?.error?.(msg);
+      } catch {}
+      throw new Error(msg);
+    }
+    
+    return data as T;
+  } catch (error: any) {
+    // Re-throw if it's already our Error
+    if (error instanceof Error && error.message) {
+      throw error;
+    }
+    // Otherwise, wrap in a new error
+    const msg = error?.message || `Failed to fetch: ${method} ${url}`;
+    console.error(`[API] Request error: ${method} ${url}`, error);
     throw new Error(msg);
   }
-  return data;
 }
 
 export const apiPost = <T = unknown>(path: string, body?: unknown) =>

@@ -6,7 +6,9 @@ import prisma from '../lib/prisma';
 import env from '../config/env';
 import { DO_NOT_CONTACT_TAGS, renderCampaignMessage } from '../services/campaigns';
 
-const connection = new IORedis(env.REDIS_URL);
+const connection = new IORedis(env.REDIS_URL, {
+  maxRetriesPerRequest: null, // Required by BullMQ - must be null
+});
 
 export const reminderQueue = new Queue('reminders', { connection });
 export const messageQueue = new Queue('messages', { connection });

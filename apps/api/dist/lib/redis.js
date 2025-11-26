@@ -7,7 +7,7 @@ const ioredis_1 = __importDefault(require("ioredis"));
 const env_1 = __importDefault(require("../config/env"));
 const redis = new ioredis_1.default(env_1.default.REDIS_URL, {
     lazyConnect: true,
-    maxRetriesPerRequest: 2,
+    maxRetriesPerRequest: null, // Required by BullMQ - must be null
 });
 redis.on('error', (err) => {
     console.error('[Redis] error', err);

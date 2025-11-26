@@ -1,0 +1,11 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 5, "column": 0}, "map": {"version":3,"sources":["/turbopack/[project]/apps/web/src/components/auth-guard.tsx"],"sourcesContent":["\"use client\";\n\nimport { useRouter } from 'next/navigation';\nimport { useEffect } from 'react';\nimport { useAuth } from '@/lib/auth';\n\nexport default function AuthGuard({ children }: { children: React.ReactNode }) {\n  const { user, loading } = useAuth();\n  const router = useRouter();\n\n  useEffect(() => {\n    if (!loading && !user) {\n      router.replace('/login');\n    }\n  }, [user, loading, router]);\n\n  if (loading) return <p className=\"text-sm text-muted-foreground\">Loading session…</p>;\n  if (!user) return null;\n  return <>{children}</>;\n}\n\n"],"names":[],"mappings":";;;;;;;;AAAA;;;;;AAMe,SAAS,UAAU,EAAE,QAAQ,EAAiC;IAC3E,MAAM,EAAE,IAAI,EAAE,OAAO,EAAE,GAAG,CAAA,GAAA,kIAAA,CAAA,UAAO,AAAD;IAChC,MAAM,SAAS,CAAA,GAAA,kIAAA,CAAA,YAAS,AAAD;IAEvB,CAAA,GAAA,+MAAA,CAAA,YAAS,AAAD,EAAE;QACR,IAAI,CAAC,WAAW,CAAC,MAAM;YACrB,OAAO,OAAO,CAAC;QACjB;IACF,GAAG;QAAC;QAAM;QAAS;KAAO;IAE1B,IAAI,SAAS,qBAAO,wPAAC;QAAE,WAAU;kBAAgC;;;;;;IACjE,IAAI,CAAC,MAAM,OAAO;IAClB,qBAAO;kBAAG;;AACZ"}},
+    {"offset": {"line": 43, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"A"}},
+    {"offset": {"line": 48, "column": 0}, "map": {"version":3,"sources":["/turbopack/[project]/apps/web/src/app/dashboard/layout.tsx"],"sourcesContent":["\"use client\";\n\nimport AuthGuard from '@/components/auth-guard';\n\nexport default function DashboardLayout({ children }: { children: React.ReactNode }) {\n  return <AuthGuard>{children}</AuthGuard>;\n}\n\n"],"names":[],"mappings":";;;;;;AAAA;;;AAIe,SAAS,gBAAgB,EAAE,QAAQ,EAAiC;IACjF,qBAAO,wPAAC,kJAAA,CAAA,UAAS;kBAAE;;;;;;AACrB"}},
+    {"offset": {"line": 66, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"A"}},
+    {"offset": {"line": 74, "column": 0}, "map": {"version":3,"sources":["/turbopack/[project]/node_modules/next/navigation.js"],"sourcesContent":["module.exports = require('./dist/client/components/navigation')\n"],"names":[],"mappings":"AAAA,OAAO,OAAO"}},
+    {"offset": {"line": 75, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"A"}}]
+}
