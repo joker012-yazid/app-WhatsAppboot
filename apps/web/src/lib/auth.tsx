@@ -4,10 +4,12 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { apiGet, apiPost } from './api';
 
 type User = { id: string; name: string; email: string; role: string } | null;
+type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 
 type AuthContextValue = {
   user: User;
   loading: boolean;
+  status: AuthStatus;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -20,6 +22,7 @@ const getStorage = () => (typeof window === 'undefined' ? null : window.sessionS
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User>(null);
   const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState<AuthStatus>('loading');
   const [error, setError] = useState<string | null>(null);
 
   const clearTokens = useCallback(() => {
@@ -28,10 +31,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const fetchMe = useCallback(async () => {
-    const me = await apiGet<{ id: string; name: string; email: string; role: string }>(
+    const me = await apiGet<{ success?: boolean; id: string; name: string; email: string; role: string }>(
       '/api/auth/me',
     );
     setUser(me);
+    setStatus('authenticated');
+    setError(null);
   }, []);
 
   const tryRefresh = useCallback(async () => {
@@ -42,6 +47,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       );
       return true;
     } catch {
+      setStatus('unauthenticated');
       return false;
     }
   }, []);
@@ -61,6 +67,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       clearTokens();
       setUser(null);
+      setStatus('unauthenticated');
     }
   }, [clearTokens]);
 
@@ -74,15 +81,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         await fetchMe();
       } catch (e: any) {
-        // Attempt refresh on 401-like errors
         const ok = await tryRefresh();
         if (ok) {
           try {
             await fetchMe();
           } catch (e2: any) {
-            setError(e2?.message || 'Failed to fetch profile');
+            if (!cancelled) {
+              setError(e2?.message || 'Failed to fetch profile');
+              setStatus('unauthenticated');
+              clearTokens();
+            }
           }
-        } else {
+        } else if (!cancelled) {
+          const msg = e?.message || 'Session expired. Please login again.';
+          setError(msg);
+          setStatus('unauthenticated');
           clearTokens();
         }
       } finally {
@@ -95,9 +108,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [tryRefresh, fetchMe, clearTokens]);
 
-  const value = useMemo<AuthContextValue>(() => ({ user, loading, error, login, logout }), [
+  const value = useMemo<AuthContextValue>(() => ({ user, loading, status, error, login, logout }), [
     user,
     loading,
+    status,
     error,
     login,
     logout,
