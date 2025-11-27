@@ -53,10 +53,14 @@ new Worker(
       prisma.campaignRecipient.findUnique({ where: { id: recipientId }, include: { customer: true } }),
     ]);
     if (!campaign || !recipient) return { skipped: 'missing' };
+    const terminalStatuses: CampaignRecipientStatus[] = [
+      CampaignRecipientStatus.SENT,
+      CampaignRecipientStatus.DELIVERED,
+      CampaignRecipientStatus.FAILED,
+      CampaignRecipientStatus.CANCELLED,
+    ];
     if (
-      [CampaignRecipientStatus.SENT, CampaignRecipientStatus.DELIVERED, CampaignRecipientStatus.FAILED, CampaignRecipientStatus.CANCELLED].includes(
-        recipient.status,
-      )
+      terminalStatuses.includes(recipient.status)
     ) {
       console.log('[campaign-worker] skip duplicate send for recipient', recipientId, 'status', recipient.status);
       return { skipped: recipient.status };
