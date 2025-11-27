@@ -28,6 +28,7 @@ type DeviceDetail = {
 export default function DeviceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
   const qc = useQueryClient();
   const q = useQuery({
     queryKey: ['device', id],

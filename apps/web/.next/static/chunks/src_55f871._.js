@@ -19,15 +19,17 @@ var _s = __turbopack_refresh__.signature();
 ;
 function AuthGuard({ children }) {
     _s();
-    const { user, loading } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$lib$2f$auth$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useAuth"])();
+    const { user, loading, error } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$lib$2f$auth$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useAuth"])();
     const router = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRouter"])();
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
-        if (!loading && !user) {
-            router.replace('/login');
+        if (!loading && (!user || error)) {
+            const reason = error ? `?reason=${encodeURIComponent(error)}` : '';
+            router.replace(`/login${reason}`);
         }
     }, [
         user,
         loading,
+        error,
         router
     ]);
     if (loading) return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -35,7 +37,7 @@ function AuthGuard({ children }) {
         children: "Loading session…"
     }, void 0, false, {
         fileName: "[project]/apps/web/src/components/auth-guard.tsx",
-        lineNumber: 17,
+        lineNumber: 18,
         columnNumber: 23
     }, this);
     if (!user) return null;
@@ -43,7 +45,7 @@ function AuthGuard({ children }) {
         children: children
     }, void 0, false);
 }
-_s(AuthGuard, "Zr2WDa/YWeMetzDhcnOimt0LiKE=", false, function() {
+_s(AuthGuard, "R51r8ZVs41pBwxz5Q05KMFNowNA=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$lib$2f$auth$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useAuth"],
         __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRouter"]

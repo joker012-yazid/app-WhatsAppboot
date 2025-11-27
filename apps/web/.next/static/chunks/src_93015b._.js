@@ -77,6 +77,7 @@ __turbopack_esm__({
     "ThemeToggle": ()=>ThemeToggle
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_import__("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_import__("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$moon$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Moon$3e$__ = __turbopack_import__("[project]/node_modules/lucide-react/dist/esm/icons/moon.js [app-client] (ecmascript) <export default as Moon>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$sun$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Sun$3e$__ = __turbopack_import__("[project]/node_modules/lucide-react/dist/esm/icons/sun.js [app-client] (ecmascript) <export default as Sun>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2d$themes$2f$dist$2f$index$2e$module$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_import__("[project]/node_modules/next-themes/dist/index.module.js [app-client] (ecmascript)");
@@ -88,9 +89,35 @@ var _s = __turbopack_refresh__.signature();
 ;
 ;
 ;
+;
 const ThemeToggle = ()=>{
     _s();
     const { theme, setTheme } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2d$themes$2f$dist$2f$index$2e$module$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useTheme"])();
+    const [mounted, setMounted] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
+    // Prevent hydration mismatch by only rendering after mount
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
+        setMounted(true);
+    }, []);
+    if (!mounted) {
+        // Return a placeholder with the same structure to prevent hydration mismatch
+        return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+            variant: "ghost",
+            size: "icon",
+            "aria-label": "Toggle theme",
+            disabled: true,
+            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$moon$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Moon$3e$__["Moon"], {
+                className: "h-5 w-5"
+            }, void 0, false, {
+                fileName: "[project]/apps/web/src/components/theme-toggle.tsx",
+                lineNumber: 27,
+                columnNumber: 9
+            }, this)
+        }, void 0, false, {
+            fileName: "[project]/apps/web/src/components/theme-toggle.tsx",
+            lineNumber: 21,
+            columnNumber: 7
+        }, this);
+    }
     const isDark = theme === 'dark';
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
         variant: "ghost",
@@ -101,22 +128,22 @@ const ThemeToggle = ()=>{
             className: "h-5 w-5"
         }, void 0, false, {
             fileName: "[project]/apps/web/src/components/theme-toggle.tsx",
-            lineNumber: 19,
+            lineNumber: 41,
             columnNumber: 17
         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$moon$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Moon$3e$__["Moon"], {
             className: "h-5 w-5"
         }, void 0, false, {
             fileName: "[project]/apps/web/src/components/theme-toggle.tsx",
-            lineNumber: 19,
+            lineNumber: 41,
             columnNumber: 47
         }, this)
     }, void 0, false, {
         fileName: "[project]/apps/web/src/components/theme-toggle.tsx",
-        lineNumber: 13,
+        lineNumber: 35,
         columnNumber: 5
     }, this);
 };
-_s(ThemeToggle, "5ABGV54qnXKp6rHn7MS/8MjwRhQ=", false, function() {
+_s(ThemeToggle, "uGU5l7ciDSfqFDe6wS7vfMb29jQ=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2d$themes$2f$dist$2f$index$2e$module$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useTheme"]
     ];
@@ -252,6 +279,7 @@ const AuthProvider = ({ children })=>{
     _s();
     const [user, setUser] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const [loading, setLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(true);
+    const [status, setStatus] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])('loading');
     const [error, setError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const clearTokens = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])(()=>{
         const storage = getStorage();
@@ -260,12 +288,15 @@ const AuthProvider = ({ children })=>{
     const fetchMe = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])(async ()=>{
         const me = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$lib$2f$api$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["apiGet"])('/api/auth/me');
         setUser(me);
+        setStatus('authenticated');
+        setError(null);
     }, []);
     const tryRefresh = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])(async ()=>{
         try {
             await (0, __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$lib$2f$api$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["apiPost"])('/api/auth/refresh', {});
             return true;
         } catch  {
+            setStatus('unauthenticated');
             return false;
         }
     }, []);
@@ -285,6 +316,7 @@ const AuthProvider = ({ children })=>{
         } finally{
             clearTokens();
             setUser(null);
+            setStatus('unauthenticated');
         }
     }, [
         clearTokens
@@ -298,15 +330,21 @@ const AuthProvider = ({ children })=>{
             try {
                 await fetchMe();
             } catch (e) {
-                // Attempt refresh on 401-like errors
                 const ok = await tryRefresh();
                 if (ok) {
                     try {
                         await fetchMe();
                     } catch (e2) {
-                        setError(e2?.message || 'Failed to fetch profile');
+                        if (!cancelled) {
+                            setError(e2?.message || 'Failed to fetch profile');
+                            setStatus('unauthenticated');
+                            clearTokens();
+                        }
                     }
-                } else {
+                } else if (!cancelled) {
+                    const msg = e?.message || 'Session expired. Please login again.';
+                    setError(msg);
+                    setStatus('unauthenticated');
                     clearTokens();
                 }
             } finally{
@@ -325,12 +363,14 @@ const AuthProvider = ({ children })=>{
     const value = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])(()=>({
             user,
             loading,
+            status,
             error,
             login,
             logout
         }), [
         user,
         loading,
+        status,
         error,
         login,
         logout
@@ -340,11 +380,11 @@ const AuthProvider = ({ children })=>{
         children: children
     }, void 0, false, {
         fileName: "[project]/apps/web/src/lib/auth.tsx",
-        lineNumber: 106,
+        lineNumber: 120,
         columnNumber: 10
     }, this);
 };
-_s(AuthProvider, "UXk0t+DYZsXEOEivLcWe8OtVR1E=");
+_s(AuthProvider, "z2dJIPfUDH9B3bAN5D6afB2rG7E=");
 _c = AuthProvider;
 const useAuth = ()=>{
     _s1();
