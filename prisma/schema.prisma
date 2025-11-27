@@ -194,6 +194,8 @@ model Reminder {
   job       Job          @relation(fields: [jobId], references: [id])
   kind      ReminderKind
   sentAt    DateTime     @default(now())
+
+  @@index([jobId, kind])
 }
 
 enum CampaignStatus {
@@ -221,6 +223,7 @@ enum CampaignRecipientStatus {
   DELIVERED
   FAILED
   CANCELLED
+  // TODO(status-consistency): consider introducing PROCESSING/QUEUED to reflect in-flight sends consistently.
 }
 
 model Campaign {
@@ -249,6 +252,8 @@ model Campaign {
   updatedAt         DateTime           @updatedAt
   recipients        CampaignRecipient[]
   events            CampaignEvent[]
+
+  @@index([status, createdAt])
 }
 
 model CampaignRecipient {
@@ -265,10 +270,16 @@ model CampaignRecipient {
   lastAttemptAt DateTime?
   sentAt      DateTime?
   deliveredAt DateTime?
+  // TODO(legacy): read tracking appears unused in codebase; validate before removal.
   readAt      DateTime?
+  // TODO(legacy): response tracking appears unused; candidate for cleanup after audit.
   respondedAt DateTime?
   createdAt   DateTime                 @default(now())
   updatedAt   DateTime                 @updatedAt
+
+  @@index([campaignId, status])
+  @@index([campaignId, createdAt])
+  @@index([campaignId, phone])
 }
 
 model CampaignPreset {
@@ -300,3 +311,10 @@ model SystemSetting {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+/// ---------------------------------------------------------------------------
+/// Prisma schema migration plan (see docs/schema-migration-plan.md for details)
+/// SAFE (indexes/comments): new indexes on Campaign.status+createdAt, CampaignRecipient campaign scopes, Reminder job/kind.
+/// RISKY (audit first): potential unique constraint on CampaignRecipient (campaignId, phone) and cleanup of unused read/respond fields.
+/// Commands: npx prisma migrate dev --name campaign_indexes
+/// ---------------------------------------------------------------------------

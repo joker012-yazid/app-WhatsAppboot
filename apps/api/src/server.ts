@@ -3,8 +3,7 @@
 import prisma from './lib/prisma';
 import env from './config/env';
 import { createApp } from './app';
-import { startReminderScheduler } from './scheduler/reminders';
-import { startBackupScheduler } from './scheduler/backups';
+import { initSchedulers } from './scheduler';
 
 const app = createApp();
 const server = createServer(app);
@@ -19,8 +18,7 @@ prisma.$connect()
     });
 
     // Start background schedulers & queues after database is connected
-    startReminderScheduler();
-    startBackupScheduler().catch((error) => console.error('[backup] scheduler error', error));
+    initSchedulers().catch((error) => console.error('[scheduler] init error', error));
   })
   .catch((error) => {
     console.error('Failed to connect to database:', error);

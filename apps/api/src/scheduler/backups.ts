@@ -1,16 +1,30 @@
-﻿import cron from 'node-cron';
+import cron from 'node-cron';
 
-import prisma from '../lib/prisma';
 import { createBackup } from '../services/backup';
 import { getSetting } from '../services/settings';
 
 let task: cron.ScheduledTask | null = null;
+let isRunningBackup = false;
+
+const runBackup = async () => {
+  if (isRunningBackup) {
+    console.log('[backup] run skipped - already in progress');
+    return;
+  }
+  isRunningBackup = true;
+  const start = Date.now();
+  try {
+    const result = await createBackup({ manual: false });
+    console.log('[backup] automated backup created', { filename: result.filename, durationMs: Date.now() - start });
+  } catch (error) {
+    console.error('[backup] automated backup failed', error);
+  } finally {
+    isRunningBackup = false;
+  }
+};
 
 const schedule = async () => {
   try {
-    // Ensure Prisma is connected before accessing database
-    await prisma.$connect();
-    
     const backupSettings = await getSetting('backup');
     const [hour, minute] = backupSettings.schedule.split(':').map((value) => Number(value));
     const cronExpression = `0 ${Number.isFinite(minute) ? minute : 0} ${Number.isFinite(hour) ? hour : 2} * * *`;
@@ -22,9 +36,7 @@ const schedule = async () => {
     task = cron.schedule(
       cronExpression,
       () => {
-        createBackup({ manual: false })
-          .then((result) => console.log(`[backup] automated backup created: ${result.filename}`))
-          .catch((error) => console.error('[backup] automated backup failed', error));
+        runBackup().catch((error) => console.error('[backup] scheduled run error', error));
       },
       {
         timezone: 'Asia/Kuala_Lumpur',
@@ -39,8 +51,6 @@ const schedule = async () => {
 
 export const startBackupScheduler = async () => {
   try {
-    // Ensure database connection before starting scheduler
-    await prisma.$connect();
     await schedule();
   } catch (error) {
     console.error('[backup] failed to start scheduler', error);
