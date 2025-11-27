@@ -30,7 +30,6 @@ const schedule = async () => {
     const cronExpression = `0 ${Number.isFinite(minute) ? minute : 0} ${Number.isFinite(hour) ? hour : 2} * * *`;
     if (task) {
       task.stop();
-      task.destroy();
       task = null;
     }
     task = cron.schedule(

@@ -146,9 +146,24 @@ export async function getAllSettings(): Promise<SettingMap> {
   const rows = await prisma.systemSetting.findMany();
   const data = cloneDefaults();
   for (const row of rows) {
-    if (settingKeySchema.safeParse(row.key).success) {
-      const key = row.key as SettingKey;
-      data[key] = { ...data[key], ...(row.value as object) } as SettingMap[SettingKey];
+    const parsedKey = settingKeySchema.safeParse(row.key);
+    if (parsedKey.success) {
+      const key = parsedKey.data;
+      const value = row.value as SettingMap[typeof key];
+      switch (key) {
+        case 'general':
+          data.general = { ...data.general, ...value };
+          break;
+        case 'whatsapp':
+          data.whatsapp = { ...data.whatsapp, ...value };
+          break;
+        case 'ai':
+          data.ai = { ...data.ai, ...value };
+          break;
+        case 'backup':
+          data.backup = { ...data.backup, ...value };
+          break;
+      }
     }
   }
   return data;
