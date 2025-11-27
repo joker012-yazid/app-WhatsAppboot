@@ -27,6 +27,7 @@ type DashboardCards = {
   pendingJobs: number;
   activeJobs: number;
   newCustomers: number;
+  // Count of urgent/prioritized jobs, not an inventory metric
   urgentJobs: number;
   campaignsRunning: number;
 };
