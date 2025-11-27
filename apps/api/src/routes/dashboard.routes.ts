@@ -142,7 +142,7 @@ router.get('/', requireAuth, async (_req, res) => {
         pendingJobs,
         activeJobs: inProgressJobs,
         newCustomers: newCustomersToday,
-        lowStockItems: urgentJobs,
+        urgentJobs,
         campaignsRunning,
       },
       salesTrend,

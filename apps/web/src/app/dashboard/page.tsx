@@ -22,11 +22,29 @@ type Stats = {
   };
 };
 
+type DashboardCards = {
+  todaysRevenue: number;
+  pendingJobs: number;
+  activeJobs: number;
+  newCustomers: number;
+  urgentJobs: number;
+  campaignsRunning: number;
+};
+
+type DashboardResponse = {
+  cards: DashboardCards;
+};
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const toast = useToast();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [cards, setCards] = useState<DashboardCards | null>(null);
+  const [cardsLoading, setCardsLoading] = useState(true);
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR', maximumFractionDigits: 0 }).format(value || 0);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -47,6 +65,25 @@ export default function DashboardPage() {
     fetchStats();
   }, [toast]);
 
+  useEffect(() => {
+    const fetchCards = async () => {
+      try {
+        setCardsLoading(true);
+        const data = await apiGet<DashboardResponse>('/api/dashboard');
+        setCards(data.cards || null);
+      } catch (error: any) {
+        console.error('[Dashboard] Failed to load cards:', error);
+        const errorMessage = error?.message || 'Failed to load dashboard metrics';
+        toast.error(errorMessage);
+        setCards(null);
+      } finally {
+        setCardsLoading(false);
+      }
+    };
+
+    fetchCards();
+  }, [toast]);
+
   return (
     <AuthGuard>
       <div className="space-y-6">
@@ -59,6 +96,46 @@ export default function DashboardPage() {
             <p className="text-sm text-muted-foreground mt-1">Role: {user?.role}</p>
           </div>
 
+          {cardsLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Loading dashboard metrics...</div>
+          ) : cards ? (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-lg border p-6 bg-card">
+                <p className="text-sm text-muted-foreground mb-2">Today's Revenue</p>
+                <p className="text-3xl font-bold">{formatCurrency(cards.todaysRevenue)}</p>
+              </div>
+
+              <div className="rounded-lg border p-6 bg-card">
+                <p className="text-sm text-muted-foreground mb-2">Pending Jobs</p>
+                <p className="text-3xl font-bold">{cards.pendingJobs}</p>
+              </div>
+
+              <div className="rounded-lg border p-6 bg-card">
+                <p className="text-sm text-muted-foreground mb-2">Active Jobs</p>
+                <p className="text-3xl font-bold">{cards.activeJobs}</p>
+              </div>
+
+              <div className="rounded-lg border p-6 bg-card">
+                <p className="text-sm text-muted-foreground mb-2">New Customers Today</p>
+                <p className="text-3xl font-bold">{cards.newCustomers}</p>
+              </div>
+
+              <div className="rounded-lg border p-6 bg-card">
+                <p className="text-sm text-muted-foreground mb-2">Urgent Jobs</p>
+                <p className="text-3xl font-bold">{cards.urgentJobs}</p>
+              </div>
+
+              <div className="rounded-lg border p-6 bg-card">
+                <p className="text-sm text-muted-foreground mb-2">Campaigns Running</p>
+                <p className="text-3xl font-bold">{cards.campaignsRunning}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">Failed to load dashboard metrics</div>
+          )}
+        </section>
+
+        <section className="rounded-xl border bg-card px-6 py-8 shadow-sm">
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">Loading statistics...</div>
           ) : stats ? (
