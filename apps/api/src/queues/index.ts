@@ -58,6 +58,7 @@ new Worker(
         recipient.status,
       )
     ) {
+      console.log('[campaign-worker] skip duplicate send for recipient', recipientId, 'status', recipient.status);
       return { skipped: recipient.status };
     }
     if (['CANCELLED', 'FAILED', 'COMPLETED'].includes(campaign.status)) {
@@ -166,7 +167,10 @@ export async function enqueueCampaignRecipients(campaignId: string, specificIds?
     where.status = { in: [CampaignRecipientStatus.PENDING, CampaignRecipientStatus.SCHEDULED] };
   }
   const recipients = await prisma.campaignRecipient.findMany({ where, select: { id: true } });
-  if (!recipients.length) return;
+  if (!recipients.length) {
+    console.log('[campaign] enqueue skipped - no pending recipients', campaignId);
+    return;
+  }
   if (!specificIds?.length) {
     await prisma.campaignRecipient.updateMany({
       where: { campaignId, status: CampaignRecipientStatus.PENDING },
@@ -178,4 +182,5 @@ export async function enqueueCampaignRecipients(campaignId: string, specificIds?
       campaignQueue.add('campaign-send', { campaignId, recipientId: recipient.id }, { attempts: 3, removeOnComplete: true }),
     ),
   );
+  console.log('[campaign] enqueued recipients', { campaignId, count: recipients.length });
 }
