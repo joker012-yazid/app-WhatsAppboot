@@ -66,7 +66,8 @@ Pakej berikut berada di akar kerana menyokong server legasi dan boleh dinyahakti
 - `dayjs`
 - `cors`
 
-Selepas memastikan tiada lagi kebergantungan pada kod `src/`, kita boleh memindahkan legasi ke folder `legacy/` atau pakej berasingan sebelum membuang dependensi tersebut.
+Selepas memastikan tiada lagi kebergantungan pada kod `src/`, kita boleh memindahkan legasi ke folder `legacy/` atau
+pakej berasingan sebelum membuang dependensi tersebut.
 
 ## Dokumentasi Tambahan
 
