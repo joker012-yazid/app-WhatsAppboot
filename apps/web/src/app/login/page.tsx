@@ -1,8 +1,8 @@
 "use client";
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
@@ -11,11 +11,19 @@ import { useToast } from '@/components/toast-provider';
 export default function LoginPage() {
   const { login, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('admin@example.com');
   const [password, setPassword] = useState('admin123');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const toast = useToast();
+
+  useEffect(() => {
+    const reason = searchParams.get('reason');
+    if (reason) {
+      setError(reason);
+    }
+  }, [searchParams]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

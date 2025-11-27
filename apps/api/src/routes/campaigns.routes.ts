@@ -84,7 +84,7 @@ const editableStatuses: CampaignStatus[] = ['DRAFT', 'PAUSED', 'SCHEDULED'];
 
 router.use(requireAuth, requireRole('ADMIN', 'MANAGER'));
 
-router.get('/', async (req, res) => {
+const listCampaigns = async (req: import('express').Request, res: import('express').Response) => {
   const statusParam = typeof req.query.status === 'string' ? req.query.status : undefined;
   const statusFilter = statusParam && (CampaignStatus as any)[statusParam] ? (statusParam as CampaignStatus) : undefined;
   const campaigns = await prisma.campaign.findMany({
@@ -93,9 +93,9 @@ router.get('/', async (req, res) => {
     take: 50,
   });
   return res.json(campaigns);
-});
+};
 
-router.post('/preview', async (req, res) => {
+const previewCampaignRecipients = async (req: import('express').Request, res: import('express').Response) => {
   const parsed = previewSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ message: 'Invalid preview payload' });
   const { filters, limit } = parsed.data;
@@ -106,14 +106,14 @@ router.post('/preview', async (req, res) => {
     manualTargets: preview.manualTargets,
     manualCount: preview.manualCount,
   });
-});
+};
 
-router.get('/presets', async (_req, res) => {
+const listCampaignPresets = async (_req: import('express').Request, res: import('express').Response) => {
   const presets = await prisma.campaignPreset.findMany({ orderBy: { createdAt: 'desc' } });
   return res.json(presets);
-});
+};
 
-router.post('/presets', async (req, res) => {
+const createCampaignPreset = async (req: import('express').Request, res: import('express').Response) => {
   const parsed = presetSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ message: 'Invalid preset payload' });
   const filtersPayload = parsed.data.filters || {};
@@ -126,15 +126,15 @@ router.post('/presets', async (req, res) => {
     },
   });
   return res.status(201).json(preset);
-});
+};
 
-router.delete('/presets/:id', async (req, res) => {
+const deleteCampaignPreset = async (req: import('express').Request, res: import('express').Response) => {
   const id = String(req.params.id);
   await prisma.campaignPreset.delete({ where: { id } }).catch(() => null);
   return res.status(204).send();
-});
+};
 
-router.post('/', async (req, res) => {
+const createCampaign = async (req: import('express').Request, res: import('express').Response) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ message: 'Invalid payload' });
   const payload = parsed.data;
@@ -161,9 +161,9 @@ router.post('/', async (req, res) => {
     },
   });
   return res.status(201).json(campaign);
-});
+};
 
-router.put('/:id', async (req, res) => {
+const updateCampaign = async (req: import('express').Request, res: import('express').Response) => {
   const id = String(req.params.id);
   const parsed = updateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ message: 'Invalid payload' });
@@ -201,9 +201,9 @@ router.put('/:id', async (req, res) => {
   }
   const updated = await prisma.campaign.update({ where: { id }, data: updateData });
   return res.json(updated);
-});
+};
 
-router.get('/:id', async (req, res) => {
+const getCampaignDetails = async (req: import('express').Request, res: import('express').Response) => {
   const id = String(req.params.id);
   const campaign = await prisma.campaign.findUnique({
     where: { id },
@@ -225,9 +225,9 @@ router.get('/:id', async (req, res) => {
     take: 10,
   });
   return res.json({ campaign, stats, recentRecipients });
-});
+};
 
-router.get('/:id/recipients', async (req, res) => {
+const listCampaignRecipients = async (req: import('express').Request, res: import('express').Response) => {
   const id = String(req.params.id);
   const page = Math.max(1, Number(req.query.page) || 1);
   const pageSize = Math.min(100, Math.max(10, Number(req.query.pageSize) || 25));
@@ -241,9 +241,9 @@ router.get('/:id/recipients', async (req, res) => {
     prisma.campaignRecipient.count({ where: { campaignId: id } }),
   ]);
   return res.json({ items, total, page, pageSize });
-});
+};
 
-router.post('/:id/start', async (req, res) => {
+const startCampaign = async (req: import('express').Request, res: import('express').Response) => {
   const id = String(req.params.id);
   const campaign = await prisma.campaign.findUnique({ where: { id } });
   if (!campaign) return res.status(404).json({ message: 'Campaign not found' });
@@ -272,9 +272,9 @@ router.post('/:id/start', async (req, res) => {
 
   await enqueueCampaignRecipients(id);
   return res.json({ message: 'Campaign started', targetCount: total });
-});
+};
 
-router.post('/:id/pause', async (req, res) => {
+const pauseCampaign = async (req: import('express').Request, res: import('express').Response) => {
   const id = String(req.params.id);
   const campaign = await prisma.campaign.findUnique({ where: { id } });
   if (!campaign) return res.status(404).json({ message: 'Campaign not found' });
@@ -286,9 +286,9 @@ router.post('/:id/pause', async (req, res) => {
     prisma.campaignEvent.create({ data: { campaignId: id, type: 'campaign.paused' } }),
   ]);
   return res.json({ message: 'Campaign paused' });
-});
+};
 
-router.post('/:id/resume', async (req, res) => {
+const resumeCampaign = async (req: import('express').Request, res: import('express').Response) => {
   const id = String(req.params.id);
   const campaign = await prisma.campaign.findUnique({ where: { id } });
   if (!campaign) return res.status(404).json({ message: 'Campaign not found' });
@@ -301,9 +301,9 @@ router.post('/:id/resume', async (req, res) => {
   ]);
   await enqueueCampaignRecipients(id);
   return res.json({ message: 'Campaign resumed' });
-});
+};
 
-router.post('/:id/cancel', async (req, res) => {
+const cancelCampaign = async (req: import('express').Request, res: import('express').Response) => {
   const id = String(req.params.id);
   const campaign = await prisma.campaign.findUnique({ where: { id } });
   if (!campaign) return res.status(404).json({ message: 'Campaign not found' });
@@ -319,6 +319,22 @@ router.post('/:id/cancel', async (req, res) => {
     prisma.campaignEvent.create({ data: { campaignId: id, type: 'campaign.cancelled' } }),
   ]);
   return res.json({ message: 'Campaign cancelled' });
-});
+};
+
+// TODO(api-naming): consider PATCH /campaigns/:id with { status } for start/pause/resume/cancel to remove verb routes.
+
+router.get('/', listCampaigns);
+router.post('/preview', previewCampaignRecipients);
+router.get('/presets', listCampaignPresets);
+router.post('/presets', createCampaignPreset);
+router.delete('/presets/:id', deleteCampaignPreset);
+router.post('/', createCampaign);
+router.put('/:id', updateCampaign);
+router.get('/:id', getCampaignDetails);
+router.get('/:id/recipients', listCampaignRecipients);
+router.post('/:id/start', startCampaign);
+router.post('/:id/pause', pauseCampaign);
+router.post('/:id/resume', resumeCampaign);
+router.post('/:id/cancel', cancelCampaign);
 
 export default router;
