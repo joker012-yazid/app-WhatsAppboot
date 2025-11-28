@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { createPortal } from 'react-dom';
 
 type ConfirmOptions = {
   title?: string;
@@ -29,9 +30,15 @@ const ConfirmContext = createContext<ConfirmContextValue | undefined>(undefined)
 
 export function ConfirmProvider({ children }: { children: ReactNode }) {
   const [dialog, setDialog] = useState<PendingConfirm | null>(null);
+  const [mounted, setMounted] = useState(false);
   const previouslyFocused = useRef<HTMLElement | null>(null);
   const confirmBtnRef = useRef<HTMLButtonElement | null>(null);
   const cancelBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  // Prevent hydration mismatch by only rendering portal after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const confirm = useCallback<ConfirmContextValue['confirm']>((options) => {
     return new Promise<boolean>((resolve) => {
@@ -49,103 +56,109 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
 
   const api = useMemo(() => ({ confirm }), [confirm]);
 
-  const onClose = (val: boolean) => {
-    if (!dialog) return;
-    dialog.resolve(val);
-    setDialog(null);
-  };
+  const onClose = useCallback((val: boolean) => {
+    setDialog((current) => {
+      if (!current) return null;
+      current.resolve(val);
+      return null;
+    });
+  }, []);
 
   // Focus management & keyboard handling
   useEffect(() => {
-    if (dialog) {
-      previouslyFocused.current = (document.activeElement as HTMLElement) || null;
-      // Focus confirm button by default after paint
-      const t = setTimeout(() => {
-        (confirmBtnRef.current || cancelBtnRef.current)?.focus();
-      }, 0);
+    if (!dialog) return;
 
-      const handleKey = (e: KeyboardEvent) => {
-        if (!dialog) return;
-        if (e.key === 'Escape') {
+    previouslyFocused.current = (document.activeElement as HTMLElement) || null;
+    // Focus confirm button by default after paint
+    const t = setTimeout(() => {
+      (confirmBtnRef.current || cancelBtnRef.current)?.focus();
+    }, 0);
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (!dialog) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose(false);
+        return;
+      }
+      if (e.key === 'Enter') {
+        // Avoid submitting from textarea inputs if any (none in this dialog)
+        e.preventDefault();
+        onClose(true);
+        return;
+      }
+      if (e.key === 'Tab') {
+        const focusables = [cancelBtnRef.current, confirmBtnRef.current].filter(
+          Boolean,
+        ) as HTMLElement[];
+        if (focusables.length === 0) return;
+        const idx = focusables.indexOf(document.activeElement as HTMLElement);
+        if (e.shiftKey) {
+          // backwards
+          const next = idx <= 0 ? focusables[focusables.length - 1] : focusables[idx - 1];
           e.preventDefault();
-          onClose(false);
-          return;
-        }
-        if (e.key === 'Enter') {
-          // Avoid submitting from textarea inputs if any (none in this dialog)
+          next.focus();
+        } else {
+          const next = idx === -1 || idx >= focusables.length - 1 ? focusables[0] : focusables[idx + 1];
           e.preventDefault();
-          onClose(true);
-          return;
+          next.focus();
         }
-        if (e.key === 'Tab') {
-          const focusables = [cancelBtnRef.current, confirmBtnRef.current].filter(
-            Boolean,
-          ) as HTMLElement[];
-          if (focusables.length === 0) return;
-          const idx = focusables.indexOf(document.activeElement as HTMLElement);
-          if (e.shiftKey) {
-            // backwards
-            const next = idx <= 0 ? focusables[focusables.length - 1] : focusables[idx - 1];
-            e.preventDefault();
-            next.focus();
-          } else {
-            const next = idx === -1 || idx >= focusables.length - 1 ? focusables[0] : focusables[idx + 1];
-            e.preventDefault();
-            next.focus();
-          }
-        }
-      };
-      document.addEventListener('keydown', handleKey);
-      return () => {
-        clearTimeout(t);
-        document.removeEventListener('keydown', handleKey);
-        // Restore focus to the previously focused element
-        try {
-          previouslyFocused.current?.focus();
-        } catch {}
-      };
-    }
-  }, [dialog]);
+      }
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener('keydown', handleKey);
+      // Restore focus to the previously focused element
+      try {
+        previouslyFocused.current?.focus();
+      } catch {}
+    };
+  }, [dialog, onClose]);
+
+  const dialogContent = mounted && dialog ? (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" role="presentation">
+      <div className="absolute inset-0 bg-black/40" onClick={() => onClose(false)} />
+      <div
+        className="relative z-10 w-full max-w-sm rounded-md border bg-card p-4 shadow-xl outline-none"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-title"
+        aria-describedby="confirm-desc"
+        tabIndex={-1}
+      >
+        <h3 id="confirm-title" className="mb-1 text-lg font-semibold">
+          {dialog.title}
+        </h3>
+        <p id="confirm-desc" className="mb-4 text-sm text-muted-foreground">
+          {dialog.description}
+        </p>
+        <div className="flex justify-end gap-2">
+          <button
+            ref={cancelBtnRef}
+            className="rounded-md border px-3 py-1.5 text-sm"
+            onClick={() => onClose(false)}
+          >
+            {dialog.cancelText}
+          </button>
+          <button
+            ref={confirmBtnRef}
+            className={`rounded-md px-3 py-1.5 text-sm text-white ${dialog.variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-primary/90'}`}
+            onClick={() => onClose(true)}
+          >
+            {dialog.confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <ConfirmContext.Provider value={api}>
       {children}
-      {dialog ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" role="presentation">
-          <div className="absolute inset-0 bg-black/40" onClick={() => onClose(false)} />
-          <div
-            className="relative z-10 w-full max-w-sm rounded-md border bg-card p-4 shadow-xl outline-none"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="confirm-title"
-            aria-describedby="confirm-desc"
-            tabIndex={-1}
-          >
-            <h3 id="confirm-title" className="mb-1 text-lg font-semibold">
-              {dialog.title}
-            </h3>
-            <p id="confirm-desc" className="mb-4 text-sm text-muted-foreground">
-              {dialog.description}
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                ref={cancelBtnRef}
-                className="rounded-md border px-3 py-1.5 text-sm"
-                onClick={() => onClose(false)}
-              >
-                {dialog.cancelText}
-              </button>
-              <button
-                ref={confirmBtnRef}
-                className={`rounded-md px-3 py-1.5 text-sm text-white ${dialog.variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-primary/90'}`}
-                onClick={() => onClose(true)}
-              >
-                {dialog.confirmText}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {mounted && typeof document !== 'undefined' && dialogContent
+        ? createPortal(dialogContent, document.body)
+        : null}
     </ConfirmContext.Provider>
   );
 }

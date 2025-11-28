@@ -9,8 +9,9 @@ import AuthGuard from '@/components/auth-guard';
 import { apiGet, apiPut, apiPost, apiUpload, apiDelete } from '@/lib/api';
 import { useToast } from '@/components/toast-provider';
 import { useConfirm } from '@/components/confirm-provider';
-import { useToast } from '@/components/toast-provider';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/lib/auth';
+import { hasAnyRole } from '@/lib/roles';
 
 type JobDetail = {
   job: {
@@ -36,6 +37,7 @@ export default function JobDetailPage() {
   const qc = useQueryClient();
   const toast = useToast();
   const confirm = useConfirm();
+  const { user } = useAuth();
   const q = useQuery({
     queryKey: ['job', id],
     queryFn: async () => apiGet<JobDetail>(`/api/jobs/${id}`),
@@ -112,7 +114,6 @@ export default function JobDetailPage() {
   const [label, setLabel] = useState('');
   const [files, setFiles] = useState<File[] | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
-  const toast = useToast();
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
@@ -127,7 +128,7 @@ export default function JobDetailPage() {
       setFiles(null);
       (document.getElementById('photo-input') as HTMLInputElement | null)?.value && ((document.getElementById('photo-input') as HTMLInputElement).value = '');
       await refetchPhotos();
-      setToast({ message: `Uploaded ${res?.length ?? files?.length ?? 0} photo(s)`, variant: 'success' });
+      toast.success(`Uploaded ${res?.length ?? files?.length ?? 0} photo(s)`);
     },
     onError: (e: any) => {
       const msg = e?.message || 'Failed to upload';
@@ -175,8 +176,14 @@ export default function JobDetailPage() {
             </Button>
             <Button
               variant="destructive"
-              onClick={() => {
-                if (confirm('Delete this job?')) deleteJob.mutate();
+              onClick={async () => {
+                const ok = await confirm({
+                  title: 'Delete job',
+                  description: 'Are you sure you want to delete this job? This action cannot be undone.',
+                  confirmText: 'Delete',
+                  variant: 'destructive',
+                });
+                if (ok) deleteJob.mutate();
               }}
               disabled={deleteJob.isPending}
             >

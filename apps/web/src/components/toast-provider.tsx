@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Toast } from './toast';
 
 type Variant = 'info' | 'success' | 'error' | 'warning';
@@ -24,6 +25,12 @@ const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch by only rendering toasts after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const remove = useCallback((id: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -60,12 +67,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     };
   }, [api]);
 
-  return (
-    <ToastContext.Provider value={api}>
-      {children}
+  const toastContent = mounted && toasts.length > 0 ? (
+    <>
       {toasts.map((t) => (
         <Toast key={t.id} message={t.message} variant={t.variant} duration={t.duration} onClose={() => remove(t.id)} />
       ))}
+    </>
+  ) : null;
+
+  return (
+    <ToastContext.Provider value={api}>
+      {children}
+      {mounted && typeof document !== 'undefined' && toastContent
+        ? createPortal(toastContent, document.body)
+        : null}
     </ToastContext.Provider>
   );
 }
