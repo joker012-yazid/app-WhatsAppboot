@@ -17,6 +17,7 @@ import { apiGet, apiPost, apiPut } from '@/lib/api';
 import { useToast } from '@/components/toast-provider';
 import { useAuth } from '@/lib/auth';
 import { hasAnyRole } from '@/lib/roles';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 
 const defaultGeneral = {
   companyName: '',
@@ -87,6 +88,7 @@ export default function SettingsPage() {
   const [backup, setBackup] = useState(defaultBackup);
   const [keywordsText, setKeywordsText] = useState('STOP, UNSUBSCRIBE');
   const [savingKey, setSavingKey] = useState<SettingKey | null>(null);
+  const [activeTab, setActiveTab] = useState<'general' | 'whatsapp' | 'ai' | 'backup'>('general');
 
   const query = useQuery({
     queryKey: ['settings'],
@@ -161,30 +163,45 @@ export default function SettingsPage() {
   return (
     <AuthGuard>
       <div className="space-y-8">
-        <header className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Phase 6</p>
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <section className="rounded-xl border bg-card/80 px-6 py-5 shadow-sm backdrop-blur">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold">Settings</h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Settings</p>
+              <h1 className="mt-1 text-2xl font-semibold text-slate-50">Application Settings</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Manage business identity, WhatsApp guardrails, AI preferences, and backup routines.
               </p>
             </div>
-            {!canEdit ? (
-              <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                You are in read-only mode. Contact an administrator to update settings.
-              </div>
-            ) : null}
+            <SegmentedControl
+              items={[
+                { id: 'general', label: 'General' },
+                { id: 'whatsapp', label: 'WhatsApp' },
+                { id: 'ai', label: 'AI & Automation' },
+                { id: 'backup', label: 'Backup' },
+              ]}
+              value={activeTab}
+              onValueChange={(id) => setActiveTab(id as typeof activeTab)}
+            />
           </div>
-        </header>
+          {!canEdit ? (
+            <div className="mt-4 rounded-md border border-amber-400/60 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+              You are in read-only mode. Contact an administrator to update settings.
+            </div>
+          ) : null}
+        </section>
 
         {query.isLoading ? (
-          <div className="rounded-xl border bg-card px-4 py-6 text-sm text-muted-foreground">Loading settings...</div>
+          <div className="rounded-xl border bg-card/80 px-4 py-6 text-sm text-muted-foreground backdrop-blur">
+            Loading settings...
+          </div>
         ) : query.isError ? (
-          <div className="rounded-xl border bg-card px-4 py-6 text-sm text-red-500">Failed to load settings</div>
+          <div className="rounded-xl border bg-card/80 px-4 py-6 text-sm text-red-500 backdrop-blur">
+            Failed to load settings
+          </div>
         ) : (
-          <div className="space-y-8">
-            <section className="rounded-xl border bg-card p-6 shadow-sm">
+          <div className="space-y-6">
+            {activeTab === 'general' ? (
+            <section className="rounded-xl border bg-card/80 p-6 shadow-sm backdrop-blur">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">General</p>
@@ -316,7 +333,10 @@ export default function SettingsPage() {
               </form>
             </section>
 
-            <section className="rounded-xl border bg-card p-6 shadow-sm">
+            ) : null}
+
+            {activeTab === 'whatsapp' ? (
+            <section className="rounded-xl border bg-card/80 p-6 shadow-sm backdrop-blur">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">WhatsApp</p>
@@ -423,8 +443,10 @@ export default function SettingsPage() {
                 </div>
               </form>
             </section>
+            ) : null}
 
-            <section className="rounded-xl border bg-card p-6 shadow-sm">
+            {activeTab === 'ai' ? (
+            <section className="rounded-xl border bg-card/80 p-6 shadow-sm backdrop-blur">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">AI</p>
@@ -534,8 +556,10 @@ export default function SettingsPage() {
                 </div>
               </form>
             </section>
+            ) : null}
 
-            <section className="rounded-xl border bg-card p-6 shadow-sm">
+            {activeTab === 'backup' ? (
+            <section className="rounded-xl border bg-card/80 p-6 shadow-sm backdrop-blur">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Backup & safety</p>
@@ -695,6 +719,7 @@ export default function SettingsPage() {
                 )}
               </div>
             </section>
+            ) : null}
           </div>
         )}
       </div>

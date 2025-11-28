@@ -2,11 +2,11 @@
   "pages": {
     "/dashboard/page": [
       "static/chunks/[root of the server]__23d50f._.css",
-      "static/chunks/08b5e_99b822._.js",
-      "static/chunks/src_93015b._.js",
-      "static/chunks/src_app_layout_tsx_ec2b31._.js",
-      "static/chunks/[project]__8b109e._.js",
-      "static/chunks/src_app_dashboard_layout_tsx_2dfa0a._.js",
+      "static/chunks/08b5e_5b7896._.js",
+      "static/chunks/src_276f48._.js",
+      "static/chunks/src_app_layout_tsx_ca4953._.js",
+      "static/chunks/src_200043._.js",
+      "static/chunks/src_app_dashboard_layout_tsx_e10287._.js",
       "static/chunks/src_app_dashboard_page_tsx_a0fcc6._.js",
       "static/chunks/src_app_dashboard_page_tsx_28f3ce._.js",
       "static/chunks/08b5e_next_dist_compiled_react_a1d82d._.js",

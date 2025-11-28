@@ -19,29 +19,33 @@ export function Toast({
     return () => clearTimeout(t);
   }, [duration, onClose]);
 
-  const bg =
+  const accent =
     variant === 'success'
-      ? 'bg-emerald-600'
+      ? 'border-emerald-500/60 text-emerald-50'
       : variant === 'error'
-        ? 'bg-red-600'
+        ? 'border-red-500/60 text-red-50'
         : variant === 'warning'
-          ? 'bg-amber-600'
-          : 'bg-zinc-800';
+          ? 'border-amber-500/60 text-amber-50'
+          : 'border-slate-700 text-slate-50';
 
   return (
-    <div className={`pointer-events-auto fixed bottom-4 right-4 z-50 max-w-sm rounded-md ${bg} px-4 py-3 text-white shadow-lg`}
+    <div
+      className={`pointer-events-auto fixed bottom-4 right-4 z-50 max-w-sm rounded-lg border bg-slate-950/90 px-4 py-3 shadow-lg shadow-black/40 backdrop-blur ${accent}`}
       role="status"
       aria-live="polite"
     >
       <div className="flex items-start gap-3">
         <div className="text-sm">{message}</div>
         {onClose ? (
-          <button className="ml-auto text-xs opacity-80 hover:opacity-100" onClick={onClose} aria-label="Close">
-            ✕
+          <button
+            className="ml-auto text-xs text-slate-300 opacity-80 transition hover:opacity-100"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            x
           </button>
         ) : null}
       </div>
     </div>
   );
 }
-

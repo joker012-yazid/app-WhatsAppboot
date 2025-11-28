@@ -394,9 +394,9 @@ function Toast({ message, variant = 'info', onClose, duration = 2500 }) {
         duration,
         onClose
     ]);
-    const bg = variant === 'success' ? 'bg-emerald-600' : variant === 'error' ? 'bg-red-600' : variant === 'warning' ? 'bg-amber-600' : 'bg-zinc-800';
+    const accent = variant === 'success' ? 'border-emerald-500/60 text-emerald-50' : variant === 'error' ? 'border-red-500/60 text-red-50' : variant === 'warning' ? 'border-amber-500/60 text-amber-50' : 'border-slate-700 text-slate-50';
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$future$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        className: `pointer-events-auto fixed bottom-4 right-4 z-50 max-w-sm rounded-md ${bg} px-4 py-3 text-white shadow-lg`,
+        className: `pointer-events-auto fixed bottom-4 right-4 z-50 max-w-sm rounded-lg border bg-slate-950/90 px-4 py-3 shadow-lg shadow-black/40 backdrop-blur ${accent}`,
         role: "status",
         "aria-live": "polite",
         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$future$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -407,23 +407,23 @@ function Toast({ message, variant = 'info', onClose, duration = 2500 }) {
                     children: message
                 }, void 0, false, {
                     fileName: "[project]/apps/web/src/components/toast.tsx",
-                    lineNumber: 37,
+                    lineNumber: 38,
                     columnNumber: 9
                 }, this),
                 onClose ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$future$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
-                    className: "ml-auto text-xs opacity-80 hover:opacity-100",
+                    className: "ml-auto text-xs text-slate-300 opacity-80 transition hover:opacity-100",
                     onClick: onClose,
                     "aria-label": "Close",
-                    children: "✕"
+                    children: "x"
                 }, void 0, false, {
                     fileName: "[project]/apps/web/src/components/toast.tsx",
-                    lineNumber: 39,
+                    lineNumber: 40,
                     columnNumber: 11
                 }, this) : null
             ]
         }, void 0, true, {
             fileName: "[project]/apps/web/src/components/toast.tsx",
-            lineNumber: 36,
+            lineNumber: 37,
             columnNumber: 7
         }, this)
     }, void 0, false, {
@@ -646,7 +646,7 @@ function ConfirmProvider({ children }) {
         role: "presentation",
         children: [
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$future$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "absolute inset-0 bg-black/40",
+                className: "absolute inset-0 bg-black/60 backdrop-blur-sm",
                 onClick: ()=>onClose(false)
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/components/confirm-provider.tsx",
@@ -654,7 +654,7 @@ function ConfirmProvider({ children }) {
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$future$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "relative z-10 w-full max-w-sm rounded-md border bg-card p-4 shadow-xl outline-none",
+                className: "relative z-10 w-full max-w-sm rounded-xl border border-slate-800 bg-slate-950/90 p-5 shadow-2xl shadow-black/40 outline-none backdrop-blur",
                 role: "dialog",
                 "aria-modal": "true",
                 "aria-labelledby": "confirm-title",
@@ -663,7 +663,7 @@ function ConfirmProvider({ children }) {
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$future$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
                         id: "confirm-title",
-                        className: "mb-1 text-lg font-semibold",
+                        className: "mb-1 text-lg font-semibold text-slate-50",
                         children: dialog.title
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/components/confirm-provider.tsx",
@@ -672,7 +672,7 @@ function ConfirmProvider({ children }) {
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$future$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                         id: "confirm-desc",
-                        className: "mb-4 text-sm text-muted-foreground",
+                        className: "mb-4 text-sm text-slate-300",
                         children: dialog.description
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/components/confirm-provider.tsx",
@@ -684,7 +684,7 @@ function ConfirmProvider({ children }) {
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$future$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                 ref: cancelBtnRef,
-                                className: "rounded-md border px-3 py-1.5 text-sm",
+                                className: "rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-200 transition hover:border-slate-500 hover:bg-slate-900",
                                 onClick: ()=>onClose(false),
                                 children: dialog.cancelText
                             }, void 0, false, {
@@ -694,7 +694,7 @@ function ConfirmProvider({ children }) {
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$future$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                 ref: confirmBtnRef,
-                                className: `rounded-md px-3 py-1.5 text-sm text-white ${dialog.variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-primary/90'}`,
+                                className: `rounded-md px-3 py-1.5 text-sm text-white transition ${dialog.variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : 'bg-sky-600 hover:bg-sky-500'}`,
                                 onClick: ()=>onClose(true),
                                 children: dialog.confirmText
                             }, void 0, false, {
@@ -728,7 +728,7 @@ function ConfirmProvider({ children }) {
         ]
     }, void 0, true, {
         fileName: "[project]/apps/web/src/components/confirm-provider.tsx",
-        lineNumber: 157,
+        lineNumber: 161,
         columnNumber: 5
     }, this);
 }
@@ -826,7 +826,7 @@ function UserMenu() {
     if (loading) {
         return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$future$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
             className: "text-sm text-muted-foreground",
-            children: "Loading…"
+            children: "Loading..."
         }, void 0, false, {
             fileName: "[project]/apps/web/src/components/user-menu.tsx",
             lineNumber: 13,

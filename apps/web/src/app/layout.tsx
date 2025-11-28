@@ -5,8 +5,8 @@ import './globals.css';
 
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Providers } from './providers';
-import Link from 'next/link';
 import { UserMenu } from '@/components/user-menu';
+import { TopNav } from '@/components/top-nav';
 
 const fontSans = Space_Grotesk({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -22,29 +22,21 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${fontSans.variable} min-h-screen bg-background font-sans text-foreground`}>
+      <body
+        className={`${fontSans.variable} min-h-screen bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900 font-sans text-foreground`}
+      >
         <Providers>
           <div className="flex min-h-screen flex-col">
-            <header className="border-b">
+            <header className="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur">
               <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
-                <div className="flex items-baseline gap-4">
+                <div className="flex items-baseline gap-6">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Phase 1</p>
-                    <p className="text-lg font-semibold">WhatsApp Bot POS SuperApp</p>
+                    <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Phase 1</p>
+                    <p className="text-lg font-semibold text-slate-50">WhatsApp Bot POS SuperApp</p>
                   </div>
-                  <nav className="hidden sm:flex items-center gap-3 text-sm">
-                    <Link href="/" className="text-muted-foreground hover:text-foreground">Home</Link>
-                    <Link href="/dashboard" className="text-muted-foreground hover:text-foreground">Dashboard</Link>
-                    <Link href="/customers" className="text-muted-foreground hover:text-foreground">Customers</Link>
-                    <Link href="/devices" className="text-muted-foreground hover:text-foreground">Devices</Link>
-                    <Link href="/jobs" className="text-muted-foreground hover:text-foreground">Jobs</Link>
-                    <Link href="/campaigns" className="text-muted-foreground hover:text-foreground">Campaigns</Link>
-                    <Link href="/reports" className="text-muted-foreground hover:text-foreground">Reports</Link>
-                    <Link href="/settings" className="text-muted-foreground hover:text-foreground">Settings</Link>
-                    <Link href="/docs/roadmap" className="text-muted-foreground hover:text-foreground">Roadmap</Link>
-                  </nav>
+                  <TopNav />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <ThemeToggle />
                   <UserMenu />
                 </div>

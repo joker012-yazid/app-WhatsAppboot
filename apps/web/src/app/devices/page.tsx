@@ -92,18 +92,21 @@ export default function DevicesPage() {
   return (
     <AuthGuard>
       <section className="space-y-6">
-        <header className="flex items-end justify-between gap-4">
+        <div className="rounded-xl border bg-card/80 px-6 py-5 shadow-sm backdrop-blur flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Devices</h1>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Devices</p>
+            <h1 className="text-2xl md:text-3xl font-semibold text-slate-50">Device Registry</h1>
             <p className="text-sm text-muted-foreground">Filter by customer and add new devices.</p>
           </div>
           <div className="flex items-center gap-2">
             <select
               value={customerId}
               onChange={(e) => setCustomerId(e.target.value)}
-              className="min-w-52 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="min-w-52 rounded-md border border-input bg-background/80 px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/80 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950"
             >
-              <option value="" className="bg-background text-foreground">All customers</option>
+              <option value="" className="bg-background text-foreground">
+                All customers
+              </option>
               {customers.map((c) => (
                 <option key={c.id} value={c.id} className="bg-background text-foreground">
                   {c.name}
@@ -111,153 +114,179 @@ export default function DevicesPage() {
               ))}
             </select>
           </div>
-        </header>
+        </div>
 
-        {!hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN']) ? (
-          <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        {!hasAnyRole(user?.role, ['ADMIN', 'MANAGER', 'TECHNICIAN']) ? (
+          <div className="rounded-md border border-amber-400/60 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
             You have read-only access to devices. Contact an administrator for edit permissions.
           </div>
         ) : null}
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <div className="md:col-span-2 rounded-xl border bg-card p-4">
+          <div className="md:col-span-2 rounded-xl border bg-card/80 shadow-sm backdrop-blur">
             {devicesQuery.isLoading ? (
-              <p className="text-sm text-muted-foreground">Loading…</p>
+              <div className="p-6 text-sm text-muted-foreground">Loading...</div>
             ) : devicesQuery.isError ? (
-              <p className="text-sm text-red-500">Error loading devices</p>
+              <div className="p-6 text-sm text-red-500">Error loading devices</div>
             ) : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-muted-foreground">
-                    <th className="py-2">Customer</th>
-                    <th className="py-2">Type</th>
-                    <th className="py-2">Brand</th>
-                    <th className="py-2">Model</th>
-                    <th className="py-2">Serial</th>
-                    <th className="py-2">Created</th>
-                    <th className="py-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(devicesQuery.data || []).map((d) => (
-                    <tr key={d.id} className="border-t">
-                      <td className="py-2">{d.customer?.name}</td>
-                      <td className="py-2">{d.deviceType}</td>
-                      <td className="py-2">{d.brand || '-'}</td>
-                      <td className="py-2">{d.model || '-'}</td>
-                      <td className="py-2">{d.serialNumber || '-'}</td>
-                      <td className="py-2">{new Date(d.createdAt).toLocaleString()}</td>
-                      <td className="py-2">
-                        <div className="flex gap-2">
-                          <Button asChild size="sm" variant="outline">
-                            <Link href={`/devices/${d.id}`}>View</Link>
-                          </Button>
-                          {hasAnyRole(user?.role, ['ADMIN','MANAGER']) ? (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            disabled={!!d._count && d._count.jobs > 0 || deleteMutation.isPending}
-                            onClick={async () => {
-                              const ok = await confirm({
-                                title: 'Delete device',
-                                description: 'Are you sure you want to delete this device? This action cannot be undone.',
-                                variant: 'destructive',
-                                confirmText: 'Delete',
-                              });
-                              if (ok) deleteMutation.mutate(d.id);
-                            }}
-                          >
-                            {d._count && d._count.jobs > 0 ? 'Has jobs' : 'Delete'}
-                          </Button>
-                          ) : null}
-                        </div>
-                      </td>
+              <div className="overflow-hidden rounded-xl">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-950/60 text-xs uppercase tracking-wide text-slate-400">
+                    <tr>
+                      <th className="px-4 py-3 text-left">Customer</th>
+                      <th className="px-4 py-3 text-left">Type</th>
+                      <th className="px-4 py-3 text-left">Brand</th>
+                      <th className="px-4 py-3 text-left">Model</th>
+                      <th className="px-4 py-3 text-left">Serial</th>
+                      <th className="px-4 py-3 text-left">Created</th>
+                      <th className="px-4 py-3 text-left">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {(devicesQuery.data || []).map((d, idx) => (
+                      <tr
+                        key={d.id}
+                        className={`border-b border-slate-800/70 text-sm transition hover:bg-slate-900/70 ${idx % 2 === 0 ? 'bg-slate-950/40' : ''}`}
+                      >
+                        <td className="px-4 py-2">{d.customer?.name}</td>
+                        <td className="px-4 py-2">{d.deviceType}</td>
+                        <td className="px-4 py-2">{d.brand || '-'}</td>
+                        <td className="px-4 py-2">{d.model || '-'}</td>
+                        <td className="px-4 py-2">{d.serialNumber || '-'}</td>
+                        <td className="px-4 py-2">{new Date(d.createdAt).toLocaleString()}</td>
+                        <td className="px-4 py-2">
+                          <div className="flex flex-wrap gap-2">
+                            <Button asChild size="sm" variant="outline">
+                              <Link href={`/devices/${d.id}`}>View</Link>
+                            </Button>
+                            {hasAnyRole(user?.role, ['ADMIN', 'MANAGER']) ? (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                disabled={(!!d._count && d._count.jobs > 0) || deleteMutation.isPending}
+                                onClick={async () => {
+                                  const ok = await confirm({
+                                    title: 'Delete device',
+                                    description:
+                                      'Are you sure you want to delete this device? This action cannot be undone.',
+                                    variant: 'destructive',
+                                    confirmText: 'Delete',
+                                  });
+                                  if (ok) deleteMutation.mutate(d.id);
+                                }}
+                              >
+                                {d._count && d._count.jobs > 0 ? 'Has jobs' : 'Delete'}
+                              </Button>
+                            ) : null}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
 
-          {hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN']) ? (
-          <div className="rounded-xl border bg-card p-4">
-            <h2 className="mb-3 text-lg font-semibold">New device</h2>
-            <form
-              className="space-y-3"
-              onSubmit={(e) => {
-                e.preventDefault();
-                setError(null);
-                createMutation.mutate();
-              }}
-            >
-              <div className="space-y-1">
-                <label className="text-sm font-medium" htmlFor="customer">
-                  Customer
-                </label>
-                <select
-                  id="customer"
-                  value={customerId}
-                  onChange={(e) => setCustomerId(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-                  required
-                >
-                  <option value="" disabled className="bg-background text-foreground">
-                    Select customer
-                  </option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id} className="bg-background text-foreground">
-                      {c.name}
+          {hasAnyRole(user?.role, ['ADMIN', 'MANAGER', 'TECHNICIAN']) ? (
+            <div className="rounded-xl border bg-card/80 p-5 shadow-sm backdrop-blur">
+              <h2 className="mb-3 text-lg font-semibold text-slate-50">New device</h2>
+              <form
+                className="space-y-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setError(null);
+                  createMutation.mutate();
+                }}
+              >
+                <div className="space-y-1">
+                  <label className="text-sm font-medium" htmlFor="customer">
+                    Customer
+                  </label>
+                  <select
+                    id="customer"
+                    value={customerId}
+                    onChange={(e) => setCustomerId(e.target.value)}
+                    className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/80 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950"
+                    required
+                  >
+                    <option value="" disabled className="bg-background text-foreground">
+                      Select customer
                     </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium" htmlFor="deviceType">
-                  Device type
-                </label>
-                <input
-                  id="deviceType"
-                  value={deviceType}
-                  onChange={(e) => setDeviceType(e.target.value)}
-                  className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
-                  placeholder="Phone / Tablet / PC"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium" htmlFor="brand">
-                    Brand
-                  </label>
-                  <input id="brand" value={brand} onChange={(e) => setBrand(e.target.value)} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+                    {customers.map((c) => (
+                      <option key={c.id} value={c.id} className="bg-background text-foreground">
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-medium" htmlFor="model">
-                    Model
+                  <label className="text-sm font-medium" htmlFor="deviceType">
+                    Device type
                   </label>
-                  <input id="model" value={model} onChange={(e) => setModel(e.target.value)} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+                  <input
+                    id="deviceType"
+                    value={deviceType}
+                    onChange={(e) => setDeviceType(e.target.value)}
+                    className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/80 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950"
+                    placeholder="Phone / Tablet / PC"
+                    required
+                  />
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium" htmlFor="serial">
-                    Serial
-                  </label>
-                  <input id="serial" value={serialNumber} onChange={(e) => setSerialNumber(e.target.value)} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium" htmlFor="brand">
+                      Brand
+                    </label>
+                    <input
+                      id="brand"
+                      value={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/80 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium" htmlFor="model">
+                      Model
+                    </label>
+                    <input
+                      id="model"
+                      value={model}
+                      onChange={(e) => setModel(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/80 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium" htmlFor="notes">
-                    Notes
-                  </label>
-                  <input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium" htmlFor="serial">
+                      Serial
+                    </label>
+                    <input
+                      id="serial"
+                      value={serialNumber}
+                      onChange={(e) => setSerialNumber(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/80 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium" htmlFor="notes">
+                      Notes
+                    </label>
+                    <input
+                      id="notes"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/80 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950"
+                    />
+                  </div>
                 </div>
-              </div>
-              {error ? <p className="text-sm text-red-500">{error}</p> : null}
-              <Button className="w-full" type="submit" disabled={createMutation.isPending || !customerId}>
-                {createMutation.isPending ? 'Creating…' : `Add device${selectedCustomer ? ` for ${selectedCustomer.name}` : ''}`}
-              </Button>
-            </form>
-          </div>
+                {error ? <p className="text-sm text-red-500">{error}</p> : null}
+                <Button className="w-full" type="submit" disabled={createMutation.isPending || !customerId}>
+                  {createMutation.isPending ? 'Creating...' : `Add device${selectedCustomer ? ` for ${selectedCustomer.name}` : ''}`}
+                </Button>
+              </form>
+            </div>
           ) : null}
         </div>
       </section>

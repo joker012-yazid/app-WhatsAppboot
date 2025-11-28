@@ -118,32 +118,36 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
 
   const dialogContent = mounted && dialog ? (
     <div className="fixed inset-0 z-50 flex items-center justify-center" role="presentation">
-      <div className="absolute inset-0 bg-black/40" onClick={() => onClose(false)} />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => onClose(false)} />
       <div
-        className="relative z-10 w-full max-w-sm rounded-md border bg-card p-4 shadow-xl outline-none"
+        className="relative z-10 w-full max-w-sm rounded-xl border border-slate-800 bg-slate-950/90 p-5 shadow-2xl shadow-black/40 outline-none backdrop-blur"
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-title"
         aria-describedby="confirm-desc"
         tabIndex={-1}
       >
-        <h3 id="confirm-title" className="mb-1 text-lg font-semibold">
+        <h3 id="confirm-title" className="mb-1 text-lg font-semibold text-slate-50">
           {dialog.title}
         </h3>
-        <p id="confirm-desc" className="mb-4 text-sm text-muted-foreground">
+        <p id="confirm-desc" className="mb-4 text-sm text-slate-300">
           {dialog.description}
         </p>
         <div className="flex justify-end gap-2">
           <button
             ref={cancelBtnRef}
-            className="rounded-md border px-3 py-1.5 text-sm"
+            className="rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-200 transition hover:border-slate-500 hover:bg-slate-900"
             onClick={() => onClose(false)}
           >
             {dialog.cancelText}
           </button>
           <button
             ref={confirmBtnRef}
-            className={`rounded-md px-3 py-1.5 text-sm text-white ${dialog.variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-primary/90'}`}
+            className={`rounded-md px-3 py-1.5 text-sm text-white transition ${
+              dialog.variant === 'destructive'
+                ? 'bg-red-600 hover:bg-red-700'
+                : 'bg-sky-600 hover:bg-sky-500'
+            }`}
             onClick={() => onClose(true)}
           >
             {dialog.confirmText}

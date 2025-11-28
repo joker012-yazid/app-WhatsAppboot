@@ -10,7 +10,7 @@ export function UserMenu() {
   const toast = useToast();
 
   if (loading) {
-    return <span className="text-sm text-muted-foreground">Loading…</span>;
+    return <span className="text-sm text-muted-foreground">Loading...</span>;
   }
 
   if (!user) {
