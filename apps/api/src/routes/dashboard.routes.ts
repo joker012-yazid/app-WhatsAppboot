@@ -33,6 +33,7 @@ router.get('/', requireAuth, async (_req, res) => {
       prisma.job.count({ where: { status: 'PENDING' } }),
       prisma.job.count({ where: { status: { in: ['APPROVED', 'IN_PROGRESS'] } } }),
       prisma.customer.count({ where: { createdAt: { gte: todayStart } } }),
+      // Count of high-priority jobs needing immediate attention (not an inventory/stock metric)
       prisma.job.count({ where: { priority: 'URGENT', status: { in: ['PENDING', 'APPROVED', 'IN_PROGRESS'] } } }),
       prisma.campaign.count({ where: { status: { in: ['SCHEDULED', 'RUNNING'] } } }),
       prisma.job.findMany({
@@ -142,7 +143,8 @@ router.get('/', requireAuth, async (_req, res) => {
         pendingJobs,
         activeJobs: inProgressJobs,
         newCustomers: newCustomersToday,
-        lowStockItems: urgentJobs,
+        // Urgent job tickets card (clarifies this is not an inventory count)
+        urgentJobs,
         campaignsRunning,
       },
       salesTrend,
