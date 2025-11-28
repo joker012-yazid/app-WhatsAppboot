@@ -235,10 +235,11 @@ function JobsPage() {
                                                 ...f,
                                                 status: e.target.value
                                             })),
-                                    className: "rounded-md border border-input bg-transparent px-3 py-2 text-sm",
+                                    className: "rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground",
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
                                             value: "",
+                                            className: "bg-background text-foreground",
                                             children: "All status"
                                         }, void 0, false, {
                                             fileName: "[project]/apps/web/src/app/jobs/page.tsx",
@@ -254,6 +255,7 @@ function JobsPage() {
                                             'COMPLETED'
                                         ].map((s)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
                                                 value: s,
+                                                className: "bg-background text-foreground",
                                                 children: s
                                             }, s, false, {
                                                 fileName: "[project]/apps/web/src/app/jobs/page.tsx",
@@ -624,12 +626,13 @@ function JobsPage() {
                                                     id: "customer",
                                                     value: customerId,
                                                     onChange: (e)=>setCustomerId(e.target.value),
-                                                    className: "w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm",
+                                                    className: "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground",
                                                     required: true,
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
                                                             value: "",
                                                             disabled: true,
+                                                            className: "bg-background text-foreground",
                                                             children: "Select customer"
                                                         }, void 0, false, {
                                                             fileName: "[project]/apps/web/src/app/jobs/page.tsx",
@@ -638,6 +641,7 @@ function JobsPage() {
                                                         }, this),
                                                         customers.map((c)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
                                                                 value: c.id,
+                                                                className: "bg-background text-foreground",
                                                                 children: c.name
                                                             }, c.id, false, {
                                                                 fileName: "[project]/apps/web/src/app/jobs/page.tsx",
@@ -672,13 +676,14 @@ function JobsPage() {
                                                     id: "device",
                                                     value: deviceId,
                                                     onChange: (e)=>setDeviceId(e.target.value),
-                                                    className: "w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm",
+                                                    className: "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground",
                                                     required: true,
                                                     disabled: !customerId || devicesQuery.isLoading,
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
                                                             value: "",
                                                             disabled: true,
+                                                            className: "bg-background text-foreground",
                                                             children: customerId ? 'Select device' : 'Select customer first'
                                                         }, void 0, false, {
                                                             fileName: "[project]/apps/web/src/app/jobs/page.tsx",
@@ -687,6 +692,7 @@ function JobsPage() {
                                                         }, this),
                                                         devices.map((d)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
                                                                 value: d.id,
+                                                                className: "bg-background text-foreground",
                                                                 children: [
                                                                     d.deviceType,
                                                                     d.brand,
@@ -785,7 +791,7 @@ function JobsPage() {
                                                             id: "priority",
                                                             value: priority,
                                                             onChange: (e)=>setPriority(e.target.value),
-                                                            className: "w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm",
+                                                            className: "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground",
                                                             children: [
                                                                 'LOW',
                                                                 'NORMAL',
@@ -793,6 +799,7 @@ function JobsPage() {
                                                                 'URGENT'
                                                             ].map((p)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
                                                                     value: p,
+                                                                    className: "bg-background text-foreground",
                                                                     children: p
                                                                 }, p, false, {
                                                                     fileName: "[project]/apps/web/src/app/jobs/page.tsx",

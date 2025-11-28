@@ -101,11 +101,11 @@ export default function DevicesPage() {
             <select
               value={customerId}
               onChange={(e) => setCustomerId(e.target.value)}
-              className="min-w-52 rounded-md border border-input bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="min-w-52 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <option value="">All customers</option>
+              <option value="" className="bg-background text-foreground">All customers</option>
               {customers.map((c) => (
-                <option key={c.id} value={c.id}>
+                <option key={c.id} value={c.id} className="bg-background text-foreground">
                   {c.name}
                 </option>
               ))}
@@ -198,14 +198,14 @@ export default function DevicesPage() {
                   id="customer"
                   value={customerId}
                   onChange={(e) => setCustomerId(e.target.value)}
-                  className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
                   required
                 >
-                  <option value="" disabled>
+                  <option value="" disabled className="bg-background text-foreground">
                     Select customer
                   </option>
                   {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
+                    <option key={c.id} value={c.id} className="bg-background text-foreground">
                       {c.name}
                     </option>
                   ))}

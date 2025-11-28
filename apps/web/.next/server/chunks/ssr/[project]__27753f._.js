@@ -200,10 +200,11 @@ function DevicesPage() {
                             children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$future$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("select", {
                                 value: customerId,
                                 onChange: (e)=>setCustomerId(e.target.value),
-                                className: "min-w-52 rounded-md border border-input bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                                className: "min-w-52 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$future$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
                                         value: "",
+                                        className: "bg-background text-foreground",
                                         children: "All customers"
                                     }, void 0, false, {
                                         fileName: "[project]/apps/web/src/app/devices/page.tsx",
@@ -212,6 +213,7 @@ function DevicesPage() {
                                     }, this),
                                     customers.map((c)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$future$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
                                             value: c.id,
+                                            className: "bg-background text-foreground",
                                             children: c.name
                                         }, c.id, false, {
                                             fileName: "[project]/apps/web/src/app/devices/page.tsx",
@@ -508,12 +510,13 @@ function DevicesPage() {
                                                     id: "customer",
                                                     value: customerId,
                                                     onChange: (e)=>setCustomerId(e.target.value),
-                                                    className: "w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm",
+                                                    className: "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground",
                                                     required: true,
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$future$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
                                                             value: "",
                                                             disabled: true,
+                                                            className: "bg-background text-foreground",
                                                             children: "Select customer"
                                                         }, void 0, false, {
                                                             fileName: "[project]/apps/web/src/app/devices/page.tsx",
@@ -522,6 +525,7 @@ function DevicesPage() {
                                                         }, this),
                                                         customers.map((c)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$future$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
                                                                 value: c.id,
+                                                                className: "bg-background text-foreground",
                                                                 children: c.name
                                                             }, c.id, false, {
                                                                 fileName: "[project]/apps/web/src/app/devices/page.tsx",

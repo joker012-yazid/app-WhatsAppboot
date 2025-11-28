@@ -440,8 +440,7 @@ export default function ReportsPage() {
                 <p className="text-sm font-semibold">Inventory report pending</p>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
-                {data.inventory.message} Track urgent repair jobs as an early warning until the dedicated inventory tables are
-                delivered in Phase 4.
+                {data.inventory.message}
               </p>
               <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
                 Current urgent jobs in range: {data.inventory.proxyUrgentJobs}

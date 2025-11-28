@@ -117,11 +117,11 @@ export default function JobsPage() {
             <select
               value={filters.status}
               onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
-              className="rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
             >
-              <option value="">All status</option>
+              <option value="" className="bg-background text-foreground">All status</option>
               {['PENDING', 'QUOTED', 'APPROVED', 'REJECTED', 'IN_PROGRESS', 'COMPLETED'].map((s) => (
-                <option key={s} value={s}>
+                <option key={s} value={s} className="bg-background text-foreground">
                   {s}
                 </option>
               ))}
@@ -233,14 +233,14 @@ export default function JobsPage() {
                   id="customer"
                   value={customerId}
                   onChange={(e) => setCustomerId(e.target.value)}
-                  className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
                   required
                 >
-                  <option value="" disabled>
+                  <option value="" disabled className="bg-background text-foreground">
                     Select customer
                   </option>
                   {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
+                    <option key={c.id} value={c.id} className="bg-background text-foreground">
                       {c.name}
                     </option>
                   ))}
@@ -254,15 +254,15 @@ export default function JobsPage() {
                   id="device"
                   value={deviceId}
                   onChange={(e) => setDeviceId(e.target.value)}
-                  className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
                   required
                   disabled={!customerId || devicesQuery.isLoading}
                 >
-                  <option value="" disabled>
+                  <option value="" disabled className="bg-background text-foreground">
                     {customerId ? 'Select device' : 'Select customer first'}
                   </option>
                   {devices.map((d) => (
-                    <option key={d.id} value={d.id}>
+                    <option key={d.id} value={d.id} className="bg-background text-foreground">
                       {[d.deviceType, d.brand, d.model].filter(Boolean).join(' ')}
                     </option>
                   ))}
@@ -300,10 +300,10 @@ export default function JobsPage() {
                     id="priority"
                     value={priority}
                     onChange={(e) => setPriority(e.target.value as any)}
-                    className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
                   >
                     {['LOW', 'NORMAL', 'HIGH', 'URGENT'].map((p) => (
-                      <option key={p} value={p}>
+                      <option key={p} value={p} className="bg-background text-foreground">
                         {p}
                       </option>
                     ))}

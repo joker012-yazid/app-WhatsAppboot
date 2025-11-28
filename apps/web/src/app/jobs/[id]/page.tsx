@@ -339,11 +339,11 @@ export default function JobDetailPage() {
                     id="status"
                     value={status}
                     onChange={(e) => setStatus(e.target.value as any)}
-                    className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
                     disabled={!hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN'])}
                   >
                     {statusOptions.map((s) => (
-                      <option key={s} value={s}>
+                      <option key={s} value={s} className="bg-background text-foreground">
                         {s}
                       </option>
                     ))}
@@ -357,11 +357,11 @@ export default function JobDetailPage() {
                     id="priority"
                     value={priority}
                     onChange={(e) => setPriority(e.target.value as any)}
-                    className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
                     disabled={!hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN'])}
                   >
                     {priorityOptions.map((p) => (
-                      <option key={p} value={p}>
+                      <option key={p} value={p} className="bg-background text-foreground">
                         {p}
                       </option>
                     ))}

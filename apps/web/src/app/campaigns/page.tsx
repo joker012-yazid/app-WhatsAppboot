@@ -155,9 +155,9 @@ export default function CampaignsPage() {
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-medium">Kind</span>
-                <select className="w-full rounded-md border bg-transparent px-3 py-2" value={kind} onChange={(e) => setKind(e.target.value as any)}>
+                <select className="w-full rounded-md border bg-background px-3 py-2 text-foreground" value={kind} onChange={(e) => setKind(e.target.value as any)}>
                   {campaignKinds.map((k) => (
-                    <option key={k} value={k}>
+                    <option key={k} value={k} className="bg-background text-foreground">
                       {k.replace('_', ' ')}
                     </option>
                   ))}

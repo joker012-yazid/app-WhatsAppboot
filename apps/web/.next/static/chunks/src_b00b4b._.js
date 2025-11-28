@@ -317,11 +317,12 @@ function CampaignsPage() {
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("select", {
-                                                    className: "w-full rounded-md border bg-transparent px-3 py-2",
+                                                    className: "w-full rounded-md border bg-background px-3 py-2 text-foreground",
                                                     value: kind,
                                                     onChange: (e)=>setKind(e.target.value),
                                                     children: campaignKinds.map((k)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
                                                             value: k,
+                                                            className: "bg-background text-foreground",
                                                             children: k.replace('_', ' ')
                                                         }, k, false, {
                                                             fileName: "[project]/apps/web/src/app/campaigns/page.tsx",

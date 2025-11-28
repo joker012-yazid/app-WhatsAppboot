@@ -1540,11 +1540,8 @@ function ReportsPage() {
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$future$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                     className: "mt-2 text-sm text-muted-foreground",
-                                    children: [
-                                        data.inventory.message,
-                                        " Track urgent repair jobs as an early warning until the dedicated inventory tables are delivered in Phase 4."
-                                    ]
-                                }, void 0, true, {
+                                    children: data.inventory.message
+                                }, void 0, false, {
                                     fileName: "[project]/apps/web/src/app/reports/page.tsx",
                                     lineNumber: 442,
                                     columnNumber: 15
@@ -1557,7 +1554,7 @@ function ReportsPage() {
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/apps/web/src/app/reports/page.tsx",
-                                    lineNumber: 446,
+                                    lineNumber: 445,
                                     columnNumber: 15
                                 }, this)
                             ]
@@ -1576,7 +1573,7 @@ function ReportsPage() {
                     children: "Unable to load reports for this range."
                 }, void 0, false, {
                     fileName: "[project]/apps/web/src/app/reports/page.tsx",
-                    lineNumber: 452,
+                    lineNumber: 451,
                     columnNumber: 11
                 }, this)
             ]
