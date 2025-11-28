@@ -8,6 +8,7 @@ import {
   CalendarRange,
   ClipboardList,
   Clock3,
+  Inbox,
   Loader2,
   Mail,
   PieChart,
@@ -19,6 +20,7 @@ import AuthGuard from '@/components/auth-guard';
 import { Button } from '@/components/ui/button';
 import { apiGet } from '@/lib/api';
 import { useToast } from '@/components/toast-provider';
+import { SectionHeader } from '@/components/section-header';
 
 const currencyFormatter = new Intl.NumberFormat('en-MY', {
   style: 'currency',
@@ -129,23 +131,24 @@ export default function ReportsPage() {
   return (
     <AuthGuard>
       <div className="space-y-8">
-        <header className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Phase 6</p>
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold">Reports & Analytics</h1>
-              <p className="text-sm text-muted-foreground">
-                View revenue, operations, customer, and campaign performance across the selected range.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card px-4 py-3 text-sm">
-              <CalendarRange className="h-4 w-4 text-primary" />
-              <div>
-                <p className="font-medium">{appliedRange.from} -> {appliedRange.to}</p>
-                <p className="text-xs text-muted-foreground">{data?.range.days ?? 0} day window</p>
+        <section className="space-y-4 rounded-xl border bg-card/80 px-6 py-5 shadow-sm backdrop-blur">
+          <SectionHeader
+            icon={<BarChart3 className="h-4 w-4" />}
+            overline="Reports"
+            title="Reports & Analytics"
+            description="View revenue, operations, customer, and campaign performance across the selected range."
+            actions={
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card px-4 py-3 text-sm">
+                <CalendarRange className="h-4 w-4 text-primary" />
+                <div>
+                  <p className="font-medium">
+                    {appliedRange.from} -> {appliedRange.to}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{data?.range.days ?? 0} day window</p>
+                </div>
               </div>
-            </div>
-          </div>
+            }
+          />
           <form
             className="flex flex-wrap items-end gap-3 rounded-xl border bg-card px-4 py-3"
             onSubmit={(event) => {
@@ -190,11 +193,11 @@ export default function ReportsPage() {
               Reset
             </Button>
           </form>
-        </header>
+        </section>
 
         {loading ? (
           <div className="flex items-center justify-center gap-2 rounded-xl border bg-card px-4 py-6 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Loading summary…
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading summary...
           </div>
         ) : data ? (
           <div className="space-y-8">
@@ -265,8 +268,14 @@ export default function ReportsPage() {
                     <tbody>
                       {data.sales.topCustomers.length === 0 ? (
                         <tr>
-                          <td className="py-3 text-sm text-muted-foreground" colSpan={3}>
-                            No completed jobs in this range.
+                          <td className="py-4 text-sm text-muted-foreground" colSpan={3}>
+                            <div className="flex flex-col items-center justify-center gap-2 text-center">
+                              <div className="mb-1 flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-slate-800 bg-slate-950/60">
+                                <Inbox className="h-5 w-5 text-slate-500" />
+                              </div>
+                              <p className="text-sm font-medium text-slate-100">No completed jobs in this range.</p>
+                              <p className="text-xs text-slate-400">Complete jobs to see your top customers here.</p>
+                            </div>
                           </td>
                         </tr>
                       ) : (
@@ -419,7 +428,13 @@ export default function ReportsPage() {
                 </div>
                 <div className="mt-3 space-y-3 text-sm">
                   {data.messaging.recentCampaigns.length === 0 ? (
-                    <p className="text-muted-foreground">No campaigns in this range.</p>
+                    <div className="flex flex-col items-center justify-center gap-2 py-4 text-center text-muted-foreground">
+                      <div className="mb-1 flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-slate-800 bg-slate-950/60">
+                        <Inbox className="h-5 w-5 text-slate-500" />
+                      </div>
+                      <p className="text-sm font-medium text-slate-100">No campaigns in this range.</p>
+                      <p className="text-xs text-slate-400">Launch a campaign to see delivery stats here.</p>
+                    </div>
                   ) : (
                     data.messaging.recentCampaigns.slice(0, 5).map((campaign) => (
                       <div key={campaign.id} className="rounded-lg border p-3">
@@ -456,6 +471,3 @@ export default function ReportsPage() {
     </AuthGuard>
   );
 }
-
-
-

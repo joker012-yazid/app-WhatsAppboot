@@ -1,17 +1,18 @@
 import Link from 'next/link';
+import { Route } from 'lucide-react';
+import { SectionHeader } from '@/components/section-header';
 
 export default function RoadmapDocPage() {
   return (
     <article className="relative overflow-hidden rounded-xl border bg-card/80 px-6 py-8 shadow-sm backdrop-blur">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-500/60 to-transparent" />
-      <header className="mb-6 space-y-1">
-        <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-400">Docs</p>
-        <h1 className="text-2xl font-bold text-slate-50">Development Roadmap</h1>
-        <p className="text-sm text-muted-foreground">
-          The canonical roadmap lives in <code>development_roadmap.md</code>. This placeholder simply points you back to
-          the source of truth.
-        </p>
-      </header>
+      <SectionHeader
+        icon={<Route className="h-4 w-4" />}
+        overline="Docs"
+        title="Development Roadmap"
+        description="The canonical roadmap lives in development_roadmap.md. This placeholder simply points you back to the source of truth."
+        className="mb-4"
+      />
       <div className="relative pl-8">
         <span className="absolute left-3 top-0 h-full w-px bg-slate-800" aria-hidden />
         <div className="space-y-6">

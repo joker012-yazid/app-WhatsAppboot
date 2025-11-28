@@ -33,6 +33,8 @@ const envSchema = z.object({
     .default('7d'),
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_BASE_URL: z.string().optional(),
+  WHATSAPP_SESSION_DIR: z.string().optional(),
+  WHATSAPP_LOG_LEVEL: z.string().optional(),
 });
 
 const env = envSchema.parse(process.env);

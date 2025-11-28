@@ -51,6 +51,16 @@ export async function apiFetch<T = unknown>(path: string, opts: FetchOptions = {
     if (!res.ok) {
       const msg = data?.message || `HTTP ${res.status}: ${res.statusText}`;
       console.error(`[API] Request failed: ${method} ${url} - ${msg}`);
+      
+      // Check for connection/server errors
+      if (res.status === 502 || res.status === 503 || res.status === 504) {
+        const connectionError = 'Backend API server is not running. Please start the API server on port 4000.';
+        try {
+          (globalThis as any).__toast?.error?.(connectionError);
+        } catch {}
+        throw new Error(connectionError);
+      }
+      
       try {
         (globalThis as any).__toast?.error?.(msg);
       } catch {}
@@ -59,6 +69,19 @@ export async function apiFetch<T = unknown>(path: string, opts: FetchOptions = {
     
     return data as T;
   } catch (error: any) {
+    // Check for network/connection errors
+    if (error?.message?.includes('Failed to fetch') || 
+        error?.message?.includes('NetworkError') ||
+        error?.message?.includes('ECONNREFUSED') ||
+        error?.name === 'TypeError') {
+      const connectionError = 'Backend API server is not running. Please start the API server on port 4000.';
+      console.error(`[API] Connection error: ${method} ${url}`, error);
+      try {
+        (globalThis as any).__toast?.error?.(connectionError);
+      } catch {}
+      throw new Error(connectionError);
+    }
+    
     // Re-throw if it's already our Error
     if (error instanceof Error && error.message) {
       throw error;

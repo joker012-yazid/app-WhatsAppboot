@@ -1,204 +1,190 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  getWhatsappChats,
+  getWhatsappMessages,
+  getWhatsappStatus,
+  initWhatsappSession,
+  resetWhatsappSession,
+  sendWhatsappMessage,
+  type WhatsappChatSummary,
+  type WhatsappConnectionStatus,
+  type WhatsappMessage,
+} from '@/lib/whatsapp';
 
-export type FilterType = 'all' | 'unread' | 'favorites' | 'groups';
+export type FilterType = 'all' | 'unread' | 'groups';
 
-type ChatSummary = {
-  id: string;
-  name: string;
-  lastMessage: string;
-  lastMessageAt: number;
-  unreadCount: number;
-  isGroup?: boolean;
-  isFavorite?: boolean;
+type HookState = {
+  status: WhatsappConnectionStatus | null;
+  chats: WhatsappChatSummary[];
+  selectedChatId: string | null;
+  messages: WhatsappMessage[];
+  filter: FilterType;
+  loadingStatus: boolean;
+  loadingChats: boolean;
+  loadingMessages: boolean;
+  sending: boolean;
 };
 
-type MessageItem = {
-  id: string;
-  chatId: string;
-  fromMe: boolean;
-  text: string;
-  timestamp: number;
+const initialState: HookState = {
+  status: null,
+  chats: [],
+  selectedChatId: null,
+  messages: [],
+  filter: 'all',
+  loadingStatus: false,
+  loadingChats: false,
+  loadingMessages: false,
+  sending: false,
 };
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000';
-
-const seedTimestamp = (minutesAgo: number) => Date.now() - minutesAgo * 60 * 1000;
-
-const mockMessages: MessageItem[] = [
-  {
-    id: 'm-1',
-    chatId: 'chat-1',
-    fromMe: false,
-    text: 'Hey team, the POS sync finished for the morning batch.',
-    timestamp: seedTimestamp(65),
-  },
-  {
-    id: 'm-2',
-    chatId: 'chat-1',
-    fromMe: true,
-    text: 'Nice, did any terminals report disconnects?',
-    timestamp: seedTimestamp(62),
-  },
-  {
-    id: 'm-3',
-    chatId: 'chat-1',
-    fromMe: false,
-    text: 'Only kiosk-07 went offline once. Auto-recovered.',
-    timestamp: seedTimestamp(59),
-  },
-  {
-    id: 'm-4',
-    chatId: 'chat-2',
-    fromMe: false,
-    text: 'Can we schedule a WhatsApp blast for VIP members this weekend?',
-    timestamp: seedTimestamp(35),
-  },
-  {
-    id: 'm-5',
-    chatId: 'chat-2',
-    fromMe: true,
-    text: 'Yes, drafting the template now. Will share for approval.',
-    timestamp: seedTimestamp(33),
-  },
-  {
-    id: 'm-6',
-    chatId: 'chat-3',
-    fromMe: false,
-    text: 'Reminder: Outlet 12 requested a new QR menu link.',
-    timestamp: seedTimestamp(10),
-  },
-  {
-    id: 'm-7',
-    chatId: 'chat-4',
-    fromMe: true,
-    text: 'Welcome to the pilot! Reply here for support anytime.',
-    timestamp: seedTimestamp(5),
-  },
-  {
-    id: 'm-8',
-    chatId: 'chat-4',
-    fromMe: false,
-    text: 'Got it, thanks for the quick onboarding.',
-    timestamp: seedTimestamp(3),
-  },
-];
-
-const mockChats: ChatSummary[] = [
-  {
-    id: 'chat-1',
-    name: 'Ops Bridge',
-    lastMessage: 'Only kiosk-07 went offline once. Auto-recovered.',
-    lastMessageAt: seedTimestamp(59),
-    unreadCount: 2,
-    isGroup: true,
-    isFavorite: true,
-  },
-  {
-    id: 'chat-2',
-    name: 'Marketing Squad',
-    lastMessage: 'Yes, drafting the template now. Will share for approval.',
-    lastMessageAt: seedTimestamp(33),
-    unreadCount: 0,
-    isGroup: true,
-    isFavorite: false,
-  },
-  {
-    id: 'chat-3',
-    name: 'Outlet 12 Manager',
-    lastMessage: 'Reminder: Outlet 12 requested a new QR menu link.',
-    lastMessageAt: seedTimestamp(10),
-    unreadCount: 1,
-    isGroup: false,
-    isFavorite: true,
-  },
-  {
-    id: 'chat-4',
-    name: 'Pilot Client - LaptopPro',
-    lastMessage: 'Got it, thanks for the quick onboarding.',
-    lastMessageAt: seedTimestamp(3),
-    unreadCount: 0,
-    isGroup: false,
-    isFavorite: false,
-  },
-];
-
-async function fetchChatsFromApi() {
-  // TODO: integrate with real API, e.g. `${API_BASE}/whatsapp/chats`
-  await Promise.resolve(API_BASE);
-}
 
 export function useWhatsappChat() {
-  const [chats, setChats] = useState<ChatSummary[]>(mockChats);
-  const [messages, setMessages] = useState<MessageItem[]>(mockMessages);
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
-  const [filter, setFilter] = useState<FilterType>('all');
+  const [state, setState] = useState<HookState>(initialState);
+  const pollingStatusRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingChatsRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    // Placeholder for future API hydration
-    fetchChatsFromApi().catch(() => {
-      // fall back to mock data silently
-    });
+  const refreshStatus = useCallback(async () => {
+    setState((s) => ({ ...s, loadingStatus: true }));
+    try {
+      const status = await getWhatsappStatus();
+      console.debug('[WhatsApp][status]', status);
+      setState((s) => ({ ...s, status, loadingStatus: false }));
+    } catch (error: any) {
+      console.error('[WhatsApp][status] error', error);
+      setState((s) => ({ ...s, loadingStatus: false, status: { status: 'error', qrImage: null, hasQR: false, lastError: error?.message } }));
+    }
   }, []);
 
-  const selectChat = (chatId: string) => {
-    setSelectedChatId(chatId);
-    setChats((prev) =>
-      prev.map((chat) => (chat.id === chatId ? { ...chat, unreadCount: 0 } : chat)),
-    );
-  };
+  const startSession = useCallback(
+    async (forceNew?: boolean) => {
+      setState((s) => ({ ...s, loadingStatus: true }));
+      try {
+        const res = await initWhatsappSession(forceNew);
+        console.debug('[WhatsApp][init]', res);
+      } catch (error) {
+        console.error('[WhatsApp][init] error', error);
+      } finally {
+        await refreshStatus();
+      }
+    },
+    [refreshStatus],
+  );
 
-  const sendMessage = (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed || !selectedChatId) return false;
+  const resetSession = useCallback(async () => {
+    setState((s) => ({ ...s, loadingStatus: true, chats: [], messages: [], selectedChatId: null }));
+    try {
+      const res = await resetWhatsappSession();
+      console.debug('[WhatsApp][reset]', res);
+    } catch (error) {
+      console.error('[WhatsApp][reset] error', error);
+    } finally {
+      await refreshStatus();
+    }
+  }, [refreshStatus]);
 
-    const timestamp = Date.now();
-    const newMessage: MessageItem = {
-      id: `local-${timestamp}`,
-      chatId: selectedChatId,
-      fromMe: true,
-      text: trimmed,
-      timestamp,
+  const loadChats = useCallback(async () => {
+    setState((s) => ({ ...s, loadingChats: true }));
+    try {
+      const { chats } = await getWhatsappChats();
+      console.debug('[WhatsApp][chats]', chats);
+      setState((s) => ({ ...s, chats, loadingChats: false }));
+    } catch (error: any) {
+      setState((s) => ({ ...s, loadingChats: false }));
+      throw error;
+    }
+  }, []);
+
+  const loadMessages = useCallback(async (chatId: string) => {
+    setState((s) => ({ ...s, loadingMessages: true }));
+    try {
+      const { messages } = await getWhatsappMessages(chatId);
+      console.debug('[WhatsApp][messages]', chatId, messages.length);
+      setState((s) => ({ ...s, messages, loadingMessages: false }));
+    } catch (error: any) {
+      setState((s) => ({ ...s, loadingMessages: false }));
+      throw error;
+    }
+  }, []);
+
+  const selectChat = useCallback(
+    (chatId: string) => {
+      setState((s) => ({ ...s, selectedChatId: chatId }));
+      loadMessages(chatId).catch(() => {});
+    },
+    [loadMessages],
+  );
+
+  const sendMessage = useCallback(
+    async (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed || !state.selectedChatId) return false;
+      setState((s) => ({ ...s, sending: true }));
+      try {
+        await sendWhatsappMessage(state.selectedChatId, trimmed);
+        await loadMessages(state.selectedChatId);
+        await loadChats();
+        return true;
+      } finally {
+        setState((s) => ({ ...s, sending: false }));
+      }
+    },
+    [loadChats, loadMessages, state.selectedChatId],
+  );
+
+  useEffect(() => {
+    refreshStatus();
+    return () => {
+      if (pollingStatusRef.current) clearInterval(pollingStatusRef.current);
+      if (pollingChatsRef.current) clearInterval(pollingChatsRef.current);
     };
+  }, [refreshStatus]);
 
-    setMessages((prev) => [...prev, newMessage]);
-    setChats((prev) =>
-      prev.map((chat) =>
-        chat.id === selectedChatId
-          ? {
-              ...chat,
-              lastMessage: trimmed,
-              lastMessageAt: timestamp,
-              unreadCount: chat.unreadCount,
-            }
-          : chat,
-      ),
-    );
+  useEffect(() => {
+    if (pollingStatusRef.current) clearInterval(pollingStatusRef.current);
+    pollingStatusRef.current = setInterval(() => {
+      setState((s) => s); // keep state reference
+      refreshStatus();
+    }, 4000);
+    return () => {
+      if (pollingStatusRef.current) clearInterval(pollingStatusRef.current);
+    };
+  }, [refreshStatus]);
 
-    return true;
-  };
+  useEffect(() => {
+    if (state.status?.status !== 'connected') {
+      if (pollingChatsRef.current) clearInterval(pollingChatsRef.current);
+      return;
+    }
+    loadChats();
+    if (pollingChatsRef.current) clearInterval(pollingChatsRef.current);
+    pollingChatsRef.current = setInterval(() => {
+      loadChats();
+    }, 12000);
+    return () => {
+      if (pollingChatsRef.current) clearInterval(pollingChatsRef.current);
+    };
+  }, [loadChats, state.status?.status]);
 
-  const selectedChat = chats.find((chat) => chat.id === selectedChatId) ?? null;
-  const visibleChats = chats.filter((chat) => {
-    if (filter === 'unread') return chat.unreadCount > 0;
-    if (filter === 'favorites') return Boolean(chat.isFavorite);
-    if (filter === 'groups') return Boolean(chat.isGroup);
-    return true;
-  });
-
-  const selectedMessages = selectedChatId
-    ? messages.filter((msg) => msg.chatId === selectedChatId)
-    : [];
+  const filteredChats = useMemo(() => {
+    return state.chats.filter((c) => {
+      if (state.filter === 'unread') return c.unreadCount > 0;
+      if (state.filter === 'groups') return c.isGroup;
+      return true;
+    });
+  }, [state.chats, state.filter]);
 
   return {
-    chats: visibleChats,
-    filter,
-    messages: selectedMessages,
-    selectedChat,
-    selectedChatId,
+    ...state,
+    chats: filteredChats,
+    allChats: state.chats,
+    selectedChat: state.chats.find((c) => c.id === state.selectedChatId) || null,
+    setFilter: (filter: FilterType) => setState((s) => ({ ...s, filter })),
+    refreshStatus,
+    startSession,
+    resetSession,
+    loadChats,
     selectChat,
     sendMessage,
-    setFilter,
   };
 }

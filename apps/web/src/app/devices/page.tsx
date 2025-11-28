@@ -10,6 +10,8 @@ import { useConfirm } from '@/components/confirm-provider';
 import { useAuth } from '@/lib/auth';
 import { hasAnyRole } from '@/lib/roles';
 import { Button } from '@/components/ui/button';
+import { SectionHeader } from '@/components/section-header';
+import { Inbox, MonitorSmartphone } from 'lucide-react';
 
 type Customer = { id: string; name: string };
 type Device = {
@@ -92,28 +94,29 @@ export default function DevicesPage() {
   return (
     <AuthGuard>
       <section className="space-y-6">
-        <div className="rounded-xl border bg-card/80 px-6 py-5 shadow-sm backdrop-blur flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Devices</p>
-            <h1 className="text-2xl md:text-3xl font-semibold text-slate-50">Device Registry</h1>
-            <p className="text-sm text-muted-foreground">Filter by customer and add new devices.</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <select
-              value={customerId}
-              onChange={(e) => setCustomerId(e.target.value)}
-              className="min-w-52 rounded-md border border-input bg-background/80 px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/80 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950"
-            >
-              <option value="" className="bg-background text-foreground">
-                All customers
-              </option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id} className="bg-background text-foreground">
-                  {c.name}
+        <div className="rounded-xl border bg-card/80 px-6 py-5 shadow-sm backdrop-blur">
+          <SectionHeader
+            icon={<MonitorSmartphone className="h-4 w-4" />}
+            overline="Devices"
+            title="Registered Devices"
+            description="Filter by customer and add new devices."
+            actions={
+              <select
+                value={customerId}
+                onChange={(e) => setCustomerId(e.target.value)}
+                className="min-w-52 rounded-md border border-input bg-background/80 px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/80 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950"
+              >
+                <option value="" className="bg-background text-foreground">
+                  All customers
                 </option>
-              ))}
-            </select>
-          </div>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id} className="bg-background text-foreground">
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            }
+          />
         </div>
 
         {!hasAnyRole(user?.role, ['ADMIN', 'MANAGER', 'TECHNICIAN']) ? (
@@ -128,6 +131,19 @@ export default function DevicesPage() {
               <div className="p-6 text-sm text-muted-foreground">Loading...</div>
             ) : devicesQuery.isError ? (
               <div className="p-6 text-sm text-red-500">Error loading devices</div>
+            ) : (devicesQuery.data?.length ?? 0) === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-10 text-center text-muted-foreground">
+                <div className="mb-2 flex h-16 w-16 items-center justify-center rounded-full border border-dashed border-slate-800 bg-slate-950/60">
+                  <Inbox className="h-7 w-7 text-slate-500" />
+                </div>
+                <p className="text-sm font-medium text-slate-100">No devices yet</p>
+                <p className="text-xs text-slate-400">Add devices to start tracking repairs and links to customers.</p>
+                {hasAnyRole(user?.role, ['ADMIN', 'MANAGER', 'TECHNICIAN']) ? (
+                  <Button size="sm" className="mt-2" asChild>
+                    <Link href="/devices">Add your first device</Link>
+                  </Button>
+                ) : null}
+              </div>
             ) : (
               <div className="overflow-hidden rounded-xl">
                 <table className="w-full text-sm">

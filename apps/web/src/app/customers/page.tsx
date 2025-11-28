@@ -9,6 +9,9 @@ import { useConfirm } from '@/components/confirm-provider';
 import { useAuth } from '@/lib/auth';
 import { hasAnyRole } from '@/lib/roles';
 import { Button } from '@/components/ui/button';
+import { SectionHeader } from '@/components/section-header';
+import { Inbox, Users } from 'lucide-react';
+import Link from 'next/link';
 
 type Customer = {
   id: string;
@@ -72,20 +75,21 @@ export default function CustomersPage() {
   return (
     <AuthGuard>
       <section className="space-y-6">
-        <div className="rounded-xl border bg-card/80 px-6 py-5 shadow-sm backdrop-blur flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Customers</p>
-            <h1 className="text-2xl md:text-3xl font-semibold text-slate-50">Customer Directory</h1>
-            <p className="text-sm text-muted-foreground">Search, view and create customers.</p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search name or phone"
-              className="w-64 rounded-md border border-input bg-background/80 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/80 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950"
-            />
-          </div>
+        <div className="rounded-xl border bg-card/80 px-6 py-5 shadow-sm backdrop-blur">
+          <SectionHeader
+            icon={<Users className="h-4 w-4" />}
+            overline="Customers"
+            title="Customer Directory"
+            description="Search, view and create customers."
+            actions={
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search name or phone"
+                className="w-64 rounded-md border border-input bg-background/80 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/80 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950"
+              />
+            }
+          />
         </div>
 
         {!hasAnyRole(user?.role, ['ADMIN', 'MANAGER']) ? (
@@ -100,6 +104,19 @@ export default function CustomersPage() {
               <div className="p-6 text-sm text-muted-foreground">Loading...</div>
             ) : listQuery.isError ? (
               <div className="p-6 text-sm text-red-500">Error loading customers</div>
+            ) : (listQuery.data?.length ?? 0) === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-10 text-center text-muted-foreground">
+                <div className="mb-2 flex h-16 w-16 items-center justify-center rounded-full border border-dashed border-slate-800 bg-slate-950/60">
+                  <Inbox className="h-7 w-7 text-slate-500" />
+                </div>
+                <p className="text-sm font-medium text-slate-100">No customers yet</p>
+                <p className="text-xs text-slate-400">When you add customers, they will appear here.</p>
+                {hasAnyRole(user?.role, ['ADMIN', 'MANAGER']) ? (
+                  <Button size="sm" className="mt-2" asChild>
+                    <Link href="/customers">Add your first customer</Link>
+                  </Button>
+                ) : null}
+              </div>
             ) : (
               <div className="overflow-hidden rounded-xl">
                 <table className="w-full text-sm">

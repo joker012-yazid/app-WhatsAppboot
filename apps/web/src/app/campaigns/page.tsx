@@ -6,6 +6,8 @@ import AuthGuard from '@/components/auth-guard';
 import { apiGet, apiPost } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/toast-provider';
+import { Megaphone, Inbox } from 'lucide-react';
+import { SectionHeader } from '@/components/section-header';
 
 const campaignKinds = ['PROMOTIONAL', 'ANNOUNCEMENT', 'FOLLOW_UP', 'CUSTOM'] as const;
 const customerTypes = ['VIP', 'REGULAR', 'NEW', 'PROSPECT'] as const;
@@ -130,20 +132,24 @@ export default function CampaignsPage() {
   return (
     <AuthGuard>
       <section className="space-y-8">
-        <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold">Campaigns</h1>
-            <p className="text-sm text-muted-foreground">Configure outbound WhatsApp campaigns with anti-ban rules.</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => previewTargets.mutate()} disabled={previewTargets.isPending}>
-              {previewTargets.isPending ? 'Previewing…' : 'Preview filters'}
-            </Button>
-            <Button onClick={() => createCampaign.mutate()} disabled={createCampaign.isPending}>
-              {createCampaign.isPending ? 'Saving…' : 'Save Draft'}
-            </Button>
-          </div>
-        </header>
+        <div className="rounded-xl border bg-card/80 px-6 py-5 shadow-sm backdrop-blur">
+          <SectionHeader
+            icon={<Megaphone className="h-4 w-4" />}
+            overline="Campaigns"
+            title="Campaigns"
+            description="Configure outbound WhatsApp campaigns with anti-ban rules."
+            actions={
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => previewTargets.mutate()} disabled={previewTargets.isPending}>
+                  {previewTargets.isPending ? 'Previewing...' : 'Preview filters'}
+                </Button>
+                <Button onClick={() => createCampaign.mutate()} disabled={createCampaign.isPending}>
+                  {createCampaign.isPending ? 'Saving...' : 'Save Draft'}
+                </Button>
+              </div>
+            }
+          />
+        </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="space-y-4 rounded-xl border bg-card p-4 lg:col-span-2">
@@ -267,11 +273,25 @@ export default function CampaignsPage() {
             </Button>
           </div>
           {listQuery.isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading campaigns…</p>
+            <p className="text-sm text-muted-foreground">Loading campaigns...</p>
           ) : listQuery.isError ? (
             <p className="text-sm text-red-500">Failed to load campaigns</p>
           ) : !listQuery.data?.length ? (
-            <p className="text-sm text-muted-foreground">No campaigns yet.</p>
+            <div className="flex flex-col items-center justify-center gap-2 py-10 text-center text-muted-foreground">
+              <div className="mb-2 flex h-16 w-16 items-center justify-center rounded-full border border-dashed border-slate-800 bg-slate-950/60">
+                <Inbox className="h-7 w-7 text-slate-500" />
+              </div>
+              <p className="text-sm font-medium text-slate-100">No campaigns yet</p>
+              <p className="text-xs text-slate-400">Draft a campaign and preview your filters to begin outreach.</p>
+              <Button
+                size="sm"
+                className="mt-2"
+                onClick={() => createCampaign.mutate()}
+                disabled={createCampaign.isPending}
+              >
+                {createCampaign.isPending ? 'Saving...' : 'Create your first campaign'}
+              </Button>
+            </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {listQuery.data.map((campaign) => (

@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { LayoutDashboard, MonitorSmartphone, Users, Wrench } from 'lucide-react';
 import AuthGuard from '@/components/auth-guard';
 import { useAuth } from '@/lib/auth';
 import { apiGet } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/toast-provider';
+import { SectionHeader } from '@/components/section-header';
 
 type Stats = {
   customers: number;
@@ -99,12 +101,12 @@ export default function DashboardPage() {
           </div>
 
           <div className="relative grid gap-4 md:grid-cols-[1.4fr,1fr] md:items-center">
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400/80">Dashboard</p>
-              <h1 className="text-3xl font-bold text-slate-50">Welcome back, {user?.name || user?.email}</h1>
-              <p className="text-sm text-slate-300/90">Role: {user?.role}</p>
-              <p className="text-sm text-slate-400">High-level overview of today&apos;s repair shop performance.</p>
-            </div>
+            <SectionHeader
+              icon={<LayoutDashboard className="h-4 w-4" />}
+              overline="Dashboard"
+              title="Repair Shop Overview"
+              description={`Welcome back, ${user?.name || user?.email || 'admin'}. Role: ${user?.role ?? 'unknown'}. High-level overview of today's repair shop performance.`}
+            />
             <div className="relative flex w-full flex-col items-start justify-end gap-3 rounded-lg border border-slate-700/70 bg-slate-900/60 px-5 py-4 text-left shadow-sm transition duration-150 hover:-translate-y-0.5 hover:border-sky-500/60 hover:shadow-lg hover:shadow-sky-500/20 md:items-end md:text-right">
               <div className="flex items-center gap-2 text-xs text-slate-400">
                 <span className="rounded-full bg-sky-500/15 px-3 py-1 font-semibold text-sky-300">Today</span>
@@ -302,13 +304,22 @@ export default function DashboardPage() {
             </div>
             <div className="flex flex-wrap gap-3">
               <Button asChild>
-                <Link href="/customers">Add Customer</Link>
+                <Link href="/customers" className="inline-flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  <span>Add Customer</span>
+                </Link>
               </Button>
               <Button asChild variant="outline">
-                <Link href="/jobs">Create Job</Link>
+                <Link href="/jobs" className="inline-flex items-center gap-2">
+                  <Wrench className="h-4 w-4" />
+                  <span>Create Job</span>
+                </Link>
               </Button>
               <Button asChild variant="outline">
-                <Link href="/devices">Add Device</Link>
+                <Link href="/devices" className="inline-flex items-center gap-2">
+                  <MonitorSmartphone className="h-4 w-4" />
+                  <span>Add Device</span>
+                </Link>
               </Button>
             </div>
           </div>

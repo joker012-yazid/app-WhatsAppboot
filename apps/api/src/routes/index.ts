@@ -11,6 +11,7 @@ import dashboardRouter from './dashboard.routes';
 import reportsRouter from './reports.routes';
 import settingsRouter from './settings.routes';
 import backupsRouter from './backups.routes';
+import whatsappRouter from './whatsapp.routes';
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.use('/dashboard', dashboardRouter);
 router.use('/reports', reportsRouter);
 router.use('/settings', settingsRouter);
 router.use('/backups', backupsRouter);
+router.use('/whatsapp', whatsappRouter);
 
 export default router;
 

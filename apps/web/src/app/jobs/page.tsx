@@ -11,6 +11,8 @@ import { useConfirm } from '@/components/confirm-provider';
 import { useAuth } from '@/lib/auth';
 import { hasAnyRole } from '@/lib/roles';
 import { SegmentedControl } from '@/components/ui/segmented-control';
+import { Inbox, Wrench } from 'lucide-react';
+import { SectionHeader } from '@/components/section-header';
 
 type Customer = { id: string; name: string };
 type Device = { id: string; deviceType: string; model?: string | null; brand?: string | null };
@@ -119,25 +121,28 @@ export default function JobsPage() {
   return (
     <AuthGuard>
       <section className="space-y-6">
-        <div className="rounded-xl border bg-card/80 px-6 py-5 shadow-sm backdrop-blur flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Jobs</p>
-            <h1 className="text-2xl md:text-3xl font-semibold text-slate-50">Jobs & Tickets</h1>
-            <p className="text-sm text-muted-foreground">Track repair jobs and create new ones.</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <SegmentedControl
-              items={statusItems}
-              value={statusValue}
-              onValueChange={(id) => setFilters((f) => ({ ...f, status: id === 'ALL' ? '' : id }))}
-            />
-            <input
-              placeholder="Filter by customer name"
-              value={filters.customer}
-              onChange={(e) => setFilters((f) => ({ ...f, customer: e.target.value }))}
-              className="w-56 rounded-md border border-input bg-background/80 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/80 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950"
-            />
-          </div>
+        <div className="rounded-xl border bg-card/80 px-6 py-5 shadow-sm backdrop-blur">
+          <SectionHeader
+            icon={<Wrench className="h-4 w-4" />}
+            overline="Jobs"
+            title="Jobs & Tickets"
+            description="Track repair jobs and create new ones."
+            actions={
+              <div className="flex flex-wrap items-center gap-3">
+                <SegmentedControl
+                  items={statusItems}
+                  value={statusValue}
+                  onValueChange={(id) => setFilters((f) => ({ ...f, status: id === 'ALL' ? '' : id }))}
+                />
+                <input
+                  placeholder="Filter by customer name"
+                  value={filters.customer}
+                  onChange={(e) => setFilters((f) => ({ ...f, customer: e.target.value }))}
+                  className="w-56 rounded-md border border-input bg-background/80 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/80 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950"
+                />
+              </div>
+            }
+          />
         </div>
 
         {!hasAnyRole(user?.role, ['ADMIN', 'MANAGER', 'TECHNICIAN']) ? (
@@ -152,6 +157,19 @@ export default function JobsPage() {
               <div className="p-6 text-sm text-muted-foreground">Loading...</div>
             ) : jobsQuery.isError ? (
               <div className="p-6 text-sm text-red-500">Error loading jobs</div>
+            ) : (jobsQuery.data?.length ?? 0) === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-10 text-center text-muted-foreground">
+                <div className="mb-2 flex h-16 w-16 items-center justify-center rounded-full border border-dashed border-slate-800 bg-slate-950/60">
+                  <Inbox className="h-7 w-7 text-slate-500" />
+                </div>
+                <p className="text-sm font-medium text-slate-100">No jobs yet</p>
+                <p className="text-xs text-slate-400">When you create a job, it will appear here for tracking.</p>
+                {hasAnyRole(user?.role, ['ADMIN', 'MANAGER', 'TECHNICIAN']) ? (
+                  <Button size="sm" className="mt-2" asChild>
+                    <Link href="/jobs">Create your first job</Link>
+                  </Button>
+                ) : null}
+              </div>
             ) : (
               <div className="overflow-hidden rounded-xl">
                 <table className="w-full text-sm">

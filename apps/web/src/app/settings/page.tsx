@@ -5,10 +5,16 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Building2,
   Cpu,
+  HardDrive,
+  MessageCircle,
+  Inbox,
   ServerCog,
   ShieldCheck,
   Smartphone,
+  Sparkles,
   Timer,
+  Settings2,
+  RefreshCw,
 } from 'lucide-react';
 
 import AuthGuard from '@/components/auth-guard';
@@ -18,6 +24,10 @@ import { useToast } from '@/components/toast-provider';
 import { useAuth } from '@/lib/auth';
 import { hasAnyRole } from '@/lib/roles';
 import { SegmentedControl } from '@/components/ui/segmented-control';
+import { SectionHeader } from '@/components/section-header';
+import { useWhatsappChat } from '@/hooks/use-whatsapp-chat';
+import { useWhatsappSession } from '@/hooks/use-whatsapp-session';
+import { cn } from '@/lib/utils';
 
 const defaultGeneral = {
   companyName: '',
@@ -89,6 +99,7 @@ export default function SettingsPage() {
   const [keywordsText, setKeywordsText] = useState('STOP, UNSUBSCRIBE');
   const [savingKey, setSavingKey] = useState<SettingKey | null>(null);
   const [activeTab, setActiveTab] = useState<'general' | 'whatsapp' | 'ai' | 'backup'>('general');
+  const { status: waStatus, loading: waLoading, startSession: startWaSession, reset: resetWaSession } = useWhatsappSession();
 
   const query = useQuery({
     queryKey: ['settings'],
@@ -160,29 +171,37 @@ export default function SettingsPage() {
     return { ...whatsapp, optOutKeywords: keywords.length ? keywords : defaultWhatsapp.optOutKeywords };
   }, [keywordsText, whatsapp]);
 
+  const whatsappPill = useMemo(() => {
+    const state = waStatus?.status || 'disconnected';
+    if (state === 'connected') return { label: 'Connected', className: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40' };
+    if (state === 'qr_ready') return { label: 'Scan QR', className: 'bg-amber-500/15 text-amber-300 border-amber-500/40' };
+    if (state === 'connecting') return { label: 'Connecting', className: 'bg-sky-500/15 text-sky-300 border-sky-500/40' };
+    if (state === 'error') return { label: 'Error', className: 'bg-rose-500/15 text-rose-300 border-rose-500/40' };
+    return { label: 'Disconnected', className: 'bg-slate-700/30 text-slate-200 border-slate-600/50' };
+  }, [waStatus?.status]);
+
   return (
     <AuthGuard>
       <div className="space-y-8">
         <section className="rounded-xl border bg-card/80 px-6 py-5 shadow-sm backdrop-blur">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Settings</p>
-              <h1 className="mt-1 text-2xl font-semibold text-slate-50">Application Settings</h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Manage business identity, WhatsApp guardrails, AI preferences, and backup routines.
-              </p>
-            </div>
-            <SegmentedControl
-              items={[
-                { id: 'general', label: 'General' },
-                { id: 'whatsapp', label: 'WhatsApp' },
-                { id: 'ai', label: 'AI & Automation' },
-                { id: 'backup', label: 'Backup' },
-              ]}
-              value={activeTab}
-              onValueChange={(id) => setActiveTab(id as typeof activeTab)}
-            />
-          </div>
+          <SectionHeader
+            icon={<Settings2 className="h-4 w-4" />}
+            overline="Settings"
+            title="Application Settings"
+            description="Manage business identity, WhatsApp guardrails, AI preferences, and backup routines."
+            actions={
+              <SegmentedControl
+                items={[
+                  { id: 'general', label: 'General' },
+                  { id: 'whatsapp', label: 'WhatsApp' },
+                  { id: 'ai', label: 'AI & Automation' },
+                  { id: 'backup', label: 'Backup' },
+                ]}
+                value={activeTab}
+                onValueChange={(id) => setActiveTab(id as typeof activeTab)}
+              />
+            }
+          />
           {!canEdit ? (
             <div className="mt-4 rounded-md border border-amber-400/60 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
               You are in read-only mode. Contact an administrator to update settings.
@@ -344,6 +363,50 @@ export default function SettingsPage() {
                 </div>
                 <Smartphone className="h-5 w-5 text-primary" />
               </div>
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-900/60 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-500/10 text-sky-300">
+                    <MessageCircle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-100">WhatsApp session</p>
+                    <p className="text-xs text-muted-foreground">
+                      {waStatus?.status === 'qr_ready'
+                        ? 'Scan QR to link your device.'
+                        : waStatus?.status === 'connected'
+                          ? 'Connected. Messages will sync to the control room.'
+                          : 'Start the session to generate a QR code.'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={cn('rounded-full border px-3 py-1 text-xs font-semibold', whatsappPill.className)}>
+                    {whatsappPill.label}
+                  </span>
+                  <Button size="sm" variant="outline" onClick={() => startWaSession(false)} disabled={waLoading}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Start Session
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => resetWaSession()} disabled={waLoading}>
+                    Reset Session
+                  </Button>
+                </div>
+              </div>
+              {waStatus?.status === 'qr_ready' && waStatus.qrImage ? (
+                <div className="mt-4 flex flex-wrap items-center gap-4 rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+                  <div className="overflow-hidden rounded-lg border border-slate-800 bg-black/20 shadow">
+                    <img src={waStatus.qrImage} alt="WhatsApp QR" className="h-48 w-48 object-contain" />
+                  </div>
+                  <div className="flex-1 space-y-2 text-sm text-muted-foreground">
+                    <p className="text-slate-100">Scan this QR with WhatsApp on your phone</p>
+                    <ol className="list-decimal space-y-1 pl-5">
+                      <li>Open WhatsApp → Linked devices</li>
+                      <li>Tap “Link a device” and scan</li>
+                      <li>Wait until status turns Connected</li>
+                    </ol>
+                  </div>
+                </div>
+              ) : null}
               <form
                 className="mt-6 grid gap-4 md:grid-cols-2"
                 onSubmit={(event) => {
@@ -448,9 +511,12 @@ export default function SettingsPage() {
             {activeTab === 'ai' ? (
             <section className="rounded-xl border bg-card/80 p-6 shadow-sm backdrop-blur">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">AI</p>
-                  <h2 className="text-xl font-semibold">Assistant preferences</h2>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">AI</p>
+                    <h2 className="text-xl font-semibold">Assistant preferences</h2>
+                  </div>
                 </div>
                 <Cpu className="h-5 w-5 text-primary" />
               </div>
@@ -651,7 +717,12 @@ export default function SettingsPage() {
                     disabled={!canEdit || backupMutation.isPending}
                     onClick={() => backupMutation.mutate()}
                   >
-                    {backupMutation.isPending ? 'Creating backup...' : 'Trigger manual backup'}
+                    {backupMutation.isPending ? 'Creating backup...' : (
+                      <span className="inline-flex items-center gap-2">
+                        <HardDrive className="h-4 w-4" />
+                        <span>Trigger manual backup</span>
+                      </span>
+                    )}
                   </Button>
                 </div>
                 <div className="md:col-span-2 rounded-lg border border-dashed px-4 py-3 text-xs text-muted-foreground">
@@ -714,11 +785,17 @@ export default function SettingsPage() {
                       </tbody>
                     </table>
                   </div>
-                ) : (
-                  <p className="mt-4 text-sm text-muted-foreground">No backups generated yet.</p>
-                )}
-              </div>
-            </section>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-2 py-6 text-center text-muted-foreground">
+                      <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full border border-dashed border-slate-800 bg-slate-950/60">
+                        <Inbox className="h-6 w-6 text-slate-500" />
+                      </div>
+                      <p className="text-sm font-medium text-slate-100">No backups generated yet.</p>
+                      <p className="text-xs text-slate-400">Run a manual backup to start your recovery history.</p>
+                    </div>
+                  )}
+                </div>
+              </section>
             ) : null}
           </div>
         )}

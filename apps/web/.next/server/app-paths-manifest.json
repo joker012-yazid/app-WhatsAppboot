@@ -1,12 +1,5 @@
 {
   "/api/[...path]/route": "app/api/[...path]/route.js",
-  "/devices/page": "app/devices/page.js",
-  "/jobs/page": "app/jobs/page.js",
-  "/campaigns/page": "app/campaigns/page.js",
-  "/reports/page": "app/reports/page.js",
   "/settings/page": "app/settings/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/customers/page": "app/customers/page.js",
-  "/page": "app/page.js",
-  "/docs/roadmap/page": "app/docs/roadmap/page.js"
+  "/page": "app/page.js"
 }
