@@ -2,6 +2,14 @@
 
 Monorepo ini ialah sistem aktif yang terdiri daripada API (Express + Prisma di `apps/api`) dan Web (Next.js di `apps/web`). Infrastruktur tempatan menggunakan Postgres dan Redis melalui `docker-compose.yml`. Kod legasi Express + SQLite dalam folder `src/` masih dikekalkan untuk rujukan sahaja dan tidak berjalan melalui skrip utama.
 
+## Local development (ringkas)
+
+1) Salin konfigurasi asas: `cp .env.example .env` lalu lengkapkan nilai yang diperlukan.
+2) Pasang dependensi: `npm install`
+3) Jalankan kedua-dua API (port 4000) dan Web (port 3000): `npm run dev`
+
+API mesti boleh dicapai di `http://localhost:4000` supaya UI berfungsi dengan betul. Untuk Postgres + Redis tempatan, gunakan `docker compose up -d postgres redis`.
+
 ## Cara Jalankan Projek (Monorepo)
 
 ```bash

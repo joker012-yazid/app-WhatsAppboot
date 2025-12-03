@@ -203,7 +203,7 @@ export const createApp = () => {
 
   // Handle 404 - provide helpful message for common web app routes
 
-  app.use((req, res) => {
+  app.use((req, res, next) => {
     // Log static file requests for debugging
 
     if (req.path.startsWith('/public/')) {
@@ -280,6 +280,25 @@ export const createApp = () => {
     }
 
     res.status(404).json({ message: 'Not found' });
+  });
+
+  // Global error handler - must be last middleware
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('[Error]', err);
+    
+    // Check if response was already sent
+    if (res.headersSent) {
+      return next(err);
+    }
+
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || 'Internal server error';
+    
+    res.status(status).json({
+      success: false,
+      error: message,
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    });
   });
 
   return app;

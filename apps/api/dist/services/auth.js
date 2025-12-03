@@ -66,7 +66,13 @@ const isRefreshTokenValid = async (token) => {
     try {
         const payload = jsonwebtoken_1.default.verify(token, env_1.default.JWT_REFRESH_SECRET);
         // Check DB for token existence and non-revoked
-        const tokens = await prisma_1.default.refreshToken.findMany({ where: { sessionId: payload.sid } });
+        const tokens = await prisma_1.default.refreshToken.findMany({
+            where: {
+                sessionId: payload.sid,
+                revokedAt: null,
+                expiresAt: { gt: new Date() },
+            },
+        });
         const match = await Promise.all(tokens.map((t) => bcryptjs_1.default.compare(token, t.tokenHash)));
         const matched = match.findIndex((v) => v === true);
         if (matched === -1)

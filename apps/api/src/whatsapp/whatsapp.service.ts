@@ -36,12 +36,24 @@ export type ChatMessage = {
 
 const repoRoot = path.resolve(process.cwd(), '..', '..');
 const SESSION_DIR = path.resolve(repoRoot, env.WHATSAPP_SESSION_DIR || 'whatsapp-sessions');
-const LOGGER = pino({ level: env.WHATSAPP_LOG_LEVEL || 'silent' });
+const LOGGER = pino({ level: env.WHATSAPP_LOG_LEVEL || 'info' });
+
+type WhatsAppState = {
+  status: ConnectionStatus;
+  hasQR: boolean;
+  qrImage: string | null;
+  lastError: string | null;
+};
+
+const waState: WhatsAppState = {
+  status: 'disconnected',
+  hasQR: false,
+  qrImage: null,
+  lastError: null,
+};
 
 let sock: WASocket | null = null;
-let connectionStatus: ConnectionStatus = 'disconnected';
-let currentQR: string | null = null;
-let lastError: string | null = null;
+let isStarting = false;
 const messageStore: Map<string, ChatMessage[]> = new Map();
 
 // Simple in-memory chat store (makeInMemoryStore may not be available in this baileys version)
@@ -89,13 +101,18 @@ const parseText = (wm: WAMessage) => {
   return '';
 };
 
+const setConnectionStatus = (partial: Partial<WhatsAppState>) => {
+  Object.assign(waState, partial);
+  LOGGER.info({ state: waState }, '[WhatsApp] state updated');
+};
+
 export const getConnectionStatus = () => ({
-  status: connectionStatus,
-  hasQR: Boolean(currentQR),
-  lastError,
+  status: waState.status,
+  hasQR: waState.hasQR,
+  lastError: waState.lastError,
 });
 
-export const getCurrentQR = () => currentQR;
+export const getCurrentQR = () => waState.qrImage;
 
 export const getChatSummaries = (): ChatSummary[] => {
   const chats = inMemoryStore?.chats?.all() || [];
@@ -125,29 +142,76 @@ export const getMessagesForChat = (chatId: string): ChatMessage[] => {
 const bindSocketEvents = (socket: WASocket) => {
   const ev = socket.ev as any as BaileysEventMap;
 
-  ev.on('connection.update', (update) => {
-    console.log('[WhatsApp] connection.update', update);
-    const { connection, qr, lastDisconnect } = update;
-    if (qr) {
-      currentQR = qr;
-      connectionStatus = 'qr_ready';
-      console.log('[WhatsApp] QR ready');
+  const mapDisconnectReason = (error?: Boom | Error | unknown): string => {
+    const boom = error as Boom | undefined;
+    const statusCode = boom?.output?.statusCode;
+    const message = (error as any)?.message as string | undefined;
+
+    switch (statusCode) {
+      case DisconnectReason.loggedOut:
+        return 'You have been logged out from this device.';
+      case DisconnectReason.connectionClosed:
+        return 'Connection closed. Please try again.';
+      case DisconnectReason.connectionLost:
+        return 'Network error while talking to WhatsApp.';
+      case DisconnectReason.connectionReplaced:
+        return 'This session was replaced by another login.';
+      case DisconnectReason.timedOut:
+        return 'Connection timed out.';
+      default:
+        if (message?.includes('ENOTFOUND')) return 'Network error while resolving WhatsApp servers.';
+        return message || 'Connection failure. Please try again.';
     }
+  };
+
+  ev.on('connection.update', (update) => {
+    LOGGER.info({ connection: update.connection, hasQR: Boolean(update.qr) }, '[WhatsApp] connection.update');
+    const { connection, qr, lastDisconnect } = update;
+
+    if (qr) {
+      setConnectionStatus({
+        status: 'qr_ready',
+        hasQR: true,
+        qrImage: qr,
+        lastError: null,
+      });
+      LOGGER.info('[WhatsApp] QR received');
+      return;
+    }
+
     if (connection === 'open') {
-      connectionStatus = 'connected';
-      currentQR = null;
-      lastError = null;
-      console.log('[WhatsApp] Connected');
-    } else if (connection === 'close') {
-      const statusCode = (lastDisconnect?.error as Boom | undefined)?.output?.statusCode;
-      const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-      connectionStatus = shouldReconnect ? 'disconnected' : 'error';
-      lastError = (lastDisconnect?.error as any)?.message ?? null;
-      currentQR = null;
-      console.error('[WhatsApp] connection closed', statusCode, lastError);
-    } else if (connection === 'connecting') {
-      connectionStatus = 'connecting';
-      console.log('[WhatsApp] Connecting...');
+      setConnectionStatus({
+        status: 'connected',
+        hasQR: false,
+        qrImage: null,
+        lastError: null,
+      });
+      LOGGER.info('[WhatsApp] Connected');
+      return;
+    }
+
+    if (connection === 'connecting') {
+      setConnectionStatus({
+        status: 'connecting',
+        lastError: null,
+      });
+      LOGGER.info('[WhatsApp] Connecting...');
+      return;
+    }
+
+    if (connection === 'close') {
+      const err = (lastDisconnect as any)?.error;
+      const statusCode = (err as Boom | undefined)?.output?.statusCode;
+      const friendlyMessage = mapDisconnectReason(err);
+      LOGGER.error({ statusCode, error: err }, '[WhatsApp] connection closed');
+      setConnectionStatus({
+        status: 'disconnected',
+        hasQR: false,
+        qrImage: null,
+        lastError: friendlyMessage,
+      });
+      sock = null;
+      return;
     }
   });
 
@@ -178,14 +242,19 @@ const clearAuthDir = () => {
   }
 };
 
-export const initializeWhatsApp = async (forceNewSession?: boolean) => {
-  if (sock && connectionStatus === 'connected' && !forceNewSession) {
-    return { status: connectionStatus, message: 'Already connected' };
+export const startWhatsAppClient = async (forceNewSession?: boolean) => {
+  if (waState.status === 'connected' && sock && !forceNewSession) {
+    return sock;
   }
+  if (isStarting) return sock;
+  isStarting = true;
 
-  connectionStatus = 'connecting';
-  currentQR = null;
-  lastError = null;
+  setConnectionStatus({
+    status: 'connecting',
+    hasQR: false,
+    qrImage: null,
+    lastError: null,
+  });
 
   if (forceNewSession) {
     clearAuthDir();
@@ -193,53 +262,73 @@ export const initializeWhatsApp = async (forceNewSession?: boolean) => {
     if (sock) {
       try {
         await sock.logout();
-      } catch {
-        // ignore
+      } catch (err) {
+        LOGGER.error({ err }, '[WhatsApp] logout during forceNewSession failed');
       }
       sock = null;
     }
   }
 
-  const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR);
+  try {
+    fs.mkdirSync(SESSION_DIR, { recursive: true });
+    const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR);
+    sock = makeWASocket({
+      auth: state,
+      logger: LOGGER,
+      printQRInTerminal: false,
+      browser: ['WhatsApp Bot POS', 'Desktop', '1.0.0'],
+      markOnlineOnConnect: false,
+    });
 
-  sock = makeWASocket({
-    auth: state,
-    logger: LOGGER,
-    printQRInTerminal: false,
-    browser: ['WhatsApp Bot POS', 'Desktop', '1.0.0'],
-    markOnlineOnConnect: false,
-  });
+    bindSocketEvents(sock);
+    sock.ev.on('creds.update', saveCreds);
+    LOGGER.info({ forceNewSession, sessionDir: SESSION_DIR }, '[WhatsApp] start requested');
+  } catch (error: any) {
+    const friendly = error?.message || 'Failed to initialize WhatsApp session.';
+    setConnectionStatus({
+      status: 'disconnected',
+      hasQR: false,
+      qrImage: null,
+      lastError: friendly,
+    });
+    LOGGER.error({ err: error }, '[WhatsApp] start error');
+    sock = null;
+    throw error;
+  } finally {
+    isStarting = false;
+  }
 
-  bindSocketEvents(sock);
-  sock.ev.on('creds.update', saveCreds);
-  console.log('[WhatsApp] initialize requested', { forceNewSession, sessionDir: SESSION_DIR });
-
-  return { status: connectionStatus, message: 'WhatsApp initialization started' };
+  return sock;
 };
 
 export const resetWhatsApp = async () => {
   if (sock) {
     try {
       await sock.logout();
-    } catch {
-      // ignore
+    } catch (err) {
+      LOGGER.error({ err }, '[WhatsApp] logout during reset failed');
     }
     try {
       sock.ev.removeAllListeners();
-    } catch {
-      // ignore
+    } catch (err) {
+      LOGGER.error({ err }, '[WhatsApp] remove listeners during reset failed');
     }
     sock = null;
   }
   clearAuthDir();
   resetMessageStore();
-  connectionStatus = 'disconnected';
-  currentQR = null;
-  lastError = null;
-  return { status: connectionStatus };
+  setConnectionStatus({
+    status: 'disconnected',
+    hasQR: false,
+    qrImage: null,
+    lastError: null,
+  });
+  return { status: waState.status };
 };
 
 export const sendMessageToChat = async (chatId: string, text: string) => {
   if (!sock) throw new Error('WhatsApp not initialized');
   await sock.sendMessage(chatId, { text });
 };
+
+export const getWhatsAppState = () => ({ ...waState });

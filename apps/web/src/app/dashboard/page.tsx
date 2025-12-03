@@ -220,7 +220,7 @@ export default function DashboardPage() {
                   className="mt-4 px-0 text-sm text-sky-400 hover:text-sky-300"
                   asChild
                 >
-                  <Link href="/customers">View All -></Link>
+                  <Link href="/customers">View All &rarr;</Link>
                 </Button>
               </div>
 
@@ -235,7 +235,7 @@ export default function DashboardPage() {
                   className="mt-4 px-0 text-sm text-sky-400 hover:text-sky-300"
                   asChild
                 >
-                  <Link href="/devices">View All -></Link>
+                  <Link href="/devices">View All &rarr;</Link>
                 </Button>
               </div>
 
@@ -250,7 +250,7 @@ export default function DashboardPage() {
                   className="mt-4 px-0 text-sm text-sky-400 hover:text-sky-300"
                   asChild
                 >
-                  <Link href="/jobs">View All -></Link>
+                  <Link href="/jobs">View All &rarr;</Link>
                 </Button>
               </div>
             </div>

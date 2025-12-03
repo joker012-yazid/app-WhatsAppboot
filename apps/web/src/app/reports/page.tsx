@@ -142,7 +142,7 @@ export default function ReportsPage() {
                 <CalendarRange className="h-4 w-4 text-primary" />
                 <div>
                   <p className="font-medium">
-                    {appliedRange.from} -> {appliedRange.to}
+                    {appliedRange.from} &rarr; {appliedRange.to}
                   </p>
                   <p className="text-xs text-muted-foreground">{data?.range.days ?? 0} day window</p>
                 </div>

@@ -4,14 +4,51 @@ Write-Host ""
 Write-Host "=== Quick Start Web App ===" -ForegroundColor Cyan
 Write-Host ""
 
-$rootDir = Get-Location
+# Find root directory (where quick-start.ps1 is located or search for apps/web)
+$scriptPath = $MyInvocation.MyCommand.Path
+$rootDir = $null
+
+if ($scriptPath) {
+    # Script is being executed directly, get its directory
+    $rootDir = Split-Path -Parent $scriptPath
+} else {
+    # Fallback: try to find root directory by looking for apps/web
+    $currentDir = Get-Location
+    $rootDir = $currentDir
+    
+    # Go up directories until we find root (has apps/web)
+    $maxDepth = 10
+    $depth = 0
+    while ($depth -lt $maxDepth) {
+        if (Test-Path (Join-Path $rootDir "apps\web")) {
+            break
+        }
+        $parent = Split-Path -Parent $rootDir
+        if ($parent -eq $rootDir) {
+            # Reached root of filesystem
+            break
+        }
+        $rootDir = $parent
+        $depth++
+    }
+}
+
 $webDir = Join-Path $rootDir "apps\web"
 
-# Check if we're in the right directory
+# Check if we found the right directory
 if (-not (Test-Path $webDir)) {
     Write-Host "[ERROR] Directory apps/web tidak ditemukan" -ForegroundColor Red
-    Write-Host "Pastikan Anda berada di root project directory" -ForegroundColor Yellow
-    Write-Host "Current directory: $rootDir" -ForegroundColor Gray
+    Write-Host "Pastikan Anda berada di dalam project directory" -ForegroundColor Yellow
+    Write-Host "Current directory: $(Get-Location)" -ForegroundColor Gray
+    Write-Host "Searched up to: $rootDir" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "Cara menjalankan script:" -ForegroundColor Yellow
+    Write-Host "  1. Pindah ke root directory: cd 'C:\Users\Jokeryazid\Documents\My projek\new whatsappbot\app-WhatsAppboot'" -ForegroundColor White
+    Write-Host "  2. Jalankan: .\quick-start.ps1" -ForegroundColor White
+    Write-Host ""
+    Write-Host "Atau dari apps/web:" -ForegroundColor Yellow
+    Write-Host "  cd apps\web" -ForegroundColor White
+    Write-Host "  npm run dev" -ForegroundColor White
     exit 1
 }
 

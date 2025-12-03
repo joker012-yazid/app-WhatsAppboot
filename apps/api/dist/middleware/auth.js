@@ -12,23 +12,27 @@ const requireAuth = (req, res, next) => {
     const cookieToken = req.cookies?.access_token;
     const token = bearer || cookieToken;
     if (!token)
-        return res.status(401).json({ message: 'Missing Authorization header' });
+        return res
+            .status(401)
+            .json({ success: false, errorCode: 'AUTH_REQUIRED', message: 'Missing Authorization header' });
     try {
         const payload = jsonwebtoken_1.default.verify(token, env_1.default.JWT_ACCESS_SECRET);
         req.user = payload;
         return next();
     }
     catch (err) {
-        return res.status(401).json({ message: 'Invalid or expired token' });
+        return res
+            .status(401)
+            .json({ success: false, errorCode: 'INVALID_TOKEN', message: 'Invalid or expired token' });
     }
 };
 exports.requireAuth = requireAuth;
 const requireRole = (...roles) => {
     return (req, res, next) => {
         if (!req.user)
-            return res.status(401).json({ message: 'Unauthorized' });
+            return res.status(401).json({ success: false, errorCode: 'AUTH_REQUIRED', message: 'Unauthorized' });
         if (!roles.includes(req.user.role))
-            return res.status(403).json({ message: 'Forbidden' });
+            return res.status(403).json({ success: false, errorCode: 'FORBIDDEN', message: 'Forbidden' });
         return next();
     };
 };

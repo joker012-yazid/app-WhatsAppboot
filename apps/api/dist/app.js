@@ -23,7 +23,100 @@ const getCurrentFileDir = () => {
 };
 const createApp = () => {
     const app = (0, express_1.default)();
-    app.use((0, helmet_1.default)());
+    // Static uploads (shared under repo root /uploads)
+    // Resolve relative to this file's location, not process.cwd()
+    // This ensures the path is correct regardless of where the process starts
+    // __dirname points to apps/api/src (dev) or apps/api/dist (prod)
+    const currentFileDir = getCurrentFileDir();
+    // Walk up from apps/api/src (dev) or apps/api/dist (prod) to the repo root
+    const repoRoot = node_path_1.default.resolve(currentFileDir, '..', '..', '..');
+    const uploadsDir = node_path_1.default.resolve(repoRoot, 'uploads');
+    const publicDir = node_path_1.default.resolve(repoRoot, 'public');
+    // Serve static files BEFORE other middleware to ensure they're accessible
+    if (!node_fs_1.default.existsSync(uploadsDir))
+        node_fs_1.default.mkdirSync(uploadsDir, { recursive: true });
+    app.use('/uploads', express_1.default.static(uploadsDir));
+    // Static public files (for registration pages, etc.)
+    if (node_fs_1.default.existsSync(publicDir)) {
+        console.log(`[Static] Serving public files from: ${publicDir}`);
+        const registerIndexPath = node_path_1.default.resolve(publicDir, 'register', 'index.html');
+        console.log(`[Static] Register index.html path: ${registerIndexPath}`);
+        console.log(`[Static] Register index.html exists: ${node_fs_1.default.existsSync(registerIndexPath)}`);
+        // List files in public directory for debugging
+        try {
+            const publicFiles = node_fs_1.default.readdirSync(publicDir, { withFileTypes: true });
+            console.log(`[Static] Files in public dir:`, publicFiles.map((f) => ({
+                name: f.name,
+                isDirectory: f.isDirectory(),
+            })));
+            const registerDir = node_path_1.default.join(publicDir, 'register');
+            if (node_fs_1.default.existsSync(registerDir)) {
+                const registerFiles = node_fs_1.default.readdirSync(registerDir);
+                console.log(`[Static] Files in register dir:`, registerFiles);
+            }
+            else {
+                console.warn(`[Static] Register directory not found: ${registerDir}`);
+            }
+        }
+        catch (e) {
+            console.error(`[Static] Error reading directories:`, e);
+        }
+        // Explicit route handler for register/index.html (must be before express.static)
+        app.get('/public/register/index.html', (req, res) => {
+            const filePath = node_path_1.default.resolve(publicDir, 'register', 'index.html');
+            console.log(`[Route] Request received for /public/register/index.html`);
+            console.log(`[Route] Resolved file path: ${filePath}`);
+            console.log(`[Route] File exists: ${node_fs_1.default.existsSync(filePath)}`);
+            if (node_fs_1.default.existsSync(filePath)) {
+                // Use absolute path with res.sendFile
+                res.sendFile(filePath, (err) => {
+                    if (err) {
+                        console.error(`[Route] Error sending file:`, err);
+                        if (!res.headersSent) {
+                            res
+                                .status(500)
+                                .json({ message: 'Error serving file', error: err.message });
+                        }
+                    }
+                    else {
+                        console.log(`[Route] File sent successfully`);
+                    }
+                });
+            }
+            else {
+                console.error(`[Route] File not found: ${filePath}`);
+                console.error(`[Route] Public dir: ${publicDir}`);
+                console.error(`[Route] Public dir exists: ${node_fs_1.default.existsSync(publicDir)}`);
+                res.status(404).json({
+                    message: 'File not found',
+                    path: filePath,
+                    publicDir: publicDir,
+                    publicDirExists: node_fs_1.default.existsSync(publicDir),
+                });
+            }
+        });
+        // Use express.static for other public files
+        app.use('/public', express_1.default.static(publicDir));
+    }
+    else {
+        console.warn(`[Static] Public directory not found: ${publicDir}`);
+    }
+    // Configure helmet with relaxed settings for static files
+    app.use((0, helmet_1.default)({
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc: ["'self'"],
+                scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+                styleSrc: [
+                    "'self'",
+                    "'unsafe-inline'",
+                    'https://fonts.googleapis.com',
+                ],
+                fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+                imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+            },
+        },
+    }));
     app.use((0, cors_1.default)({
         origin: true,
         credentials: true,
@@ -32,25 +125,55 @@ const createApp = () => {
     app.use(express_1.default.urlencoded({ extended: true }));
     app.use((0, cookie_parser_1.default)());
     app.use((0, morgan_1.default)('dev'));
-    // Static uploads (shared under repo root /uploads)
-    // Resolve relative to this file's location, not process.cwd()
-    // This ensures the path is correct regardless of where the process starts
-    // __dirname points to apps/api/src (dev) or apps/api/dist (prod)
-    const currentFileDir = getCurrentFileDir();
-    const apiDir = node_path_1.default.resolve(currentFileDir, '..'); // apps/api
-    const repoRoot = node_path_1.default.resolve(apiDir, '..'); // repo root
-    const uploadsDir = node_path_1.default.resolve(repoRoot, 'uploads');
-    if (!node_fs_1.default.existsSync(uploadsDir))
-        node_fs_1.default.mkdirSync(uploadsDir, { recursive: true });
-    app.use('/uploads', express_1.default.static(uploadsDir));
     app.use('/api', routes_1.default);
     app.get('/health', (_req, res) => {
         res.json({ status: 'ok', timestamp: new Date().toISOString() });
     });
     // Handle 404 - provide helpful message for common web app routes
     app.use((req, res) => {
+        // Log static file requests for debugging
+        if (req.path.startsWith('/public/')) {
+            const requestedPath = req.path.replace('/public', '');
+            const fullPath = node_path_1.default.join(publicDir, requestedPath);
+            console.log(`[404] Static file request: ${req.path}`);
+            console.log(`[404] Requested path: ${requestedPath}`);
+            console.log(`[404] Resolved full path: ${fullPath}`);
+            console.log(`[404] Public dir: ${publicDir}`);
+            console.log(`[404] File exists: ${node_fs_1.default.existsSync(fullPath)}`);
+            // List files in public directory for debugging
+            if (node_fs_1.default.existsSync(publicDir)) {
+                try {
+                    const files = node_fs_1.default.readdirSync(publicDir, { withFileTypes: true });
+                    console.log(`[404] Files in public dir:`, files.map((f) => f.name));
+                }
+                catch (e) {
+                    console.error(`[404] Error reading public dir:`, e);
+                }
+            }
+            return res.status(404).json({
+                message: 'File not found',
+                path: req.path,
+                requestedPath: requestedPath,
+                resolvedPath: fullPath,
+                publicDir: publicDir,
+                hint: 'Check that the file exists in the public directory',
+            });
+        }
+        if (req.path.startsWith('/uploads/')) {
+            return res.status(404).json({
+                message: 'File not found',
+                path: req.path,
+                hint: 'Check that the file exists in the uploads directory',
+            });
+        }
         // Common Next.js routes that might be requested from API server
-        const webAppRoutes = ['/login', '/dashboard', '/customers', '/devices', '/jobs'];
+        const webAppRoutes = [
+            '/login',
+            '/dashboard',
+            '/customers',
+            '/devices',
+            '/jobs',
+        ];
         if (webAppRoutes.includes(req.path)) {
             return res.status(404).json({
                 message: `Route '${req.path}' is a web app route, not an API endpoint. Use '/api/*' for API endpoints.`,

@@ -121,7 +121,7 @@ export default function JobDetailPage() {
       const form = new FormData();
       files.forEach((f) => form.append('photos', f));
       if (label) form.append('label', label);
-      return apiUpload(`/api/jobs/${id}/photos`, form);
+      return apiUpload<any[]>(`/api/jobs/${id}/photos`, form);
     },
     onSuccess: async (res: any[]) => {
       setLabel('');

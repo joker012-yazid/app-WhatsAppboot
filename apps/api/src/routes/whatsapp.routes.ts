@@ -3,52 +3,114 @@ import qrcode from 'qrcode';
 
 import {
   getChatSummaries,
+  getWhatsAppState,
   getConnectionStatus,
   getCurrentQR,
   getMessagesForChat,
-  initializeWhatsApp,
+  startWhatsAppClient,
   resetWhatsApp,
   sendMessageToChat,
 } from '../whatsapp/whatsapp.service';
 
 const router = Router();
 
-router.post('/session/init', async (req, res, next) => {
+router.post('/session/init', async (req, res) => {
   try {
     const { forceNewSession } = req.body || {};
     console.log('[WhatsApp][HTTP] init called', { forceNewSession });
-    const result = await initializeWhatsApp(Boolean(forceNewSession));
-    res.json({ success: true, status: result.status, message: result.message });
-  } catch (error) {
+    await startWhatsAppClient(Boolean(forceNewSession));
+    const state = getWhatsAppState();
+    res.json({ success: true, status: 'ok', message: 'WhatsApp session initialization started.', state });
+  } catch (error: any) {
     console.error('[WhatsApp][HTTP] init error', error);
-    next(error);
+    res.status(500).json({ success: false, status: 'error', message: 'Failed to start WhatsApp session', error: error?.message });
   }
 });
 
-router.get('/session/status', async (_req, res, next) => {
+router.get('/session/status', async (_req, res) => {
   try {
     const status = getConnectionStatus();
     let qrImage: string | null = null;
-    if (status.status === 'qr_ready') {
-      const qr = getCurrentQR();
-      if (qr) {
-        qrImage = await qrcode.toDataURL(qr);
-      }
+    const qr = getCurrentQR();
+    if ((status.status === 'connecting' || status.status === 'qr_ready') && qr) {
+      qrImage = await qrcode.toDataURL(qr);
     }
     res.json({ ...status, qrImage });
-  } catch (error) {
+  } catch (error: any) {
     console.error('[WhatsApp][HTTP] status error', error);
-    next(error);
+    res.status(500).json({ success: false, status: 'error', message: 'Failed to fetch WhatsApp status', error: error?.message });
   }
 });
 
-router.post('/session/reset', async (_req, res, next) => {
+router.post('/session/reset', async (_req, res) => {
   try {
     const result = await resetWhatsApp();
     res.json({ success: true, status: result.status });
-  } catch (error) {
+  } catch (error: any) {
     console.error('[WhatsApp][HTTP] reset error', error);
-    next(error);
+    res.status(500).json({ success: false, status: 'error', message: 'Failed to reset WhatsApp session', error: error?.message });
+  }
+});
+
+router.get('/debug', (_req, res) => {
+  try {
+    const status = getConnectionStatus();
+    res.json({
+      status,
+      hasQR: status.hasQR,
+      qrPreview: status.hasQR ? 'QR available (hidden for security)' : 'no QR',
+      env: {
+        sessionDir: process.env.WHATSAPP_SESSION_DIR || 'whatsapp-sessions',
+        logLevel: process.env.WHATSAPP_LOG_LEVEL || 'info',
+      },
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp][HTTP] debug error', error);
+    res.status(500).json({ success: false, status: 'error', message: 'Failed to fetch debug information', error: error?.message });
+  }
+});
+
+router.post('/connect', async (_req, res) => {
+  try {
+    await startWhatsAppClient();
+    const state = getWhatsAppState();
+    res.json(state);
+  } catch (error: any) {
+    console.error('[WhatsApp][HTTP] connect error', error);
+    res.status(500).json({
+      status: 'disconnected',
+      hasQR: false,
+      qrImage: null,
+      lastError: error?.message || 'Connection Failure',
+    });
+  }
+});
+
+router.get('/qr', async (_req, res) => {
+  try {
+    const qr = getCurrentQR();
+    if (!qr) return res.status(404).json({ message: 'QR not available' });
+    const qrImage = await qrcode.toDataURL(qr);
+    res.json({ qrImage });
+  } catch (error: any) {
+    console.error('[WhatsApp][HTTP] qr error', error);
+    res.status(500).json({ success: false, status: 'error', message: 'Failed to fetch QR', error: error?.message });
+  }
+});
+
+router.post('/start', async (_req, res) => {
+  try {
+    await startWhatsAppClient();
+    const state = getWhatsAppState();
+    res.json(state);
+  } catch (error: any) {
+    console.error('[WhatsApp][HTTP] start error', error);
+    res.status(500).json({
+      status: 'disconnected',
+      hasQR: false,
+      qrImage: null,
+      lastError: error?.message || 'Connection Failure',
+    });
   }
 });
 

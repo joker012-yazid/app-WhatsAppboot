@@ -46,7 +46,14 @@ new bullmq_1.Worker('campaign-messages', async (job) => {
     ]);
     if (!campaign || !recipient)
         return { skipped: 'missing' };
-    if ([client_1.CampaignRecipientStatus.SENT, client_1.CampaignRecipientStatus.DELIVERED, client_1.CampaignRecipientStatus.FAILED, client_1.CampaignRecipientStatus.CANCELLED].includes(recipient.status)) {
+    const terminalStatuses = [
+        client_1.CampaignRecipientStatus.SENT,
+        client_1.CampaignRecipientStatus.DELIVERED,
+        client_1.CampaignRecipientStatus.FAILED,
+        client_1.CampaignRecipientStatus.CANCELLED,
+    ];
+    if (terminalStatuses.includes(recipient.status)) {
+        console.log('[campaign-worker] skip duplicate send for recipient', recipientId, 'status', recipient.status);
         return { skipped: recipient.status };
     }
     if (['CANCELLED', 'FAILED', 'COMPLETED'].includes(campaign.status)) {
@@ -146,8 +153,10 @@ async function enqueueCampaignRecipients(campaignId, specificIds) {
         where.status = { in: [client_1.CampaignRecipientStatus.PENDING, client_1.CampaignRecipientStatus.SCHEDULED] };
     }
     const recipients = await prisma_1.default.campaignRecipient.findMany({ where, select: { id: true } });
-    if (!recipients.length)
+    if (!recipients.length) {
+        console.log('[campaign] enqueue skipped - no pending recipients', campaignId);
         return;
+    }
     if (!specificIds?.length) {
         await prisma_1.default.campaignRecipient.updateMany({
             where: { campaignId, status: client_1.CampaignRecipientStatus.PENDING },
@@ -155,4 +164,5 @@ async function enqueueCampaignRecipients(campaignId, specificIds) {
         });
     }
     await Promise.all(recipients.map((recipient) => exports.campaignQueue.add('campaign-send', { campaignId, recipientId: recipient.id }, { attempts: 3, removeOnComplete: true })));
+    console.log('[campaign] enqueued recipients', { campaignId, count: recipients.length });
 }
