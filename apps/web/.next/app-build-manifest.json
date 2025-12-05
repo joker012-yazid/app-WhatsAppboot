@@ -1,9 +1,9 @@
 {
   "pages": {
-    "/login/page": [
+    "/docs/roadmap/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/login/page.js"
+      "static/chunks/app/docs/roadmap/page.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
@@ -26,16 +26,6 @@
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/layout.js"
     ],
-    "/customers/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/customers/page.js"
-    ],
-    "/devices/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/devices/page.js"
-    ],
     "/jobs/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -51,6 +41,31 @@
       "static/chunks/main-app.js",
       "static/chunks/app/tickets/page.js"
     ],
+    "/customers/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/customers/page.js"
+    ],
+    "/customers/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/customers/[id]/page.js"
+    ],
+    "/devices/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/devices/page.js"
+    ],
+    "/devices/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/devices/[id]/page.js"
+    ],
+    "/settings/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/settings/page.js"
+    ],
     "/campaigns/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -61,15 +76,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/reports/page.js"
     ],
-    "/settings/page": [
+    "/login/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/settings/page.js"
+      "static/chunks/app/login/page.js"
     ],
-    "/docs/roadmap/page": [
+    "/_not-found/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/docs/roadmap/page.js"
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

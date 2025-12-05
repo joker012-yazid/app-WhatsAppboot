@@ -1,13 +1,9 @@
 {
-  "/customers/page": "app/customers/page.js",
-  "/devices/page": "app/devices/page.js",
+  "/devices/[id]/page": "app/devices/[id]/page.js",
   "/jobs/page": "app/jobs/page.js",
   "/jobs/[id]/page": "app/jobs/[id]/page.js",
+  "/reports/page": "app/reports/page.js",
   "/tickets/page": "app/tickets/page.js",
   "/page": "app/page.js",
-  "/campaigns/page": "app/campaigns/page.js",
-  "/reports/page": "app/reports/page.js",
-  "/settings/page": "app/settings/page.js",
-  "/docs/roadmap/page": "app/docs/roadmap/page.js",
   "/dashboard/page": "app/dashboard/page.js"
 }
