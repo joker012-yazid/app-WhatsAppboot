@@ -26,6 +26,7 @@ model User {
   refreshTokens  RefreshToken[]
   campaigns      Campaign[]
   campaignPresets CampaignPreset[]
+  systemSettings SystemSetting[]
 }
 
 model Session {

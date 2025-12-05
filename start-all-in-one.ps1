@@ -36,44 +36,44 @@ function Write-ColorOutput($ForegroundColor) {
 
 function Write-Success { Write-ColorOutput Green $args }
 function Write-Info { Write-ColorOutput Cyan $args }
-function Write-Warning { Write-ColorOutput Yellow $args }
-function Write-Error { Write-ColorOutput Red $args }
+function Write-Warn { Write-ColorOutput Yellow $args }
+function Write-Err { Write-ColorOutput Red $args }
 function Write-Step { Write-ColorOutput Magenta $args }
 
 # Banner
 Clear-Host
 Write-Info ""
-Write-Info "╔══════════════════════════════════════════════════════════════╗"
-Write-Info "║                                                              ║"
-Write-Info "║        WhatsApp Bot POS SuperApp - All-in-One Starter       ║"
-Write-Info "║                                                              ║"
-Write-Info "╚══════════════════════════════════════════════════════════════╝"
+Write-Info "================================================================"
+Write-Info "|                                                              |"
+Write-Info "|        WhatsApp Bot POS SuperApp - All-in-One Starter       |"
+Write-Info "|                                                              |"
+Write-Info "================================================================"
 Write-Info ""
 
 # Check if we're in the right directory
 if (-not (Test-Path "package.json")) {
-    Write-Error "[FATAL] package.json tidak ditemukan!"
-    Write-Warning "Pastikan Anda berada di root project directory"
-    Write-Warning "Current directory: $(Get-Location)"
+    Write-Err "[FATAL] package.json tidak ditemukan!"
+    Write-Warn "Pastikan Anda berada di root project directory"
+    Write-Warn "Current directory: $(Get-Location)"
     exit 1
 }
 
 # Step 1: Check Docker Installation and Services
 if (-not $SkipDocker) {
     Write-Step ""
-    Write-Step "═══ Step 1: Checking Docker & Database Services ═══"
+    Write-Step "=== Step 1: Checking Docker and Database Services ==="
     Write-Info ""
     
     # Check Docker command
     $dockerCmd = Get-Command docker -ErrorAction SilentlyContinue
     if (-not $dockerCmd) {
-        Write-Error "[ERROR] Docker tidak terinstall!"
-        Write-Warning ""
-        Write-Warning "Silakan install Docker Desktop terlebih dahulu:"
-        Write-Warning "  1. Jalankan: .\install-docker.ps1"
-        Write-Warning "  2. Atau download manual dari: https://www.docker.com/products/docker-desktop"
-        Write-Warning ""
-        Write-Warning "Setelah install Docker, restart komputer dan jalankan script ini lagi."
+        Write-Err "[ERROR] Docker tidak terinstall!"
+        Write-Warn ""
+        Write-Warn "Silakan install Docker Desktop terlebih dahulu:"
+        Write-Warn "  1. Jalankan: .\install-docker.ps1"
+        Write-Warn "  2. Atau download manual dari: https://www.docker.com/products/docker-desktop"
+        Write-Warn ""
+        Write-Warn "Setelah install Docker, restart komputer dan jalankan script ini lagi."
         exit 1
     }
     
@@ -83,14 +83,15 @@ if (-not $SkipDocker) {
         if ($LASTEXITCODE -ne 0) {
             throw "Docker not running"
         }
-        Write-Success "   ✓ Docker is running"
-    } catch {
-        Write-Error "   ✗ Docker terinstall tapi belum running"
-        Write-Warning ""
-        Write-Warning "Silakan start Docker Desktop terlebih dahulu:"
-        Write-Warning "  1. Buka Docker Desktop dari Start Menu"
-        Write-Warning "  2. Tunggu hingga status menunjukkan 'Docker Desktop is running'"
-        Write-Warning "  3. Jalankan script ini lagi"
+        Write-Success "   Docker is running"
+    }
+    catch {
+        Write-Err "   Docker terinstall tapi belum running"
+        Write-Warn ""
+        Write-Warn "Silakan start Docker Desktop terlebih dahulu:"
+        Write-Warn "  1. Buka Docker Desktop dari Start Menu"
+        Write-Warn "  2. Tunggu hingga status menunjukkan Docker Desktop is running"
+        Write-Warn "  3. Jalankan script ini lagi"
         exit 1
     }
     
@@ -106,8 +107,9 @@ if (-not $SkipDocker) {
         $containers = docker ps --format "{{.Names}}" 2>&1
         $postgresRunning = $containers -match "postgres"
         $redisRunning = $containers -match "redis"
-    } catch {
-        Write-Warning "   Could not check container status"
+    }
+    catch {
+        Write-Warn "   Could not check container status"
     }
     
     if (-not $postgresRunning -or -not $redisRunning) {
@@ -115,29 +117,33 @@ if (-not $SkipDocker) {
         try {
             docker compose up -d postgres redis
             if ($LASTEXITCODE -eq 0) {
-                Write-Success "   ✓ Database containers started"
+                Write-Success "   Database containers started"
                 Write-Info "   Waiting 5 seconds for databases to initialize..."
                 Start-Sleep -Seconds 5
-            } else {
+            }
+            else {
                 throw "Failed to start containers"
             }
-        } catch {
-            Write-Error "   ✗ Gagal start database containers"
-            Write-Warning "   Coba jalankan manual: docker compose up -d postgres redis"
+        }
+        catch {
+            Write-Err "   Gagal start database containers"
+            Write-Warn "   Coba jalankan manual: docker compose up -d postgres redis"
             exit 1
         }
-    } else {
-        Write-Success "   ✓ PostgreSQL is running"
-        Write-Success "   ✓ Redis is running"
     }
-} else {
-    Write-Warning "Skipping Docker checks (--SkipDocker flag)"
+    else {
+        Write-Success "   PostgreSQL is running"
+        Write-Success "   Redis is running"
+    }
+}
+else {
+    Write-Warn "Skipping Docker checks (SkipDocker flag)"
 }
 
 # Step 2: Check and Install Dependencies
 if (-not $SkipInstall) {
     Write-Step ""
-    Write-Step "═══ Step 2: Installing Dependencies ═══"
+    Write-Step "=== Step 2: Installing Dependencies ==="
     Write-Info ""
     
     if ($ForceClean) {
@@ -149,28 +155,28 @@ if (-not $SkipInstall) {
     }
     
     # Check if node_modules exists
-    $needsInstall = (-not (Test-Path "node_modules")) -or 
-                    (-not (Test-Path "apps/api/node_modules")) -or 
-                    (-not (Test-Path "apps/web/node_modules"))
+    $needsInstall = (-not (Test-Path "node_modules")) -or (-not (Test-Path "apps/api/node_modules")) -or (-not (Test-Path "apps/web/node_modules"))
     
     if ($needsInstall -or $ForceClean) {
         Write-Info "   Running npm install..."
         npm install
         if ($LASTEXITCODE -ne 0) {
-            Write-Error "   ✗ npm install gagal!"
+            Write-Err "   npm install gagal!"
             exit 1
         }
-        Write-Success "   ✓ Dependencies installed"
-    } else {
-        Write-Success "   ✓ Dependencies already installed"
+        Write-Success "   Dependencies installed"
     }
-} else {
-    Write-Warning "Skipping dependency installation (--SkipInstall flag)"
+    else {
+        Write-Success "   Dependencies already installed"
+    }
+}
+else {
+    Write-Warn "Skipping dependency installation (SkipInstall flag)"
 }
 
 # Step 3: Generate Prisma Client
 Write-Step ""
-Write-Step "═══ Step 3: Generating Prisma Client ═══"
+Write-Step "=== Step 3: Generating Prisma Client ==="
 Write-Info ""
 
 try {
@@ -180,19 +186,21 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "Prisma generate failed"
     }
-    Write-Success "   ✓ Prisma client generated"
-} catch {
-    Write-Error "   ✗ Gagal generate Prisma client"
+    Write-Success "   Prisma client generated"
+}
+catch {
+    Write-Err "   Gagal generate Prisma client"
     Set-Location "../.."
     exit 1
-} finally {
+}
+finally {
     Set-Location "../.."
 }
 
 # Step 4: Run Database Migrations
 if (-not $SkipMigration) {
     Write-Step ""
-    Write-Step "═══ Step 4: Running Database Migrations ═══"
+    Write-Step "=== Step 4: Running Database Migrations ==="
     Write-Info ""
     
     try {
@@ -204,34 +212,36 @@ if (-not $SkipMigration) {
         npx prisma migrate deploy
         
         if ($LASTEXITCODE -ne 0) {
-            Write-Warning "   ⚠ Migration might have issues, but continuing..."
-            # Don't exit, migrations might already be applied
-        } else {
-            Write-Success "   ✓ Database migrations applied"
+            Write-Warn "   Migration might have issues, but continuing..."
         }
-    } catch {
-        Write-Warning "   ⚠ Migration check failed, but continuing..."
-    } finally {
+        else {
+            Write-Success "   Database migrations applied"
+        }
+    }
+    catch {
+        Write-Warn "   Migration check failed, but continuing..."
+    }
+    finally {
         Set-Location "../.."
     }
-} else {
-    Write-Warning "Skipping database migration (--SkipMigration flag)"
+}
+else {
+    Write-Warn "Skipping database migration (SkipMigration flag)"
 }
 
 # Step 5: Check for .env files
 Write-Step ""
-Write-Step "═══ Step 5: Checking Environment Configuration ═══"
+Write-Step "=== Step 5: Checking Environment Configuration ==="
 Write-Info ""
 
 $envWarnings = @()
 
 # Check root .env
 if (-not (Test-Path ".env")) {
-    $envWarnings += "   ⚠ Root .env file not found"
-    Write-Warning "   Creating .env from template..."
+    $envWarnings += "Root .env file not found"
+    Write-Warn "   Creating .env from template..."
     try {
-        # Create a basic .env file
-        @"
+        $envContent = @"
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/whatsappbot
 REDIS_URL=redis://localhost:6379
 JWT_ACCESS_SECRET=super-secret-access-key-change-in-production
@@ -242,21 +252,24 @@ NODE_ENV=development
 PORT=4000
 WHATSAPP_SESSION_DIR=./whatsapp-sessions
 WHATSAPP_LOG_LEVEL=info
-"@ | Out-File -FilePath ".env" -Encoding UTF8
-        Write-Success "   ✓ Created default .env file"
-    } catch {
-        Write-Warning "   Could not create .env file automatically"
+"@
+        $envContent | Out-File -FilePath ".env" -Encoding UTF8
+        Write-Success "   Created default .env file"
     }
-} else {
-    Write-Success "   ✓ Root .env exists"
+    catch {
+        Write-Warn "   Could not create .env file automatically"
+    }
+}
+else {
+    Write-Success "   Root .env exists"
 }
 
 # Check API .env
 if (-not (Test-Path "apps/api/.env")) {
-    $envWarnings += "   ⚠ apps/api/.env file not found"
-    Write-Warning "   Creating apps/api/.env from template..."
+    $envWarnings += "apps/api/.env file not found"
+    Write-Warn "   Creating apps/api/.env from template..."
     try {
-        @"
+        $envContent = @"
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/whatsappbot
 REDIS_URL=redis://localhost:6379
 JWT_ACCESS_SECRET=super-secret-access-key-change-in-production
@@ -267,29 +280,33 @@ NODE_ENV=development
 PORT=4000
 WHATSAPP_SESSION_DIR=./whatsapp-sessions
 WHATSAPP_LOG_LEVEL=info
-"@ | Out-File -FilePath "apps/api/.env" -Encoding UTF8
-        Write-Success "   ✓ Created default apps/api/.env file"
-    } catch {
-        Write-Warning "   Could not create apps/api/.env file automatically"
+"@
+        $envContent | Out-File -FilePath "apps/api/.env" -Encoding UTF8
+        Write-Success "   Created default apps/api/.env file"
     }
-} else {
-    Write-Success "   ✓ API .env exists"
+    catch {
+        Write-Warn "   Could not create apps/api/.env file automatically"
+    }
+}
+else {
+    Write-Success "   API .env exists"
 }
 
 # Check Web .env.local
 if (-not (Test-Path "apps/web/.env.local")) {
-    $envWarnings += "   ⚠ apps/web/.env.local file not found"
-    Write-Warning "   Creating apps/web/.env.local from template..."
+    $envWarnings += "apps/web/.env.local file not found"
+    Write-Warn "   Creating apps/web/.env.local from template..."
     try {
-        @"
-NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
-"@ | Out-File -FilePath "apps/web/.env.local" -Encoding UTF8
-        Write-Success "   ✓ Created default apps/web/.env.local file"
-    } catch {
-        Write-Warning "   Could not create apps/web/.env.local file automatically"
+        $envContent = "NEXT_PUBLIC_API_BASE_URL=http://localhost:4000"
+        $envContent | Out-File -FilePath "apps/web/.env.local" -Encoding UTF8
+        Write-Success "   Created default apps/web/.env.local file"
     }
-} else {
-    Write-Success "   ✓ Web .env.local exists"
+    catch {
+        Write-Warn "   Could not create apps/web/.env.local file automatically"
+    }
+}
+else {
+    Write-Success "   Web .env.local exists"
 }
 
 if ($envWarnings.Count -gt 0) {
@@ -300,7 +317,7 @@ if ($envWarnings.Count -gt 0) {
 
 # Step 6: Final Health Check
 Write-Step ""
-Write-Step "═══ Step 6: Pre-Start Health Check ═══"
+Write-Step "=== Step 6: Pre-Start Health Check ==="
 Write-Info ""
 
 # Check PostgreSQL connection
@@ -308,47 +325,57 @@ Write-Info "   Testing PostgreSQL connection..."
 try {
     $env:DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/whatsappbot"
     Set-Location "apps/api"
-    $testConnection = npx prisma db execute --stdin 2>&1 << "SELECT 1"
+    npx prisma db execute --stdin 2>&1 | Out-Null
     Set-Location "../.."
-    Write-Success "   ✓ PostgreSQL connection OK"
-} catch {
-    Write-Warning "   ⚠ Could not verify PostgreSQL connection"
+    Write-Success "   PostgreSQL connection OK"
+}
+catch {
+    Set-Location "../.."
+    Write-Warn "   Could not verify PostgreSQL connection"
     Write-Info "   (Will be checked again when API starts)"
 }
 
-# Check Redis (optional, since it's used by BullMQ)
+# Check Redis
 Write-Info "   Testing Redis connection..."
 try {
-    $redisTest = docker exec $(docker ps -qf "name=redis") redis-cli ping 2>&1
-    if ($redisTest -match "PONG") {
-        Write-Success "   ✓ Redis connection OK"
-    } else {
-        Write-Warning "   ⚠ Redis might not be responding properly"
+    $redisContainer = docker ps -qf "name=redis" 2>&1
+    if ($redisContainer) {
+        $redisTest = docker exec $redisContainer redis-cli ping 2>&1
+        if ($redisTest -match "PONG") {
+            Write-Success "   Redis connection OK"
+        }
+        else {
+            Write-Warn "   Redis might not be responding properly"
+        }
     }
-} catch {
-    Write-Warning "   ⚠ Could not verify Redis connection"
+    else {
+        Write-Warn "   Redis container not found"
+    }
+}
+catch {
+    Write-Warn "   Could not verify Redis connection"
 }
 
 # Step 7: Start Servers
 Write-Step ""
-Write-Step "═══ Step 7: Starting Servers ═══"
+Write-Step "=== Step 7: Starting Servers ==="
 Write-Info ""
 Write-Info "   Starting API (port 4000) and Web (port 3000) servers..."
 Write-Info ""
-Write-Success "   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-Write-Success "   │"
-Write-Success "   │  🚀 Servers akan segera berjalan di:"
-Write-Success "   │"
-Write-Success "   │     API Server:  http://localhost:4000"
-Write-Success "   │     Web App:     http://localhost:3000"
-Write-Success "   │"
-Write-Success "   │  📝 Untuk login:"
-Write-Success "   │     Email:    admin@example.com"
-Write-Success "   │     Password: admin123"
-Write-Success "   │"
-Write-Success "   │  ⏹️  Untuk stop: Tekan Ctrl+C"
-Write-Success "   │"
-Write-Success "   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+Write-Success "   ============================================================"
+Write-Success "   |"
+Write-Success "   |  Servers akan segera berjalan di:"
+Write-Success "   |"
+Write-Success "   |     API Server:  http://localhost:4000"
+Write-Success "   |     Web App:     http://localhost:3000"
+Write-Success "   |"
+Write-Success "   |  Untuk login:"
+Write-Success "   |     Email:    admin@example.com"
+Write-Success "   |     Password: admin123"
+Write-Success "   |"
+Write-Success "   |  Untuk stop: Tekan Ctrl+C"
+Write-Success "   |"
+Write-Success "   ============================================================"
 Write-Info ""
 Write-Info "   Tunggu beberapa detik untuk servers startup..."
 Write-Info ""
@@ -359,10 +386,10 @@ Start-Sleep -Seconds 2
 # Start both servers using the monorepo script
 try {
     npm run dev:monorepo
-} catch {
-    Write-Error ""
-    Write-Error "   ✗ Error starting servers"
-    Write-Error "   Check the error messages above for details"
+}
+catch {
+    Write-Err ""
+    Write-Err "   Error starting servers"
+    Write-Err "   Check the error messages above for details"
     exit 1
 }
-

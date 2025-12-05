@@ -6,6 +6,7 @@ import makeWASocket, {
   type WASocket,
   useMultiFileAuthState,
   type BaileysEventMap,
+  fetchLatestBaileysVersion,
 } from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
@@ -272,12 +273,46 @@ export const startWhatsAppClient = async (forceNewSession?: boolean) => {
   try {
     fs.mkdirSync(SESSION_DIR, { recursive: true });
     const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR);
+    
+    // Fetch latest version info from WhatsApp
+    const { version, isLatest } = await fetchLatestBaileysVersion();
+    LOGGER.info({ version, isLatest }, '[WhatsApp] Baileys version info');
+    
     sock = makeWASocket({
+      version,
       auth: state,
       logger: LOGGER,
       printQRInTerminal: false,
-      browser: ['WhatsApp Bot POS', 'Desktop', '1.0.0'],
+      browser: ['Chrome (Linux)', '', ''],
       markOnlineOnConnect: false,
+      defaultQueryTimeoutMs: undefined,
+      keepAliveIntervalMs: 30000,
+      emitOwnEvents: false,
+      fireInitQueries: true,
+      generateHighQualityLinkPreview: false,
+      syncFullHistory: false,
+      getMessage: async () => undefined,
+      patchMessageBeforeSending: (message) => {
+        const requiresPatch = !!(
+          message.buttonsMessage ||
+          message.templateMessage ||
+          message.listMessage
+        );
+        if (requiresPatch) {
+          message = {
+            viewOnceMessage: {
+              message: {
+                messageContextInfo: {
+                  deviceListMetadataVersion: 2,
+                  deviceListMetadata: {},
+                },
+                ...message,
+              },
+            },
+          };
+        }
+        return message;
+      },
     });
 
     bindSocketEvents(sock);

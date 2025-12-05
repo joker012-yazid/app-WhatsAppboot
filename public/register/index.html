@@ -2,39 +2,545 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Repair Job Registration</title>
+    <title>Device Registration - WhatsApp Bot POS</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-      body { font-family: system-ui, sans-serif; margin: 2rem; line-height: 1.6; }
-      main { max-width: 680px; margin: 0 auto; }
-      h1 { color: #0f172a; }
-      p { color: #334155; }
-      code { background: #e2e8f0; padding: 0.125rem 0.25rem; border-radius: 4px; }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 500px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        animation: slideIn 0.5s ease-out;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px 24px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
+      .header p {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+
+      .form-container {
+        padding: 32px 24px;
+      }
+
+      .form-group {
+        margin-bottom: 24px;
+      }
+
+      label {
+        display: block;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 8px;
+        font-size: 14px;
+      }
+
+      label .required {
+        color: #ef4444;
+        margin-left: 2px;
+      }
+
+      input[type="text"],
+      input[type="tel"],
+      select {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 15px;
+        transition: all 0.2s;
+        font-family: inherit;
+      }
+
+      input[type="text"]:focus,
+      input[type="tel"]:focus,
+      select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+      input[type="text"]::placeholder,
+      input[type="tel"]::placeholder {
+        color: #9ca3af;
+      }
+
+      .checkbox-group {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px;
+        background: #f9fafb;
+        border-radius: 8px;
+        border: 2px solid #e5e7eb;
+        transition: all 0.2s;
+      }
+
+      .checkbox-group:has(input:checked) {
+        border-color: #667eea;
+        background: #eef2ff;
+      }
+
+      .checkbox-group input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        margin-top: 2px;
+        cursor: pointer;
+        accent-color: #667eea;
+      }
+
+      .checkbox-group label {
+        margin: 0;
+        font-weight: 400;
+        font-size: 14px;
+        color: #4b5563;
+        flex: 1;
+        cursor: pointer;
+      }
+
+      .submit-btn {
+        width: 100%;
+        padding: 14px 24px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+
+      .submit-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+      }
+
+      .submit-btn:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      .submit-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .alert {
+        padding: 16px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        font-size: 14px;
+        display: none;
+        animation: slideDown 0.3s ease-out;
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .alert.show {
+        display: block;
+      }
+
+      .alert-error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+      }
+
+      .alert-success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+      }
+
+      .alert-info {
+        background: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+      }
+
+      .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-right: 8px;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      .error-text {
+        color: #ef4444;
+        font-size: 13px;
+        margin-top: 6px;
+        display: none;
+      }
+
+      .error-text.show {
+        display: block;
+      }
+
+      .help-text {
+        color: #6b7280;
+        font-size: 13px;
+        margin-top: 6px;
+      }
+
+      @media (max-width: 640px) {
+        body {
+          padding: 0;
+        }
+
+        .container {
+          border-radius: 0;
+          min-height: 100vh;
+        }
+
+        .header h1 {
+          font-size: 20px;
+        }
+
+        .form-container {
+          padding: 24px 20px;
+        }
+      }
     </style>
   </head>
   <body>
-    <main>
-      <h1>Repair Job Registration</h1>
-      <p>
-        This static page is a placeholder for the public registration flow. The API endpoint
-        <code>POST /api/jobs/register/:token</code> accepts the customer details and device notes that
-        were collected from the QR code workflow described in <em>development_roadmap.md</em>.
-      </p>
-      <p>
-        Integrate this page with your frontend framework of choice. It only needs to collect the
-        following fields from the customer:
-      </p>
-      <ul>
-        <li>Full name</li>
-        <li>Phone number</li>
-        <li>Device type</li>
-        <li>Device model</li>
-        <li>Terms and conditions acceptance</li>
-      </ul>
-      <p>
-        The backend already validates the submission and links the details to the repair job that
-        generated the QR code.
-      </p>
-    </main>
+    <div class="container">
+      <div class="header">
+        <h1>Device Registration</h1>
+        <p>Please complete the form below to register your device</p>
+      </div>
+
+      <div class="form-container">
+        <div id="alert" class="alert"></div>
+
+        <form id="registrationForm" novalidate>
+          <div class="form-group">
+            <label for="fullName">
+              Full Name<span class="required">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="fullName" 
+              name="fullName" 
+              placeholder="Enter your full name"
+              required
+            >
+            <div id="fullNameError" class="error-text"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="phoneNumber">
+              Phone Number<span class="required">*</span>
+            </label>
+            <input 
+              type="tel" 
+              id="phoneNumber" 
+              name="phoneNumber" 
+              placeholder="e.g., 0123456789 or +60123456789"
+              required
+            >
+            <div class="help-text">Malaysian format: 01X-XXXXXXX</div>
+            <div id="phoneNumberError" class="error-text"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="deviceType">
+              Device Type<span class="required">*</span>
+            </label>
+            <select id="deviceType" name="deviceType" required>
+              <option value="">-- Select Device Type --</option>
+              <option value="phone">Phone</option>
+              <option value="tablet">Tablet</option>
+              <option value="laptop">Laptop</option>
+              <option value="desktop">Desktop</option>
+              <option value="smartwatch">Smartwatch</option>
+              <option value="other">Other</option>
+            </select>
+            <div id="deviceTypeError" class="error-text"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="deviceModel">
+              Device Model<span class="required">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="deviceModel" 
+              name="deviceModel" 
+              placeholder="e.g., iPhone 14 Pro, Samsung Galaxy S23"
+              required
+            >
+            <div id="deviceModelError" class="error-text"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="deviceNotes">
+              Issue Description (Optional)
+            </label>
+            <input 
+              type="text" 
+              id="deviceNotes" 
+              name="deviceNotes" 
+              placeholder="Brief description of the issue"
+            >
+          </div>
+
+          <div class="form-group">
+            <div class="checkbox-group">
+              <input 
+                type="checkbox" 
+                id="termsAccepted" 
+                name="termsAccepted" 
+                required
+              >
+              <label for="termsAccepted">
+                I agree to the terms and conditions. By submitting this form, I consent to the repair service processing my device information.
+              </label>
+            </div>
+            <div id="termsAcceptedError" class="error-text"></div>
+          </div>
+
+          <button type="submit" class="submit-btn" id="submitBtn">
+            Submit Registration
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      // Extract token from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+
+      const form = document.getElementById('registrationForm');
+      const submitBtn = document.getElementById('submitBtn');
+      const alert = document.getElementById('alert');
+
+      // Field validation
+      const fields = {
+        fullName: {
+          element: document.getElementById('fullName'),
+          error: document.getElementById('fullNameError'),
+          validate: (value) => {
+            if (!value.trim()) return 'Full name is required';
+            if (value.trim().length < 2) return 'Name must be at least 2 characters';
+            return null;
+          }
+        },
+        phoneNumber: {
+          element: document.getElementById('phoneNumber'),
+          error: document.getElementById('phoneNumberError'),
+          validate: (value) => {
+            if (!value.trim()) return 'Phone number is required';
+            // Remove spaces and dashes
+            const cleaned = value.replace(/[\s-]/g, '');
+            // Check Malaysian format (01X-XXXXXXX or +601X-XXXXXXX)
+            const phoneRegex = /^(\+?60|0)[1-9]\d{7,9}$/;
+            if (!phoneRegex.test(cleaned)) {
+              return 'Please enter a valid Malaysian phone number';
+            }
+            return null;
+          }
+        },
+        deviceType: {
+          element: document.getElementById('deviceType'),
+          error: document.getElementById('deviceTypeError'),
+          validate: (value) => {
+            if (!value) return 'Please select a device type';
+            return null;
+          }
+        },
+        deviceModel: {
+          element: document.getElementById('deviceModel'),
+          error: document.getElementById('deviceModelError'),
+          validate: (value) => {
+            if (!value.trim()) return 'Device model is required';
+            if (value.trim().length < 2) return 'Model must be at least 2 characters';
+            return null;
+          }
+        },
+        termsAccepted: {
+          element: document.getElementById('termsAccepted'),
+          error: document.getElementById('termsAcceptedError'),
+          validate: (checked) => {
+            if (!checked) return 'You must accept the terms and conditions';
+            return null;
+          }
+        }
+      };
+
+      // Real-time validation on blur
+      Object.keys(fields).forEach(fieldName => {
+        const field = fields[fieldName];
+        field.element.addEventListener('blur', () => {
+          validateField(fieldName);
+        });
+        // Clear error on input
+        field.element.addEventListener('input', () => {
+          field.error.textContent = '';
+          field.error.classList.remove('show');
+        });
+      });
+
+      function validateField(fieldName) {
+        const field = fields[fieldName];
+        const value = field.element.type === 'checkbox' 
+          ? field.element.checked 
+          : field.element.value;
+        const error = field.validate(value);
+        
+        if (error) {
+          field.error.textContent = error;
+          field.error.classList.add('show');
+          return false;
+        } else {
+          field.error.textContent = '';
+          field.error.classList.remove('show');
+          return true;
+        }
+      }
+
+      function validateForm() {
+        let isValid = true;
+        Object.keys(fields).forEach(fieldName => {
+          if (!validateField(fieldName)) {
+            isValid = false;
+          }
+        });
+        return isValid;
+      }
+
+      function showAlert(message, type = 'info') {
+        alert.textContent = message;
+        alert.className = `alert alert-${type} show`;
+        alert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      function hideAlert() {
+        alert.classList.remove('show');
+      }
+
+      // Check if token exists
+      if (!token) {
+        showAlert('Invalid or missing registration token. Please use the QR code link provided.', 'error');
+        submitBtn.disabled = true;
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideAlert();
+
+        if (!token) {
+          showAlert('Invalid registration token', 'error');
+          return;
+        }
+
+        if (!validateForm()) {
+          showAlert('Please fix the errors in the form', 'error');
+          return;
+        }
+
+        // Get form data
+        const formData = {
+          fullName: fields.fullName.element.value.trim(),
+          phoneNumber: fields.phoneNumber.element.value.trim(),
+          deviceType: fields.deviceType.element.value,
+          deviceModel: fields.deviceModel.element.value.trim(),
+          deviceNotes: document.getElementById('deviceNotes').value.trim() || undefined,
+          termsAccepted: fields.termsAccepted.element.checked
+        };
+
+        // Disable form
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner"></span>Submitting...';
+        
+        try {
+          const response = await fetch(`http://localhost:4000/api/jobs/register/${token}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            showAlert('Registration successful! You will be redirected shortly...', 'success');
+            form.reset();
+            
+            // Redirect to success page or job detail after 2 seconds
+            setTimeout(() => {
+              window.location.href = 'http://localhost:3000/dashboard';
+            }, 2000);
+          } else {
+            showAlert(data.error || data.message || 'Registration failed. Please try again.', 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Registration';
+          }
+        } catch (error) {
+          console.error('Registration error:', error);
+          showAlert('Network error. Please check your connection and try again.', 'error');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Registration';
+        }
+      });
+    </script>
   </body>
 </html>

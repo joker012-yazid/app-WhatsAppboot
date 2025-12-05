@@ -67,19 +67,59 @@ router.get('/register/:token', async (req, res) => {
 
 router.post('/register/:token', async (req, res) => {
   const token = String(req.params.token);
-  const { name, phone, device_type, model, accept_terms } = req.body || {};
-  if (!accept_terms) return res.status(400).json({ message: 'Terms must be accepted' });
+  const { fullName, phoneNumber, deviceType, deviceModel, deviceNotes, termsAccepted } = req.body || {};
+  
+  // Validate required fields
+  if (!termsAccepted) {
+    return res.status(400).json({ error: 'Terms and conditions must be accepted' });
+  }
+  if (!fullName || !phoneNumber || !deviceType || !deviceModel) {
+    return res.status(400).json({ error: 'All required fields must be filled' });
+  }
+  
   const job = await prisma.job.findUnique({ where: { qrToken: token } });
-  if (!job) return res.status(404).json({ message: 'Invalid or expired token' });
-  if (job.qrExpiresAt && job.qrExpiresAt < new Date()) return res.status(410).json({ message: 'Registration link has expired' });
+  if (!job) return res.status(404).json({ error: 'Invalid or expired token' });
+  if (job.qrExpiresAt && job.qrExpiresAt < new Date()) {
+    return res.status(410).json({ error: 'Registration link has expired' });
+  }
 
-  if (name && phone) {
-    await prisma.customer.update({ where: { id: job.customerId }, data: { name, phone } });
+  // Update customer information
+  if (fullName && phoneNumber) {
+    await prisma.customer.update({ 
+      where: { id: job.customerId }, 
+      data: { 
+        name: fullName, 
+        phone: phoneNumber 
+      } 
+    });
   }
-  if (device_type || model) {
-    await prisma.device.update({ where: { id: job.deviceId }, data: { deviceType: device_type || undefined, model: model || undefined } });
+  
+  // Update device information
+  if (deviceType || deviceModel) {
+    await prisma.device.update({ 
+      where: { id: job.deviceId }, 
+      data: { 
+        deviceType: deviceType || undefined, 
+        model: deviceModel || undefined,
+        notes: deviceNotes || undefined
+      } 
+    });
   }
-  return res.json({ message: 'Registration completed' });
+  
+  // Update job status to PENDING (customer has registered)
+  await prisma.job.update({
+    where: { id: job.id },
+    data: { 
+      status: 'PENDING',
+      description: deviceNotes || job.description
+    }
+  });
+  
+  return res.json({ 
+    success: true,
+    message: 'Registration completed successfully',
+    jobId: job.id 
+  });
 });
 
 // Authenticated routes
