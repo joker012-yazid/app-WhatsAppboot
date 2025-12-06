@@ -1,10 +1,11 @@
-﻿import { Queue, Worker, JobsOptions } from 'bullmq';
+import { Queue, Worker, JobsOptions } from 'bullmq';
 import IORedis from 'ioredis';
 import { CampaignRecipientStatus, Prisma } from '@prisma/client';
 
 import prisma from '../lib/prisma';
 import env from '../config/env';
 import { DO_NOT_CONTACT_TAGS, renderCampaignMessage } from '../services/campaigns';
+import { sendReminderMessage } from '../services/workflow';
 
 const connection = new IORedis(env.REDIS_URL, {
   maxRetriesPerRequest: null, // Required by BullMQ - must be null
@@ -17,17 +18,22 @@ export const campaignQueue = new Queue('campaign-messages', { connection });
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const randomBetween = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-// Process reminders: create JobMessage entries (placeholder for WhatsApp sends)
+// Process reminders: send actual WhatsApp messages
 new Worker(
   'reminders',
   async (job: any) => {
-    const { jobId, kind } = job.data as { jobId: string; kind: string };
-    const j = await prisma.job.findUnique({ where: { id: jobId }, include: { customer: true } });
-    if (!j) return;
-    const content = `Reminder (${kind}): Hi ${j.customer.name}, this is a reminder regarding your job "${j.title}".`;
-    await prisma.jobMessage.create({ data: { jobId, role: 'AGENT', content } });
-    await prisma.reminder.create({ data: { jobId, kind } as any });
-    return { ok: true };
+    const { jobId, kind } = job.data as { jobId: string; kind: 'QUOTE_DAY_1' | 'QUOTE_DAY_20' | 'QUOTE_DAY_30' };
+    
+    // Send the actual WhatsApp reminder message
+    const sent = await sendReminderMessage(jobId, kind);
+    
+    if (sent) {
+      console.log('[reminder-worker] Reminder sent successfully', { jobId, kind });
+      return { ok: true, sent: true };
+    } else {
+      console.log('[reminder-worker] Failed to send reminder (job may no longer be QUOTED)', { jobId, kind });
+      return { ok: false, sent: false };
+    }
   },
   { connection },
 );

@@ -73,7 +73,37 @@ model Customer {
 
   devices   Device[]
   jobs      Job[]
+  messages  Message[]
   campaignRecipients CampaignRecipient[]
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  RECEIVED
+}
+
+model Message {
+  id          String           @id @default(uuid())
+  customerId  String
+  customer    Customer         @relation(fields: [customerId], references: [id])
+  direction   MessageDirection
+  content     String
+  status      MessageStatus    @default(SENT)
+  sentAt      DateTime?
+  receivedAt  DateTime?
+  readAt      DateTime?
+  createdAt   DateTime         @default(now())
+  
+  @@index([customerId])
+  @@index([createdAt])
 }
 
 enum JobStatus {

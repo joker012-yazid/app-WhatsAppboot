@@ -63,11 +63,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const tryRefresh = useCallback(async () => {
     const { refresh } = loadStoredTokens();
-    const body = refresh ? { refreshToken: refresh } : {};
+    // If no refresh token stored, don't try to refresh
+    if (!refresh) {
+      return false;
+    }
     try {
-      const res = await apiPost<{ accessToken: string; refreshToken?: string }>('/api/auth/refresh', body);
+      const res = await apiPost<{ accessToken: string; refreshToken?: string }>('/api/auth/refresh', { refreshToken: refresh });
       if (res?.accessToken) {
-        storeTokens(res.accessToken, res.refreshToken ?? refresh ?? null);
+        storeTokens(res.accessToken, res.refreshToken ?? refresh);
         setAccessToken(res.accessToken);
         return true;
       }
@@ -106,7 +109,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = useCallback(async () => {
     try {
       const { refresh } = loadStoredTokens();
-      await apiPost('/api/auth/logout', refresh ? { refreshToken: refresh } : {});
+      if (refresh) {
+        await apiPost('/api/auth/logout', { refreshToken: refresh });
+      }
+    } catch {
+      // Ignore logout errors
     } finally {
       clearTokens();
       setUser(null);
@@ -119,24 +126,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const boot = async () => {
       setStatus('authenticating');
       try {
-        const { access } = loadStoredTokens();
+        const { access, refresh } = loadStoredTokens();
         let hasToken = Boolean(access);
-        if (!hasToken) {
+        
+        // Only try to refresh if we have a refresh token
+        if (!hasToken && refresh) {
           hasToken = await tryRefresh();
-        } else {
-          setAccessToken(access || null);
+        } else if (access) {
+          setAccessToken(access);
         }
+        
         if (hasToken) {
           await fetchMe();
           if (!cancelled) setStatus('authenticated');
         } else if (!cancelled) {
+          // No tokens at all - user is not authenticated
           setStatus('unauthenticated');
           setUser(null);
         }
       } catch (e: any) {
         if (!cancelled) {
-          const msg = e?.message || 'Session expired. Please login again.';
-          setError(msg);
+          // Only set error if it's not a simple "no auth" situation
+          const msg = e?.message || '';
+          const isBackendError = msg.includes('Backend API') || msg.includes('BACKEND_UNAVAILABLE');
+          if (isBackendError) {
+            setError(msg);
+          }
           setStatus('unauthenticated');
           setUser(null);
           clearTokens();

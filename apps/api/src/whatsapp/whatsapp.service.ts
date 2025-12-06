@@ -12,6 +12,7 @@ import { Boom } from '@hapi/boom';
 import pino from 'pino';
 
 import env from '../config/env';
+import { handleCustomerResponse } from '../services/workflow';
 
 type ConnectionStatus = 'disconnected' | 'connecting' | 'qr_ready' | 'connected' | 'error';
 
@@ -229,6 +230,14 @@ const bindSocketEvents = (socket: WASocket) => {
         fromMe: Boolean(m.key.fromMe),
       };
       pushMessage(chatMessage);
+      
+      // Handle incoming customer messages (not from us)
+      if (!m.key.fromMe && text) {
+        const phone = chatId.replace('@s.whatsapp.net', '');
+        handleCustomerResponse(phone, text).catch((error) => {
+          LOGGER.error({ error, phone }, '[WhatsApp] Error handling customer response');
+        });
+      }
     });
   });
 

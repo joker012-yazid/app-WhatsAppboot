@@ -9,6 +9,7 @@ import { enqueueReminder } from '../queues';
 
 import prisma from '../lib/prisma';
 import { requireAuth, requireRole } from '../middleware/auth';
+import { onJobStatusChange, sendRegistrationConfirmation } from '../services/workflow';
 
 const router = Router();
 
@@ -114,6 +115,9 @@ router.post('/register/:token', async (req, res) => {
       description: deviceNotes || job.description
     }
   });
+  
+  // Send confirmation WhatsApp message
+  await sendRegistrationConfirmation(job.id);
   
   return res.json({ 
     success: true,
@@ -228,6 +232,11 @@ router.put('/:id', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'), a
           notes: `Status updated from ${existing.status} to ${data.status}`,
         },
       });
+      
+      // Trigger workflow automation
+      await onJobStatusChange(id, data.status, existing.status);
+      
+      // Schedule reminders for quotations
       if (data.status === 'QUOTED') {
         const DAY = 24 * 60 * 60 * 1000;
         await enqueueReminder(id, 'QUOTE_DAY_1', DAY);
