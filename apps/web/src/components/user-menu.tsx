@@ -55,12 +55,12 @@ export function UserMenu() {
     : user.email?.slice(0, 2).toUpperCase() || 'U';
 
   const handleLogout = async () => {
-    try {
-      await logout();
+          try {
+            await logout();
       toast.success('Logged out successfully');
-    } catch (e: any) {
-      toast.error(e?.message || 'Logout failed');
-    }
+          } catch (e: any) {
+            toast.error(e?.message || 'Logout failed');
+          }
   };
 
   return (

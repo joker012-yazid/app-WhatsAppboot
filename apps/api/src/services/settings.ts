@@ -34,6 +34,8 @@ type AiSettings = {
   model: string;
   temperature: number;
   maxTokens: number;
+  systemPrompt: string;
+  autoReplyEnabled: boolean;
 };
 
 type BackupSettings = {
@@ -75,8 +77,10 @@ export const settingDefaults: SettingMap = {
     apiKey: '',
     baseUrl: '',
     model: 'gpt-4o-mini',
-    temperature: 0.2,
-    maxTokens: 512,
+    temperature: 0.3,
+    maxTokens: 800,
+    systemPrompt: '',
+    autoReplyEnabled: true,
   },
   backup: {
     manualEnabled: true,
@@ -123,6 +127,8 @@ const aiSchema = z.object({
   model: z.string().min(1),
   temperature: z.number().min(0).max(1),
   maxTokens: z.number().min(64).max(4000),
+  systemPrompt: z.string().optional().transform((value) => value ?? ''),
+  autoReplyEnabled: z.boolean().optional().default(true),
 });
 
 const backupSchema = z.object({

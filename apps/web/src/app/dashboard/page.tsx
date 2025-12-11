@@ -230,7 +230,7 @@ export default function DashboardPage() {
   }, []);
 
   if (loading) {
-    return (
+  return (
       <div className="space-y-6">
         <SkeletonStats />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -239,7 +239,7 @@ export default function DashboardPage() {
           </div>
           <Skeleton className="h-80 w-full rounded-xl" />
         </div>
-      </div>
+              </div>
     );
   }
 
@@ -266,7 +266,7 @@ export default function DashboardPage() {
               <Link href="/jobs">New Job</Link>
             </AnimatedButton>
           </div>
-        </div>
+                </div>
       </SlideIn>
 
       {/* Stats Cards */}
@@ -317,7 +317,7 @@ export default function DashboardPage() {
           color="cyan-500"
           delay={0.5}
         />
-      </div>
+              </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -330,7 +330,7 @@ export default function DashboardPage() {
         >
           <AnimatedCard className="p-6" hoverEffect="none">
             <div className="flex items-center justify-between mb-6">
-              <div>
+                <div>
                 <h3 className="font-semibold text-foreground">Revenue Overview</h3>
                 <p className="text-sm text-muted-foreground">Last 7 days performance</p>
               </div>
@@ -391,7 +391,7 @@ export default function DashboardPage() {
               <Link href="/jobs" className="text-xs text-primary hover:underline">
                 View all
               </Link>
-            </div>
+              </div>
             <div className="space-y-1 max-h-64 overflow-y-auto">
               {dashboard?.recentActivities?.slice(0, 6).map((activity, index) => (
                 <ActivityItem key={activity.id} activity={activity} index={index} />
@@ -468,6 +468,6 @@ export default function DashboardPage() {
           </div>
         </AnimatedCard>
       </motion.div>
-    </div>
+      </div>
   );
 }

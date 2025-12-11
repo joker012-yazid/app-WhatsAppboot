@@ -9,7 +9,6 @@ import {
   Users,
   MonitorSmartphone,
   Wrench,
-  MessageSquare,
   MessageCircle,
   Megaphone,
   BarChart3,
@@ -18,6 +17,7 @@ import {
   ChevronRight,
   Zap,
   FileText,
+  QrCode,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/use-animation';
@@ -33,10 +33,10 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
   { label: 'WhatsApp Chat', href: '/chat', icon: <MessageCircle className="h-5 w-5" />, badge: 'Live', badgeColor: 'bg-green-500' },
+  { label: 'Registration', href: '/registration', icon: <QrCode className="h-5 w-5" />, badge: 'QR', badgeColor: 'bg-purple-500' },
   { label: 'Customers', href: '/customers', icon: <Users className="h-5 w-5" /> },
   { label: 'Devices', href: '/devices', icon: <MonitorSmartphone className="h-5 w-5" /> },
   { label: 'Jobs', href: '/jobs', icon: <Wrench className="h-5 w-5" />, badge: 'New', badgeColor: 'bg-primary' },
-  { label: 'Tickets', href: '/tickets', icon: <MessageSquare className="h-5 w-5" /> },
   { label: 'Campaigns', href: '/campaigns', icon: <Megaphone className="h-5 w-5" /> },
   { label: 'Reports', href: '/reports', icon: <BarChart3 className="h-5 w-5" /> },
 ];

@@ -157,8 +157,8 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium text-foreground" htmlFor="password">
-                  Password
-                </label>
+                Password
+              </label>
                 <Link
                   href="#"
                   className="text-xs text-primary hover:text-primary/80 transition-colors"
@@ -168,10 +168,10 @@ export default function LoginPage() {
               </div>
               <div className="relative">
                 <motion.input
-                  id="password"
+                id="password"
                   type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                   className={cn(
                     'w-full rounded-lg border bg-card px-4 py-3 pr-12 text-sm transition-all duration-200',
                     'placeholder:text-muted-foreground',
@@ -179,10 +179,10 @@ export default function LoginPage() {
                     error ? 'border-destructive' : 'border-border'
                   )}
                   placeholder="Enter your password"
-                  autoComplete="current-password"
-                  required
+                autoComplete="current-password"
+                required
                   whileFocus={{ scale: 1.01 }}
-                />
+              />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -216,7 +216,7 @@ export default function LoginPage() {
                   exit={{ opacity: 0, height: 0 }}
                   className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive"
                 >
-                  {error}
+                {error}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -277,7 +277,7 @@ export default function LoginPage() {
           <div className="absolute top-20 left-20 h-72 w-72 rounded-full bg-primary/30 blur-3xl" />
           <div className="absolute bottom-20 right-20 h-96 w-96 rounded-full bg-purple-500/30 blur-3xl" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full bg-cyan-500/20 blur-3xl" />
-        </div>
+            </div>
 
         {/* Grid Pattern */}
         <div

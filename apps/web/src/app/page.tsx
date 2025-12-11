@@ -16,7 +16,7 @@ export default function HomePage() {
         router.replace('/dashboard');
       } else {
         router.replace('/login');
-      }
+    }
     }
   }, [user, loading, router]);
 

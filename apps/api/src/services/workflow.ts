@@ -7,6 +7,7 @@
 
 import prisma from '../lib/prisma';
 import { sendMessageToChat, getConnectionStatus } from '../whatsapp/whatsapp.service';
+import { generateSalesResponse } from './ai';
 import pino from 'pino';
 
 const logger = pino({ level: 'info' });
@@ -365,17 +366,17 @@ export async function handleCustomerResponse(
     // Normalize phone number
     const normalizedPhone = phone.replace(/\D/g, '');
 
-    // Find customer by phone
-    const customer = await prisma.customer.findFirst({
+    // Find customer by phone using exact match (phone is unique)
+    const customer = await prisma.customer.findUnique({
       where: {
-        phone: {
-          contains: normalizedPhone,
-        },
+        phone: normalizedPhone,
       },
     });
 
     if (!customer) {
-      logger.info({ phone }, '[Workflow] Customer not found for incoming message');
+      // New customer - respond with AI welcome message
+      logger.info({ phone }, '[Workflow] New customer - generating AI welcome response');
+      await handleNewCustomerAiResponse(phone, messageText);
       return;
     }
 
@@ -393,8 +394,21 @@ export async function handleCustomerResponse(
       },
     });
 
+    // Log incoming message first
+    await prisma.message.create({
+      data: {
+        customerId: customer.id,
+        direction: 'INBOUND',
+        content: messageText,
+        status: 'RECEIVED',
+        receivedAt: new Date(),
+      },
+    });
+
     if (!job) {
-      logger.info({ customerId: customer.id }, '[Workflow] No pending quotation found');
+      // Existing customer without pending quotation - still provide AI response
+      logger.info({ customerId: customer.id }, '[Workflow] No pending quotation, using AI for general response');
+      await handleAiResponse(phone, customer, messageText, null);
       return;
     }
 
@@ -449,21 +463,79 @@ export async function handleCustomerResponse(
 
       logger.info({ jobId: job.id, customerId: customer.id }, '[Workflow] Job rejected by customer');
     } else {
-      logger.info({ text }, '[Workflow] Message does not contain approval/rejection keywords');
+      // Use AI to generate response for general inquiries
+      logger.info({ text }, '[Workflow] Using AI to respond to general inquiry');
+      await handleAiResponse(phone, customer, messageText, job);
+    }
+  } catch (error: any) {
+    logger.error({ error: error.message, phone }, '[Workflow] Error handling customer response');
+  }
+}
+
+/**
+ * Handle AI-powered response for general customer inquiries
+ */
+async function handleAiResponse(
+  phone: string,
+  customer: { id: string; name: string; phone: string },
+  messageText: string,
+  job?: { id: string; status: string; device: { deviceType: string; model?: string | null } } | null
+): Promise<void> {
+  try {
+    // Get recent conversation history (excluding the current message which was just logged)
+    // Skip 1 to exclude the current message that was just saved
+    const recentMessages = await prisma.message.findMany({
+      where: { customerId: customer.id },
+      orderBy: { createdAt: 'desc' },
+      skip: 1, // Skip the most recent (current) message to avoid duplicate
+      take: 10,
+    });
+
+    const previousMessages = recentMessages
+      .reverse()
+      .map((m) => ({
+        role: (m.direction === 'INBOUND' ? 'customer' : 'agent') as 'customer' | 'agent',
+        content: m.content,
+      }));
+
+    // Generate AI response
+    const aiResponse = await generateSalesResponse(messageText, {
+      customerName: customer.name,
+      previousMessages,
+      hasQuotation: job?.status === 'QUOTED',
+      deviceInfo: job ? `${job.device.deviceType} ${job.device.model || ''}`.trim() : undefined,
+    });
+
+    if (!aiResponse || aiResponse.startsWith('AI stub') || aiResponse.startsWith('AI provider error')) {
+      logger.warn({ phone }, '[Workflow] AI response not available or error');
+      return;
     }
 
-    // Log incoming message
+    // Check WhatsApp connection
+    const status = getConnectionStatus();
+    if (status.status !== 'connected') {
+      logger.warn({ status: status.status }, '[Workflow] WhatsApp not connected, cannot send AI response');
+      return;
+    }
+
+    // Format phone number and send
+    const chatId = phone.includes('@') ? phone : `${phone.replace(/\D/g, '')}@s.whatsapp.net`;
+    await sendMessageToChat(chatId, aiResponse);
+
+    // Log AI response
     await prisma.message.create({
       data: {
         customerId: customer.id,
-        direction: 'INBOUND',
-        content: messageText,
-        status: 'RECEIVED',
-        receivedAt: new Date(),
+        direction: 'OUTBOUND',
+        content: aiResponse,
+        status: 'SENT',
+        sentAt: new Date(),
       },
     });
+
+    logger.info({ phone, customerId: customer.id }, '[Workflow] AI response sent successfully');
   } catch (error: any) {
-    logger.error({ error: error.message, phone }, '[Workflow] Error handling customer response');
+    logger.error({ error: error.message, phone }, '[Workflow] Error generating AI response');
   }
 }
 
@@ -507,6 +579,111 @@ export async function sendRegistrationConfirmation(jobId: string): Promise<boole
   } catch (error: any) {
     logger.error({ error: error.message, jobId }, '[Workflow] Error sending registration confirmation');
     return false;
+  }
+}
+
+/**
+ * Handle AI response for new customers (not yet in database)
+ * Uses upsert pattern to handle concurrent requests safely
+ */
+async function handleNewCustomerAiResponse(phone: string, messageText: string): Promise<void> {
+  try {
+    const normalizedPhone = phone.replace(/\D/g, '');
+    
+    // Use upsert to handle concurrent requests - won't fail on duplicate
+    let customer;
+    let isNewCustomer = false;
+    
+    try {
+      // Try to create new customer first
+      customer = await prisma.customer.create({
+        data: {
+          name: `Lead ${normalizedPhone.slice(-4)}`, // Temporary name
+          phone: normalizedPhone,
+          type: 'NEW',
+          tags: ['WHATSAPP_LEAD'],
+        },
+      });
+      isNewCustomer = true;
+      logger.info({ phone, customerId: customer.id }, '[Workflow] New customer lead created');
+    } catch (createError: any) {
+      // If unique constraint violation (P2002), find existing customer with exact match
+      if (createError.code === 'P2002') {
+        customer = await prisma.customer.findUnique({
+          where: { phone: normalizedPhone },
+        });
+        if (!customer) {
+          // Edge case: still not found, something went wrong
+          throw new Error('Customer not found after unique constraint error');
+        }
+        logger.info({ phone, customerId: customer.id }, '[Workflow] Found existing customer (concurrent request)');
+      } else {
+        throw createError; // Re-throw other errors
+      }
+    }
+
+    // Log the incoming message
+    await prisma.message.create({
+      data: {
+        customerId: customer.id,
+        direction: 'INBOUND',
+        content: messageText,
+        status: 'RECEIVED',
+        receivedAt: new Date(),
+      },
+    });
+
+    // For concurrent requests (customer already exists), get conversation history
+    // and generate contextual response instead of welcome message
+    const previousMessages = isNewCustomer ? [] : (
+      await prisma.message.findMany({
+        where: { customerId: customer.id },
+        orderBy: { createdAt: 'desc' },
+        skip: 1, // Skip the just-logged message
+        take: 10,
+      })
+    ).reverse().map((m) => ({
+      role: (m.direction === 'INBOUND' ? 'customer' : 'agent') as 'customer' | 'agent',
+      content: m.content,
+    }));
+
+    // Generate AI response
+    const aiResponse = await generateSalesResponse(messageText, {
+      customerName: isNewCustomer ? undefined : customer.name,
+      previousMessages,
+      hasQuotation: false,
+    });
+
+    if (!aiResponse || aiResponse.startsWith('AI stub') || aiResponse.startsWith('AI provider error')) {
+      logger.warn({ phone }, '[Workflow] AI response not available for new customer');
+      return;
+    }
+
+    // Check WhatsApp connection
+    const status = getConnectionStatus();
+    if (status.status !== 'connected') {
+      logger.warn({ status: status.status }, '[Workflow] WhatsApp not connected');
+      return;
+    }
+
+    // Send response
+    const chatId = phone.includes('@') ? phone : `${normalizedPhone}@s.whatsapp.net`;
+    await sendMessageToChat(chatId, aiResponse);
+
+    // Log the outgoing AI response
+    await prisma.message.create({
+      data: {
+        customerId: customer.id,
+        direction: 'OUTBOUND',
+        content: aiResponse,
+        status: 'SENT',
+        sentAt: new Date(),
+      },
+    });
+
+    logger.info({ phone, customerId: customer.id }, '[Workflow] AI welcome response sent to new customer');
+  } catch (error: any) {
+    logger.error({ error: error.message, phone }, '[Workflow] Error sending AI response to new customer');
   }
 }
 

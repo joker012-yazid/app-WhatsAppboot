@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Job Progress - WhatsApp Bot POS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+        min-height: 100vh;
+        padding: 20px;
+        line-height: 1.6;
+        color: #e2e8f0;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      /* Header Card */
+      .header-card {
+        background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(20, 184, 166, 0.1) 100%);
+        border: 1px solid rgba(6, 182, 212, 0.3);
+        border-radius: 20px;
+        padding: 28px;
+        margin-bottom: 20px;
+        animation: slideIn 0.5s ease-out;
+        backdrop-filter: blur(10px);
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .header-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(6, 182, 212, 0.2);
+        color: #22d3ee;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 16px;
+      }
+
+      .header-badge svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      .header-card h1 {
+        font-size: 26px;
+        font-weight: 700;
+        color: #f1f5f9;
+        margin-bottom: 8px;
+      }
+
+      .device-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #94a3b8;
+        font-size: 14px;
+      }
+
+      .device-info svg {
+        width: 16px;
+        height: 16px;
+        color: #64748b;
+      }
+
+      /* Status Card */
+      .status-card {
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.1);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 20px;
+        animation: slideIn 0.5s ease-out 0.1s both;
+      }
+
+      .status-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+
+      .status-header h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .current-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 30px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .status-PENDING { background: rgba(234, 179, 8, 0.15); color: #fbbf24; border: 1px solid rgba(234, 179, 8, 0.3); }
+      .status-QUOTED { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+      .status-APPROVED { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+      .status-REJECTED { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+      .status-IN_PROGRESS { background: rgba(6, 182, 212, 0.15); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.3); }
+      .status-COMPLETED { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+
+      /* Progress Steps */
+      .progress-steps {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+        margin-top: 8px;
+      }
+
+      .progress-steps::before {
+        content: '';
+        position: absolute;
+        top: 14px;
+        left: 20px;
+        right: 20px;
+        height: 3px;
+        background: rgba(148, 163, 184, 0.2);
+        border-radius: 2px;
+      }
+
+      .progress-line {
+        position: absolute;
+        top: 14px;
+        left: 20px;
+        height: 3px;
+        background: linear-gradient(90deg, #06b6d4 0%, #14b8a6 100%);
+        border-radius: 2px;
+        transition: width 0.5s ease;
+      }
+
+      .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .step-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #1e293b;
+        border: 3px solid rgba(148, 163, 184, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+      }
+
+      .step-circle svg {
+        width: 14px;
+        height: 14px;
+        color: #64748b;
+      }
+
+      .step.completed .step-circle {
+        background: linear-gradient(135deg, #06b6d4 0%, #14b8a6 100%);
+        border-color: transparent;
+      }
+
+      .step.completed .step-circle svg {
+        color: white;
+      }
+
+      .step.active .step-circle {
+        border-color: #06b6d4;
+        box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.2);
+      }
+
+      .step-label {
+        font-size: 11px;
+        color: #64748b;
+        text-align: center;
+        font-weight: 500;
+      }
+
+      .step.completed .step-label,
+      .step.active .step-label {
+        color: #e2e8f0;
+      }
+
+      /* Timeline Card */
+      .timeline-card {
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.1);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 20px;
+        animation: slideIn 0.5s ease-out 0.2s both;
+      }
+
+      .timeline-card h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 20px;
+      }
+
+      .timeline {
+        position: relative;
+        padding-left: 28px;
+      }
+
+      .timeline::before {
+        content: '';
+        position: absolute;
+        left: 8px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: rgba(148, 163, 184, 0.2);
+      }
+
+      .timeline-item {
+        position: relative;
+        padding-bottom: 24px;
+      }
+
+      .timeline-item:last-child {
+        padding-bottom: 0;
+      }
+
+      .timeline-dot {
+        position: absolute;
+        left: -22px;
+        top: 2px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #06b6d4;
+        border: 2px solid #0f172a;
+      }
+
+      .timeline-item:not(:first-child) .timeline-dot {
+        background: #475569;
+      }
+
+      .timeline-content {
+        background: rgba(15, 23, 42, 0.5);
+        border: 1px solid rgba(148, 163, 184, 0.1);
+        border-radius: 12px;
+        padding: 14px 16px;
+      }
+
+      .timeline-status {
+        font-weight: 600;
+        color: #f1f5f9;
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+
+      .timeline-notes {
+        font-size: 13px;
+        color: #94a3b8;
+        margin-bottom: 6px;
+      }
+
+      .timeline-time {
+        font-size: 12px;
+        color: #64748b;
+      }
+
+      /* Photos Card */
+      .photos-card {
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.1);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 20px;
+        animation: slideIn 0.5s ease-out 0.3s both;
+      }
+
+      .photos-card h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 20px;
+      }
+
+      .photos-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      .photo-item {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        aspect-ratio: 1;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+
+      .photo-item:hover {
+        transform: scale(1.02);
+      }
+
+      .photo-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .photo-label {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 8px 12px;
+        background: linear-gradient(transparent, rgba(0,0,0,0.8));
+        font-size: 12px;
+        color: white;
+      }
+
+      .no-photos {
+        text-align: center;
+        padding: 32px;
+        color: #64748b;
+      }
+
+      .no-photos svg {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 12px;
+        opacity: 0.5;
+      }
+
+      /* Info Card */
+      .info-card {
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.1);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 20px;
+        animation: slideIn 0.5s ease-out 0.4s both;
+      }
+
+      .info-card h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 16px;
+      }
+
+      .info-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+      }
+
+      .info-row:last-child {
+        border-bottom: none;
+      }
+
+      .info-label {
+        color: #64748b;
+        font-size: 13px;
+      }
+
+      .info-value {
+        color: #f1f5f9;
+        font-weight: 500;
+        font-size: 14px;
+      }
+
+      /* Footer */
+      .footer {
+        text-align: center;
+        padding: 24px;
+        color: #64748b;
+        font-size: 12px;
+      }
+
+      .footer-brand {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .footer-brand svg {
+        width: 20px;
+        height: 20px;
+        color: #06b6d4;
+      }
+
+      /* Loading State */
+      .loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 300px;
+        gap: 16px;
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(6, 182, 212, 0.2);
+        border-top-color: #06b6d4;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      /* Error State */
+      .error-card {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 16px;
+        padding: 32px;
+        text-align: center;
+        animation: slideIn 0.5s ease-out;
+      }
+
+      .error-card svg {
+        width: 48px;
+        height: 48px;
+        color: #f87171;
+        margin-bottom: 16px;
+      }
+
+      .error-card h2 {
+        color: #f87171;
+        margin-bottom: 8px;
+      }
+
+      .error-card p {
+        color: #94a3b8;
+      }
+
+      /* Lightbox */
+      .lightbox {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .lightbox.show {
+        display: flex;
+      }
+
+      .lightbox img {
+        max-width: 100%;
+        max-height: 90vh;
+        border-radius: 8px;
+      }
+
+      .lightbox-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(255,255,255,0.1);
+        border: none;
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      @media (max-width: 640px) {
+        body {
+          padding: 12px;
+        }
+
+        .header-card h1 {
+          font-size: 22px;
+        }
+
+        .photos-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .progress-steps {
+          gap: 4px;
+        }
+
+        .step-label {
+          font-size: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Loading State -->
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p style="color: #94a3b8;">Loading job progress...</p>
+      </div>
+
+      <!-- Error State -->
+      <div id="error" class="error-card" style="display: none;">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <h2>Error</h2>
+        <p id="errorMessage">Unable to load job progress.</p>
+      </div>
+
+      <!-- Content -->
+      <div id="content" style="display: none;">
+        <!-- Header -->
+        <div class="header-card">
+          <div class="header-badge">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            Job Progress
+          </div>
+          <h1 id="jobTitle">Loading...</h1>
+          <div class="device-info">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            </svg>
+            <span id="deviceInfo">—</span>
+          </div>
+        </div>
+
+        <!-- Status Card -->
+        <div class="status-card">
+          <div class="status-header">
+            <h2>Current Status</h2>
+            <div id="currentStatus" class="current-status status-PENDING">
+              <span class="status-dot"></span>
+              <span>Pending</span>
+            </div>
+          </div>
+          
+          <div class="progress-steps">
+            <div class="progress-line" id="progressLine"></div>
+            <div class="step" data-step="PENDING">
+              <div class="step-circle">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <span class="step-label">Received</span>
+            </div>
+            <div class="step" data-step="QUOTED">
+              <div class="step-circle">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+              </div>
+              <span class="step-label">Quoted</span>
+            </div>
+            <div class="step" data-step="IN_PROGRESS">
+              <div class="step-circle">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+              </div>
+              <span class="step-label">In Progress</span>
+            </div>
+            <div class="step" data-step="COMPLETED">
+              <div class="step-circle">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <span class="step-label">Completed</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Photos Card -->
+        <div class="photos-card">
+          <h2>📸 Progress Photos</h2>
+          <div id="photosGrid" class="photos-grid">
+            <!-- Photos will be inserted here -->
+          </div>
+          <div id="noPhotos" class="no-photos" style="display: none;">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <p>No progress photos yet.<br>Photos will appear here as we work on your device.</p>
+          </div>
+        </div>
+
+        <!-- Timeline Card -->
+        <div class="timeline-card">
+          <h2>📋 Status Timeline</h2>
+          <div id="timeline" class="timeline">
+            <!-- Timeline items will be inserted here -->
+          </div>
+          <div id="noTimeline" style="display: none; text-align: center; padding: 20px; color: #64748b;">
+            <p>No status updates yet.</p>
+          </div>
+        </div>
+
+        <!-- Info Card -->
+        <div class="info-card">
+          <h2>ℹ️ Job Information</h2>
+          <div class="info-grid">
+            <div class="info-row">
+              <span class="info-label">Customer</span>
+              <span class="info-value" id="customerName">—</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Device</span>
+              <span class="info-value" id="deviceDetails">—</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Priority</span>
+              <span class="info-value" id="priority">—</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Created</span>
+              <span class="info-value" id="createdAt">—</span>
+            </div>
+            <div class="info-row" id="dueDateRow" style="display: none;">
+              <span class="info-label">Expected Due</span>
+              <span class="info-value" id="dueDate">—</span>
+            </div>
+            <div class="info-row" id="diagnosisRow" style="display: none;">
+              <span class="info-label">Diagnosis</span>
+              <span class="info-value" id="diagnosis">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+          <div class="footer-brand">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+            WhatsApp Bot POS
+          </div>
+          <p>This page auto-refreshes every 30 seconds</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lightbox -->
+    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+      <button class="lightbox-close" onclick="closeLightbox()">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+      <img id="lightboxImage" src="" alt="Photo">
+    </div>
+
+    <script>
+      // Extract token from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+
+      const loadingEl = document.getElementById('loading');
+      const errorEl = document.getElementById('error');
+      const contentEl = document.getElementById('content');
+      const errorMessageEl = document.getElementById('errorMessage');
+
+      // Status order for progress calculation
+      const statusOrder = ['PENDING', 'QUOTED', 'APPROVED', 'IN_PROGRESS', 'COMPLETED'];
+      const statusLabels = {
+        PENDING: 'Pending',
+        QUOTED: 'Quoted',
+        APPROVED: 'Approved',
+        REJECTED: 'Rejected',
+        IN_PROGRESS: 'In Progress',
+        COMPLETED: 'Completed'
+      };
+
+      function showError(message) {
+        loadingEl.style.display = 'none';
+        errorEl.style.display = 'block';
+        contentEl.style.display = 'none';
+        errorMessageEl.textContent = message;
+      }
+
+      function showContent() {
+        loadingEl.style.display = 'none';
+        errorEl.style.display = 'none';
+        contentEl.style.display = 'block';
+      }
+
+      function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-MY', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+
+      function updateProgressSteps(currentStatus) {
+        const steps = document.querySelectorAll('.step');
+        const progressLine = document.getElementById('progressLine');
+        
+        // Map status to step index
+        const stepMapping = {
+          'PENDING': 0,
+          'QUOTED': 1,
+          'APPROVED': 2,
+          'REJECTED': 1,
+          'IN_PROGRESS': 2,
+          'COMPLETED': 3
+        };
+        
+        const currentIndex = stepMapping[currentStatus] || 0;
+        
+        steps.forEach((step, index) => {
+          step.classList.remove('completed', 'active');
+          if (index < currentIndex) {
+            step.classList.add('completed');
+          } else if (index === currentIndex) {
+            step.classList.add('active');
+            if (currentStatus === 'COMPLETED') {
+              step.classList.add('completed');
+            }
+          }
+        });
+        
+        // Calculate progress line width
+        const totalSteps = steps.length - 1;
+        const progressPercent = (currentIndex / totalSteps) * 100;
+        progressLine.style.width = `calc(${progressPercent}% - 40px)`;
+      }
+
+      function renderPhotos(photos) {
+        const grid = document.getElementById('photosGrid');
+        const noPhotos = document.getElementById('noPhotos');
+        
+        if (!photos || photos.length === 0) {
+          grid.innerHTML = '';
+          noPhotos.style.display = 'block';
+          return;
+        }
+        
+        noPhotos.style.display = 'none';
+        grid.innerHTML = photos.map(photo => `
+          <div class="photo-item" onclick="openLightbox('${photo.url}')">
+            <img src="${photo.url}" alt="${photo.label || 'Progress photo'}" loading="lazy">
+            ${photo.label ? `<div class="photo-label">${photo.label}</div>` : ''}
+          </div>
+        `).join('');
+      }
+
+      function renderTimeline(history) {
+        const timeline = document.getElementById('timeline');
+        const noTimeline = document.getElementById('noTimeline');
+        
+        if (!history || history.length === 0) {
+          timeline.innerHTML = '';
+          noTimeline.style.display = 'block';
+          return;
+        }
+        
+        noTimeline.style.display = 'none';
+        timeline.innerHTML = history.map((item, index) => `
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+              <div class="timeline-status">${statusLabels[item.status] || item.status}</div>
+              ${item.notes ? `<div class="timeline-notes">${item.notes}</div>` : ''}
+              <div class="timeline-time">${formatDate(item.createdAt)}</div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      function openLightbox(imageUrl) {
+        document.getElementById('lightboxImage').src = imageUrl;
+        document.getElementById('lightbox').classList.add('show');
+      }
+
+      function closeLightbox() {
+        document.getElementById('lightbox').classList.remove('show');
+      }
+
+      // Close lightbox on escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeLightbox();
+      });
+
+      async function loadJobProgress() {
+        if (!token) {
+          showError('Invalid or missing token. Please use the QR code link provided.');
+          return;
+        }
+
+        try {
+          // Get base URL from current location
+          const baseUrl = window.location.origin;
+          
+          // Fetch job data
+          const response = await fetch(`${baseUrl}/api/jobs/progress/${token}`);
+          
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.message || 'Unable to load job progress');
+          }
+
+          const data = await response.json();
+          const { job, history, photos } = data;
+
+          // Update header
+          document.getElementById('jobTitle').textContent = job.title;
+          document.getElementById('deviceInfo').textContent = [
+            job.device.deviceType,
+            job.device.brand,
+            job.device.model
+          ].filter(Boolean).join(' ') || 'Unknown device';
+
+          // Update status
+          const statusEl = document.getElementById('currentStatus');
+          statusEl.className = `current-status status-${job.status}`;
+          statusEl.innerHTML = `
+            <span class="status-dot"></span>
+            <span>${statusLabels[job.status] || job.status}</span>
+          `;
+
+          // Update progress steps
+          updateProgressSteps(job.status);
+
+          // Update info
+          document.getElementById('customerName').textContent = job.customer.name;
+          document.getElementById('deviceDetails').textContent = [
+            job.device.deviceType,
+            job.device.brand,
+            job.device.model
+          ].filter(Boolean).join(' ') || '—';
+          document.getElementById('priority').textContent = job.priority;
+          document.getElementById('createdAt').textContent = formatDate(job.createdAt);
+          
+          if (job.dueDate) {
+            document.getElementById('dueDateRow').style.display = 'flex';
+            document.getElementById('dueDate').textContent = formatDate(job.dueDate);
+          }
+          
+          if (job.diagnosis) {
+            document.getElementById('diagnosisRow').style.display = 'flex';
+            document.getElementById('diagnosis').textContent = job.diagnosis;
+          }
+
+          // Render photos
+          renderPhotos(photos);
+
+          // Render timeline
+          renderTimeline(history);
+
+          showContent();
+        } catch (error) {
+          console.error('Error loading job progress:', error);
+          showError(error.message || 'Unable to load job progress. Please try again later.');
+        }
+      }
+
+      // Initial load
+      loadJobProgress();
+
+      // Auto-refresh every 30 seconds
+      setInterval(loadJobProgress, 30000);
+    </script>
+  </body>
+</html>
+

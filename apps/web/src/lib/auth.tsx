@@ -150,7 +150,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           const msg = e?.message || '';
           const isBackendError = msg.includes('Backend API') || msg.includes('BACKEND_UNAVAILABLE');
           if (isBackendError) {
-            setError(msg);
+          setError(msg);
           }
           setStatus('unauthenticated');
           setUser(null);

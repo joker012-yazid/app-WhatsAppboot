@@ -1,9 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="ms">
   <head>
     <meta charset="utf-8">
-    <title>Device Registration - WhatsApp Bot POS</title>
+    <title>Pendaftaran Customer & Device - WhatsApp Bot POS</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
       * {
         margin: 0;
@@ -12,27 +15,86 @@
       }
 
       body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
         min-height: 100vh;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
         padding: 20px;
-        line-height: 1.6;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      /* Animated background elements */
+      .bg-decoration {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.4;
+        pointer-events: none;
+      }
+
+      .bg-decoration-1 {
+        width: 400px;
+        height: 400px;
+        background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+        top: -100px;
+        right: -100px;
+        animation: float 8s ease-in-out infinite;
+      }
+
+      .bg-decoration-2 {
+        width: 300px;
+        height: 300px;
+        background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+        bottom: -50px;
+        left: -50px;
+        animation: float 10s ease-in-out infinite reverse;
+      }
+
+      .bg-decoration-3 {
+        width: 200px;
+        height: 200px;
+        background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        animation: pulse 6s ease-in-out infinite;
+      }
+
+      @keyframes float {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        33% { transform: translate(30px, -30px) rotate(5deg); }
+        66% { transform: translate(-20px, 20px) rotate(-5deg); }
+      }
+
+      @keyframes pulse {
+        0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.3; }
+        50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.5; }
       }
 
       .container {
-        max-width: 500px;
-        margin: 0 auto;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        overflow: hidden;
-        animation: slideIn 0.5s ease-out;
+        width: 100%;
+        max-width: 520px;
+        position: relative;
+        z-index: 10;
       }
 
-      @keyframes slideIn {
+      .card {
+        background: rgba(30, 41, 59, 0.8);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(148, 163, 184, 0.1);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        animation: slideUp 0.6s ease-out;
+      }
+
+      @keyframes slideUp {
         from {
           opacity: 0;
-          transform: translateY(30px);
+          transform: translateY(40px);
         }
         to {
           opacity: 1;
@@ -40,337 +102,725 @@
         }
       }
 
+      /* Header */
       .header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 30px 24px;
+        padding: 36px 32px 28px;
         text-align: center;
+        position: relative;
+      }
+
+      .header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #06b6d4 0%, #8b5cf6 50%, #ec4899 100%);
+      }
+
+      .logo-container {
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 20px;
+        background: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%);
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 40px rgba(6, 182, 212, 0.3);
+        animation: bounce 2s ease-in-out infinite;
+      }
+
+      @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-6px); }
+      }
+
+      .logo-container svg {
+        width: 36px;
+        height: 36px;
+        color: white;
       }
 
       .header h1 {
-        font-size: 24px;
-        font-weight: 700;
+        font-size: 26px;
+        font-weight: 800;
+        color: #f1f5f9;
         margin-bottom: 8px;
+        background: linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
       }
 
       .header p {
         font-size: 14px;
-        opacity: 0.9;
+        color: #94a3b8;
+        line-height: 1.5;
       }
 
+      /* Form */
       .form-container {
-        padding: 32px 24px;
+        padding: 0 32px 36px;
+      }
+
+      /* Section Divider */
+      .section-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 24px 0 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+      }
+
+      .section-title:first-child {
+        margin-top: 0;
+      }
+
+      .section-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .section-icon.customer {
+        background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+      }
+
+      .section-icon.device {
+        background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+      }
+
+      .section-icon svg {
+        width: 18px;
+        height: 18px;
+        color: white;
+      }
+
+      .section-title h2 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #e2e8f0;
+      }
+
+      .section-title span {
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 500;
       }
 
       .form-group {
-        margin-bottom: 24px;
+        margin-bottom: 20px;
       }
 
       label {
-        display: block;
+        display: flex;
+        align-items: center;
+        gap: 8px;
         font-weight: 600;
-        color: #1f2937;
+        color: #e2e8f0;
         margin-bottom: 8px;
-        font-size: 14px;
+        font-size: 13px;
       }
 
-      label .required {
-        color: #ef4444;
+      label svg {
+        width: 16px;
+        height: 16px;
+        color: #06b6d4;
+      }
+
+      .required {
+        color: #f87171;
         margin-left: 2px;
+      }
+
+      .optional {
+        color: #64748b;
+        font-weight: 400;
+        font-size: 11px;
       }
 
       input[type="text"],
       input[type="tel"],
+      input[type="email"],
+      textarea,
       select {
         width: 100%;
-        padding: 12px 16px;
-        border: 2px solid #e5e7eb;
-        border-radius: 8px;
+        padding: 14px 16px;
+        background: rgba(15, 23, 42, 0.6);
+        border: 2px solid rgba(148, 163, 184, 0.1);
+        border-radius: 12px;
         font-size: 15px;
-        transition: all 0.2s;
+        color: #f1f5f9;
+        transition: all 0.3s;
         font-family: inherit;
       }
 
-      input[type="text"]:focus,
-      input[type="tel"]:focus,
+      select {
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 20px;
+        padding-right: 44px;
+      }
+
+      select option {
+        background: #1e293b;
+        color: #f1f5f9;
+        padding: 12px;
+      }
+
+      input:focus,
+      textarea:focus,
       select:focus {
         outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        border-color: #06b6d4;
+        background: rgba(15, 23, 42, 0.8);
+        box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.1);
       }
 
-      input[type="text"]::placeholder,
-      input[type="tel"]::placeholder {
-        color: #9ca3af;
+      input::placeholder,
+      textarea::placeholder {
+        color: #64748b;
       }
 
-      .checkbox-group {
-        display: flex;
-        align-items: flex-start;
+      textarea {
+        min-height: 80px;
+        resize: vertical;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         gap: 12px;
-        padding: 16px;
-        background: #f9fafb;
-        border-radius: 8px;
-        border: 2px solid #e5e7eb;
-        transition: all 0.2s;
       }
 
-      .checkbox-group:has(input:checked) {
-        border-color: #667eea;
-        background: #eef2ff;
+      .help-text {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #64748b;
+        font-size: 12px;
+        margin-top: 6px;
       }
 
-      .checkbox-group input[type="checkbox"] {
-        width: 20px;
-        height: 20px;
-        margin-top: 2px;
-        cursor: pointer;
-        accent-color: #667eea;
+      .help-text svg {
+        width: 12px;
+        height: 12px;
       }
 
-      .checkbox-group label {
-        margin: 0;
-        font-weight: 400;
-        font-size: 14px;
-        color: #4b5563;
-        flex: 1;
-        cursor: pointer;
+      .error-text {
+        color: #f87171;
+        font-size: 12px;
+        margin-top: 6px;
+        display: none;
+        align-items: center;
+        gap: 6px;
       }
 
+      .error-text.show {
+        display: flex;
+      }
+
+      .error-text svg {
+        width: 12px;
+        height: 12px;
+      }
+
+      /* Submit Button */
       .submit-btn {
         width: 100%;
-        padding: 14px 24px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 16px 24px;
+        background: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%);
         color: white;
         border: none;
-        border-radius: 8px;
+        border-radius: 14px;
         font-size: 16px;
-        font-weight: 600;
+        font-weight: 700;
         cursor: pointer;
         transition: all 0.3s;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 10px 40px rgba(6, 182, 212, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        position: relative;
+        overflow: hidden;
+        margin-top: 28px;
+      }
+
+      .submit-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+      }
+
+      .submit-btn:hover:not(:disabled)::before {
+        left: 100%;
       }
 
       .submit-btn:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        transform: translateY(-3px);
+        box-shadow: 0 15px 50px rgba(6, 182, 212, 0.4);
       }
 
       .submit-btn:active:not(:disabled) {
-        transform: translateY(0);
+        transform: translateY(-1px);
       }
 
       .submit-btn:disabled {
         opacity: 0.6;
         cursor: not-allowed;
+        transform: none;
       }
 
+      .submit-btn svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      /* Alert */
       .alert {
-        padding: 16px;
-        border-radius: 8px;
-        margin-bottom: 24px;
-        font-size: 14px;
+        padding: 14px 16px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        font-size: 13px;
         display: none;
-        animation: slideDown 0.3s ease-out;
+        align-items: center;
+        gap: 10px;
+        animation: shake 0.5s ease-out;
       }
 
-      @keyframes slideDown {
-        from {
-          opacity: 0;
-          transform: translateY(-10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
       }
 
       .alert.show {
-        display: block;
+        display: flex;
+      }
+
+      .alert svg {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
       }
 
       .alert-error {
-        background: #fee2e2;
-        color: #991b1b;
-        border: 1px solid #fecaca;
+        background: rgba(239, 68, 68, 0.1);
+        color: #fca5a5;
+        border: 1px solid rgba(239, 68, 68, 0.2);
       }
 
       .alert-success {
-        background: #d1fae5;
-        color: #065f46;
-        border: 1px solid #a7f3d0;
+        background: rgba(34, 197, 94, 0.1);
+        color: #86efac;
+        border: 1px solid rgba(34, 197, 94, 0.2);
+        animation: none;
       }
 
-      .alert-info {
-        background: #dbeafe;
-        color: #1e40af;
-        border: 1px solid #bfdbfe;
-      }
-
+      /* Spinner */
       .spinner {
-        display: inline-block;
-        width: 16px;
-        height: 16px;
-        border: 2px solid rgba(255, 255, 255, 0.3);
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
         border-top-color: white;
         border-radius: 50%;
         animation: spin 0.8s linear infinite;
-        margin-right: 8px;
       }
 
       @keyframes spin {
         to { transform: rotate(360deg); }
       }
 
-      .error-text {
-        color: #ef4444;
-        font-size: 13px;
-        margin-top: 6px;
+      /* Success State */
+      .success-state {
         display: none;
+        text-align: center;
+        padding: 40px 32px;
+        animation: scaleIn 0.5s ease-out;
       }
 
-      .error-text.show {
+      @keyframes scaleIn {
+        from { opacity: 0; transform: scale(0.9); }
+        to { opacity: 1; transform: scale(1); }
+      }
+
+      .success-state.show {
         display: block;
       }
 
-      .help-text {
-        color: #6b7280;
-        font-size: 13px;
-        margin-top: 6px;
+      .success-icon {
+        width: 90px;
+        height: 90px;
+        margin: 0 auto 24px;
+        background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: successPulse 2s ease-in-out infinite;
       }
 
+      @keyframes successPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+        50% { box-shadow: 0 0 0 20px rgba(16, 185, 129, 0); }
+      }
+
+      .success-icon svg {
+        width: 45px;
+        height: 45px;
+        color: white;
+      }
+
+      .success-state h2 {
+        font-size: 24px;
+        font-weight: 700;
+        color: #f1f5f9;
+        margin-bottom: 12px;
+      }
+
+      .success-state p {
+        color: #94a3b8;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .success-details {
+        margin-top: 24px;
+        padding: 16px;
+        background: rgba(15, 23, 42, 0.5);
+        border-radius: 12px;
+        text-align: left;
+      }
+
+      .success-details .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+      }
+
+      .success-details .detail-row:last-child {
+        border-bottom: none;
+      }
+
+      .success-details .detail-label {
+        color: #64748b;
+        font-size: 13px;
+      }
+
+      .success-details .detail-value {
+        color: #e2e8f0;
+        font-weight: 600;
+        font-size: 13px;
+      }
+
+      /* Footer */
+      .footer {
+        text-align: center;
+        padding: 16px;
+        color: #64748b;
+        font-size: 11px;
+      }
+
+      .footer a {
+        color: #06b6d4;
+        text-decoration: none;
+      }
+
+      /* Responsive */
       @media (max-width: 640px) {
         body {
           padding: 0;
+          align-items: flex-start;
         }
 
         .container {
+          max-width: 100%;
+        }
+
+        .card {
           border-radius: 0;
           min-height: 100vh;
         }
 
+        .header {
+          padding: 28px 20px 24px;
+        }
+
         .header h1 {
-          font-size: 20px;
+          font-size: 22px;
         }
 
         .form-container {
-          padding: 24px 20px;
+          padding: 0 20px 28px;
+        }
+
+        .row {
+          grid-template-columns: 1fr;
+        }
+
+        .bg-decoration {
+          display: none;
         }
       }
     </style>
   </head>
   <body>
+    <!-- Background Decorations -->
+    <div class="bg-decoration bg-decoration-1"></div>
+    <div class="bg-decoration bg-decoration-2"></div>
+    <div class="bg-decoration bg-decoration-3"></div>
+
     <div class="container">
-      <div class="header">
-        <h1>Device Registration</h1>
-        <p>Please complete the form below to register your device</p>
-      </div>
-
-      <div class="form-container">
-        <div id="alert" class="alert"></div>
-
-        <form id="registrationForm" novalidate>
-          <div class="form-group">
-            <label for="fullName">
-              Full Name<span class="required">*</span>
-            </label>
-            <input 
-              type="text" 
-              id="fullName" 
-              name="fullName" 
-              placeholder="Enter your full name"
-              required
-            >
-            <div id="fullNameError" class="error-text"></div>
+      <div class="card">
+        <!-- Header -->
+        <div class="header">
+          <div class="logo-container">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
           </div>
+          <h1>Pendaftaran Servis</h1>
+          <p>Sila lengkapkan maklumat anda dan device yang ingin dihantar untuk servis</p>
+        </div>
 
-          <div class="form-group">
-            <label for="phoneNumber">
-              Phone Number<span class="required">*</span>
-            </label>
-            <input 
-              type="tel" 
-              id="phoneNumber" 
-              name="phoneNumber" 
-              placeholder="e.g., 0123456789 or +60123456789"
-              required
-            >
-            <div class="help-text">Malaysian format: 01X-XXXXXXX</div>
-            <div id="phoneNumberError" class="error-text"></div>
+        <!-- Success State -->
+        <div id="successState" class="success-state">
+          <div class="success-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
           </div>
+          <h2>Pendaftaran Berjaya! 🎉</h2>
+          <p>Terima kasih kerana mendaftar. Kami akan menghubungi anda melalui WhatsApp untuk makluman lanjut.</p>
+          <div class="success-details" id="successDetails"></div>
+        </div>
 
-          <div class="form-group">
-            <label for="deviceType">
-              Device Type<span class="required">*</span>
-            </label>
-            <select id="deviceType" name="deviceType" required>
-              <option value="">-- Select Device Type --</option>
-              <option value="phone">Phone</option>
-              <option value="tablet">Tablet</option>
-              <option value="laptop">Laptop</option>
-              <option value="desktop">Desktop</option>
-              <option value="smartwatch">Smartwatch</option>
-              <option value="other">Other</option>
-            </select>
-            <div id="deviceTypeError" class="error-text"></div>
-          </div>
+        <!-- Form -->
+        <div id="formContainer" class="form-container">
+          <div id="alert" class="alert"></div>
 
-          <div class="form-group">
-            <label for="deviceModel">
-              Device Model<span class="required">*</span>
-            </label>
-            <input 
-              type="text" 
-              id="deviceModel" 
-              name="deviceModel" 
-              placeholder="e.g., iPhone 14 Pro, Samsung Galaxy S23"
-              required
-            >
-            <div id="deviceModelError" class="error-text"></div>
-          </div>
-
-          <div class="form-group">
-            <label for="deviceNotes">
-              Issue Description (Optional)
-            </label>
-            <input 
-              type="text" 
-              id="deviceNotes" 
-              name="deviceNotes" 
-              placeholder="Brief description of the issue"
-            >
-          </div>
-
-          <div class="form-group">
-            <div class="checkbox-group">
-              <input 
-                type="checkbox" 
-                id="termsAccepted" 
-                name="termsAccepted" 
-                required
-              >
-              <label for="termsAccepted">
-                I agree to the terms and conditions. By submitting this form, I consent to the repair service processing my device information.
-              </label>
+          <form id="registrationForm" novalidate>
+            <!-- Customer Section -->
+            <div class="section-title">
+              <div class="section-icon customer">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+              </div>
+              <div>
+                <h2>Maklumat Peribadi</h2>
+                <span>Data pelanggan</span>
+              </div>
             </div>
-            <div id="termsAcceptedError" class="error-text"></div>
-          </div>
 
-          <button type="submit" class="submit-btn" id="submitBtn">
-            Submit Registration
-          </button>
-        </form>
+            <div class="form-group">
+              <label for="fullName">
+                Nama Penuh<span class="required">*</span>
+              </label>
+              <input 
+                type="text" 
+                id="fullName" 
+                name="fullName" 
+                placeholder="Masukkan nama penuh anda"
+                required
+                autocomplete="name"
+              >
+              <div id="fullNameError" class="error-text">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span></span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="phoneNumber">
+                Nombor Telefon<span class="required">*</span>
+              </label>
+              <input 
+                type="tel" 
+                id="phoneNumber" 
+                name="phoneNumber" 
+                placeholder="Contoh: 0123456789"
+                required
+                autocomplete="tel"
+              >
+              <div class="help-text">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Format: 01X-XXXXXXX
+              </div>
+              <div id="phoneNumberError" class="error-text">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span></span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="email">
+                Email <span class="optional">(Pilihan)</span>
+              </label>
+              <input 
+                type="email" 
+                id="email" 
+                name="email" 
+                placeholder="contoh@email.com"
+                autocomplete="email"
+              >
+              <div id="emailError" class="error-text">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span></span>
+              </div>
+            </div>
+
+            <!-- Device Section -->
+            <div class="section-title">
+              <div class="section-icon device">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+              </div>
+              <div>
+                <h2>Maklumat Device</h2>
+                <span>Device yang ingin diservis</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="deviceType">
+                Jenis Device<span class="required">*</span>
+              </label>
+              <select id="deviceType" name="deviceType" required>
+                <option value="">-- Pilih Jenis Device --</option>
+                <option value="laptop">💻 Laptop</option>
+                <option value="desktop">🖥️ Desktop / PC</option>
+                <option value="phone">📱 Telefon</option>
+                <option value="tablet">📲 Tablet</option>
+                <option value="printer">🖨️ Printer</option>
+                <option value="monitor">🖵 Monitor</option>
+                <option value="other">📦 Lain-lain</option>
+              </select>
+              <div id="deviceTypeError" class="error-text">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span></span>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="form-group">
+                <label for="deviceBrand">
+                  Jenama<span class="required">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="deviceBrand" 
+                  name="deviceBrand" 
+                  placeholder="Cth: HP, Dell, Asus"
+                  required
+                >
+                <div id="deviceBrandError" class="error-text">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <span></span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="deviceModel">
+                  Model <span class="optional">(Pilihan)</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="deviceModel" 
+                  name="deviceModel" 
+                  placeholder="Cth: Pavilion 14"
+                >
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="serialNumber">
+                Serial Number <span class="optional">(Pilihan)</span>
+              </label>
+              <input 
+                type="text" 
+                id="serialNumber" 
+                name="serialNumber" 
+                placeholder="Nombor siri device (jika ada)"
+              >
+              <div class="help-text">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Biasanya di bahagian bawah atau belakang device
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="issueDescription">
+                Masalah / Kerosakan<span class="required">*</span>
+              </label>
+              <textarea 
+                id="issueDescription" 
+                name="issueDescription" 
+                placeholder="Terangkan masalah atau kerosakan yang dialami..."
+                required
+              ></textarea>
+              <div id="issueDescriptionError" class="error-text">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span></span>
+              </div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Hantar Pendaftaran
+            </button>
+          </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+          Powered by <a href="#">WhatsApp Bot POS</a> • © 2025
+        </div>
       </div>
     </div>
 
     <script>
-      // Extract token from URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token');
-
       const form = document.getElementById('registrationForm');
+      const formContainer = document.getElementById('formContainer');
+      const successState = document.getElementById('successState');
+      const successDetails = document.getElementById('successDetails');
       const submitBtn = document.getElementById('submitBtn');
-      const alert = document.getElementById('alert');
+      const alertEl = document.getElementById('alert');
 
       // Field validation
       const fields = {
@@ -378,8 +828,8 @@
           element: document.getElementById('fullName'),
           error: document.getElementById('fullNameError'),
           validate: (value) => {
-            if (!value.trim()) return 'Full name is required';
-            if (value.trim().length < 2) return 'Name must be at least 2 characters';
+            if (!value.trim()) return 'Nama penuh diperlukan';
+            if (value.trim().length < 2) return 'Nama mesti sekurang-kurangnya 2 huruf';
             return null;
           }
         },
@@ -387,13 +837,23 @@
           element: document.getElementById('phoneNumber'),
           error: document.getElementById('phoneNumberError'),
           validate: (value) => {
-            if (!value.trim()) return 'Phone number is required';
-            // Remove spaces and dashes
+            if (!value.trim()) return 'Nombor telefon diperlukan';
             const cleaned = value.replace(/[\s-]/g, '');
-            // Check Malaysian format (01X-XXXXXXX or +601X-XXXXXXX)
             const phoneRegex = /^(\+?60|0)[1-9]\d{7,9}$/;
             if (!phoneRegex.test(cleaned)) {
-              return 'Please enter a valid Malaysian phone number';
+              return 'Sila masukkan nombor telefon Malaysia yang sah';
+            }
+            return null;
+          }
+        },
+        email: {
+          element: document.getElementById('email'),
+          error: document.getElementById('emailError'),
+          validate: (value) => {
+            if (!value.trim()) return null;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(value)) {
+              return 'Sila masukkan alamat email yang sah';
             }
             return null;
           }
@@ -402,55 +862,52 @@
           element: document.getElementById('deviceType'),
           error: document.getElementById('deviceTypeError'),
           validate: (value) => {
-            if (!value) return 'Please select a device type';
+            if (!value) return 'Sila pilih jenis device';
             return null;
           }
         },
-        deviceModel: {
-          element: document.getElementById('deviceModel'),
-          error: document.getElementById('deviceModelError'),
+        deviceBrand: {
+          element: document.getElementById('deviceBrand'),
+          error: document.getElementById('deviceBrandError'),
           validate: (value) => {
-            if (!value.trim()) return 'Device model is required';
-            if (value.trim().length < 2) return 'Model must be at least 2 characters';
+            if (!value.trim()) return 'Jenama device diperlukan';
             return null;
           }
         },
-        termsAccepted: {
-          element: document.getElementById('termsAccepted'),
-          error: document.getElementById('termsAcceptedError'),
-          validate: (checked) => {
-            if (!checked) return 'You must accept the terms and conditions';
+        issueDescription: {
+          element: document.getElementById('issueDescription'),
+          error: document.getElementById('issueDescriptionError'),
+          validate: (value) => {
+            if (!value.trim()) return 'Sila terangkan masalah device';
+            if (value.trim().length < 10) return 'Penerangan mesti sekurang-kurangnya 10 huruf';
             return null;
           }
         }
       };
 
-      // Real-time validation on blur
+      // Real-time validation
       Object.keys(fields).forEach(fieldName => {
         const field = fields[fieldName];
-        field.element.addEventListener('blur', () => {
-          validateField(fieldName);
-        });
-        // Clear error on input
+        field.element.addEventListener('blur', () => validateField(fieldName));
         field.element.addEventListener('input', () => {
-          field.error.textContent = '';
+          const errorSpan = field.error.querySelector('span');
+          if (errorSpan) errorSpan.textContent = '';
           field.error.classList.remove('show');
         });
       });
 
       function validateField(fieldName) {
         const field = fields[fieldName];
-        const value = field.element.type === 'checkbox' 
-          ? field.element.checked 
-          : field.element.value;
+        const value = field.element.value;
         const error = field.validate(value);
+        const errorSpan = field.error.querySelector('span');
         
         if (error) {
-          field.error.textContent = error;
+          if (errorSpan) errorSpan.textContent = error;
           field.error.classList.add('show');
           return false;
         } else {
-          field.error.textContent = '';
+          if (errorSpan) errorSpan.textContent = '';
           field.error.classList.remove('show');
           return true;
         }
@@ -459,86 +916,114 @@
       function validateForm() {
         let isValid = true;
         Object.keys(fields).forEach(fieldName => {
-          if (!validateField(fieldName)) {
-            isValid = false;
-          }
+          if (!validateField(fieldName)) isValid = false;
         });
         return isValid;
       }
 
-      function showAlert(message, type = 'info') {
-        alert.textContent = message;
-        alert.className = `alert alert-${type} show`;
-        alert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      function showAlert(message, type = 'error') {
+        const icon = type === 'success' 
+          ? '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+          : '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+        
+        alertEl.innerHTML = icon + '<span>' + message + '</span>';
+        alertEl.className = `alert alert-${type} show`;
       }
 
       function hideAlert() {
-        alert.classList.remove('show');
+        alertEl.classList.remove('show');
       }
 
-      // Check if token exists
-      if (!token) {
-        showAlert('Invalid or missing registration token. Please use the QR code link provided.', 'error');
-        submitBtn.disabled = true;
+      function showSuccess(data) {
+        formContainer.style.display = 'none';
+        
+        // Build success details
+        const deviceTypeLabels = {
+          laptop: '💻 Laptop',
+          desktop: '🖥️ Desktop / PC',
+          phone: '📱 Telefon',
+          tablet: '📲 Tablet',
+          printer: '🖨️ Printer',
+          monitor: '🖵 Monitor',
+          other: '📦 Lain-lain'
+        };
+        
+        successDetails.innerHTML = `
+          <div class="detail-row">
+            <span class="detail-label">Nama</span>
+            <span class="detail-value">${data.customerName}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Telefon</span>
+            <span class="detail-value">${data.phone}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Device</span>
+            <span class="detail-value">${deviceTypeLabels[data.deviceType] || data.deviceType} - ${data.brand}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Masalah</span>
+            <span class="detail-value">${data.issue.substring(0, 50)}${data.issue.length > 50 ? '...' : ''}</span>
+          </div>
+        `;
+        
+        successState.classList.add('show');
       }
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         hideAlert();
 
-        if (!token) {
-          showAlert('Invalid registration token', 'error');
-          return;
-        }
-
         if (!validateForm()) {
-          showAlert('Please fix the errors in the form', 'error');
+          showAlert('Sila betulkan ralat dalam borang');
           return;
         }
 
-        // Get form data
+        // Disable button
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<div class="spinner"></div> Menghantar...';
+
         const formData = {
-          fullName: fields.fullName.element.value.trim(),
-          phoneNumber: fields.phoneNumber.element.value.trim(),
+          // Customer data
+          name: fields.fullName.element.value.trim(),
+          phone: fields.phoneNumber.element.value.trim(),
+          email: fields.email.element.value.trim() || undefined,
+          // Device data
           deviceType: fields.deviceType.element.value,
-          deviceModel: fields.deviceModel.element.value.trim(),
-          deviceNotes: document.getElementById('deviceNotes').value.trim() || undefined,
-          termsAccepted: fields.termsAccepted.element.checked
+          deviceBrand: fields.deviceBrand.element.value.trim(),
+          deviceModel: document.getElementById('deviceModel').value.trim() || undefined,
+          serialNumber: document.getElementById('serialNumber').value.trim() || undefined,
+          issueDescription: fields.issueDescription.element.value.trim()
         };
 
-        // Disable form
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner"></span>Submitting...';
-        
         try {
-          const response = await fetch(`http://localhost:4000/api/jobs/register/${token}`, {
+          const baseUrl = window.location.origin;
+          const response = await fetch(`${baseUrl}/api/customers/register`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData)
           });
 
           const data = await response.json();
 
           if (response.ok) {
-            showAlert('Registration successful! You will be redirected shortly...', 'success');
-            form.reset();
-            
-            // Redirect to success page or job detail after 2 seconds
-            setTimeout(() => {
-              window.location.href = 'http://localhost:3000/dashboard';
-            }, 2000);
+            showSuccess({
+              customerName: formData.name,
+              phone: formData.phone,
+              deviceType: formData.deviceType,
+              brand: formData.deviceBrand,
+              issue: formData.issueDescription
+            });
           } else {
-            showAlert(data.error || data.message || 'Registration failed. Please try again.', 'error');
+            showAlert(data.error || data.message || 'Pendaftaran gagal. Sila cuba lagi.');
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Submit Registration';
+            submitBtn.innerHTML = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Hantar Pendaftaran';
           }
         } catch (error) {
           console.error('Registration error:', error);
-          showAlert('Network error. Please check your connection and try again.', 'error');
+          showAlert('Ralat rangkaian. Sila semak sambungan internet anda.');
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Submit Registration';
+          submitBtn.innerHTML = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Hantar Pendaftaran';
         }
       });
     </script>

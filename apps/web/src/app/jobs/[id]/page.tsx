@@ -199,7 +199,7 @@ export default function JobDetailPage() {
               <AiChat jobId={id} />
             </div>
             <div className="rounded-xl border bg-card p-4">
-              <h2 className="mb-3 text-lg font-semibold">QR Registration</h2>
+              <h2 className="mb-3 text-lg font-semibold">QR Progress</h2>
               {qrUrl ? (
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground break-all">
@@ -226,7 +226,7 @@ export default function JobDetailPage() {
                     ) : null}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Share this link with the customer to complete registration.
+                    Share this link with the customer to check their job progress and photos.
                   </p>
                 </div>
               ) : (

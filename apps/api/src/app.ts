@@ -103,48 +103,40 @@ export const createApp = () => {
     }
 
     // Explicit route handler for register/index.html (must be before express.static)
-
     app.get('/public/register/index.html', (req, res) => {
       const filePath = path.resolve(publicDir, 'register', 'index.html');
-
       console.log(`[Route] Request received for /public/register/index.html`);
 
-      console.log(`[Route] Resolved file path: ${filePath}`);
-
-      console.log(`[Route] File exists: ${fs.existsSync(filePath)}`);
-
       if (fs.existsSync(filePath)) {
-        // Use absolute path with res.sendFile
-
         res.sendFile(filePath, (err) => {
           if (err) {
             console.error(`[Route] Error sending file:`, err);
-
             if (!res.headersSent) {
-              res
-                .status(500)
-                .json({ message: 'Error serving file', error: err.message });
+              res.status(500).json({ message: 'Error serving file', error: err.message });
             }
-          } else {
-            console.log(`[Route] File sent successfully`);
           }
         });
       } else {
-        console.error(`[Route] File not found: ${filePath}`);
+        res.status(404).json({ message: 'File not found', path: filePath });
+      }
+    });
 
-        console.error(`[Route] Public dir: ${publicDir}`);
+    // Explicit route handler for progress/index.html (customer job progress page)
+    app.get('/public/progress/index.html', (req, res) => {
+      const filePath = path.resolve(publicDir, 'progress', 'index.html');
+      console.log(`[Route] Request received for /public/progress/index.html`);
 
-        console.error(`[Route] Public dir exists: ${fs.existsSync(publicDir)}`);
-
-        res.status(404).json({
-          message: 'File not found',
-
-          path: filePath,
-
-          publicDir: publicDir,
-
-          publicDirExists: fs.existsSync(publicDir),
+      if (fs.existsSync(filePath)) {
+        res.sendFile(filePath, (err) => {
+          if (err) {
+            console.error(`[Route] Error sending progress file:`, err);
+            if (!res.headersSent) {
+              res.status(500).json({ message: 'Error serving file', error: err.message });
+            }
+          }
         });
+      } else {
+        res.status(404).json({ message: 'Progress page not found', path: filePath });
       }
     });
 

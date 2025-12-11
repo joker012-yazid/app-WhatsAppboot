@@ -38,7 +38,7 @@ const updateSchema = z.object({
 const buildQrUrl = (req: import('express').Request, token: string) => {
   const host = req.get('host') || 'localhost:4000';
   const proto = req.headers['x-forwarded-proto']?.toString() || req.protocol || 'http';
-  return `${proto}://${host}/public/register/index.html?token=${token}`;
+  return `${proto}://${host}/public/progress/index.html?token=${token}`;
 };
 
 // Multer storage for job photos (shared uploads at repo root)
@@ -123,6 +123,72 @@ router.post('/register/:token', async (req, res) => {
     success: true,
     message: 'Registration completed successfully',
     jobId: job.id 
+  });
+});
+
+// Public progress endpoint - allows customers to view job progress via QR code
+router.get('/progress/:token', async (req, res) => {
+  const token = String(req.params.token);
+  
+  const job = await prisma.job.findUnique({ 
+    where: { qrToken: token }, 
+    include: { 
+      customer: true, 
+      device: true 
+    } 
+  });
+  
+  if (!job) {
+    return res.status(404).json({ message: 'Invalid token' });
+  }
+  
+  // Check if token has expired
+  if (job.qrExpiresAt && job.qrExpiresAt < new Date()) {
+    return res.status(410).json({ message: 'Progress link has expired. Please contact the service center for a new link.' });
+  }
+  
+  // Get status history
+  const history = await prisma.jobStatusHistory.findMany({
+    where: { jobId: job.id },
+    orderBy: { createdAt: 'desc' },
+  });
+  
+  // Get photos with URLs
+  const host = req.get('host') || 'localhost:4000';
+  const proto = req.headers['x-forwarded-proto']?.toString() || req.protocol || 'http';
+  const photosRaw = await prisma.jobPhoto.findMany({ 
+    where: { jobId: job.id }, 
+    orderBy: { createdAt: 'desc' } 
+  });
+  
+  const photos = photosRaw.map((p) => ({
+    id: p.id,
+    label: p.label,
+    url: `${proto}://${host}${p.filePath.startsWith('/') ? '' : '/'}${p.filePath}`,
+    createdAt: p.createdAt,
+  }));
+  
+  return res.json({ 
+    job: {
+      id: job.id,
+      title: job.title,
+      description: job.description,
+      status: job.status,
+      priority: job.priority,
+      diagnosis: job.diagnosis,
+      dueDate: job.dueDate,
+      createdAt: job.createdAt,
+      customer: {
+        name: job.customer.name,
+      },
+      device: {
+        deviceType: job.device.deviceType,
+        brand: job.device.brand,
+        model: job.device.model,
+      },
+    },
+    history,
+    photos,
   });
 });
 

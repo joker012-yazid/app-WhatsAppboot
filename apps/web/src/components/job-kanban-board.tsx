@@ -58,41 +58,41 @@ type KanbanColumn = {
 };
 
 const columns: KanbanColumn[] = [
-  {
-    id: 'PENDING',
-    title: 'Awaiting Quote',
+  { 
+    id: 'PENDING', 
+    title: 'Awaiting Quote', 
     status: 'PENDING',
     icon: <Clock className="h-4 w-4" />,
     color: 'text-amber-400',
     bgGradient: 'from-amber-500/20 to-orange-500/10',
   },
-  {
-    id: 'QUOTED',
-    title: 'Quotation Sent',
+  { 
+    id: 'QUOTED', 
+    title: 'Quotation Sent', 
     status: 'QUOTED',
     icon: <Package className="h-4 w-4" />,
     color: 'text-blue-400',
     bgGradient: 'from-blue-500/20 to-cyan-500/10',
   },
-  {
-    id: 'APPROVED',
-    title: 'Approved',
+  { 
+    id: 'APPROVED', 
+    title: 'Approved', 
     status: 'APPROVED',
     icon: <CheckCircle2 className="h-4 w-4" />,
     color: 'text-violet-400',
     bgGradient: 'from-violet-500/20 to-purple-500/10',
   },
-  {
-    id: 'IN_PROGRESS',
-    title: 'Repairing',
+  { 
+    id: 'IN_PROGRESS', 
+    title: 'Repairing', 
     status: 'IN_PROGRESS',
     icon: <PlayCircle className="h-4 w-4" />,
     color: 'text-orange-400',
     bgGradient: 'from-orange-500/20 to-red-500/10',
   },
-  {
-    id: 'COMPLETED',
-    title: 'Completed',
+  { 
+    id: 'COMPLETED', 
+    title: 'Completed', 
     status: 'COMPLETED',
     icon: <CheckCircle2 className="h-4 w-4" />,
     color: 'text-emerald-400',
@@ -165,12 +165,12 @@ function JobCard({ job, onDelete, userRole, isDragging }: JobCardProps) {
           priority.color
         )}
       />
-
+      
       {/* Thumbnail */}
       {job.thumbnailUrl && (
         <div className="relative overflow-hidden rounded-t-xl">
-          <img
-            src={job.thumbnailUrl}
+          <img 
+            src={job.thumbnailUrl} 
             alt="thumbnail"
             className="h-28 w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
@@ -184,12 +184,12 @@ function JobCard({ job, onDelete, userRole, isDragging }: JobCardProps) {
       )}
 
       <div className="p-3">
-        {/* Title */}
-        <Link href={`/jobs/${job.id}`}>
+      {/* Title */}
+      <Link href={`/jobs/${job.id}`}>
           <h4 className="font-semibold text-sm text-foreground line-clamp-2 hover:text-primary transition-colors">
-            {job.title}
-          </h4>
-        </Link>
+          {job.title}
+        </h4>
+      </Link>
 
         {/* Meta Info */}
         <div className="mt-2 space-y-1.5">
@@ -205,15 +205,15 @@ function JobCard({ job, onDelete, userRole, isDragging }: JobCardProps) {
                 .join(' ')}
             </span>
           </div>
-          {job.quotedAmount && (
+        {job.quotedAmount && (
             <div className="flex items-center gap-2 text-xs">
               <DollarSign className="h-3 w-3 text-green-500" />
               <span className="font-semibold text-green-500">
                 RM {Number(job.quotedAmount).toFixed(2)}
               </span>
             </div>
-          )}
-        </div>
+        )}
+      </div>
 
         {/* Footer */}
         <div className="mt-3 flex items-center justify-between">
@@ -226,14 +226,14 @@ function JobCard({ job, onDelete, userRole, isDragging }: JobCardProps) {
           >
             <span className={cn('h-1.5 w-1.5 rounded-full bg-white', job.priority === 'URGENT' && 'animate-pulse')} />
             {priority.label}
-          </span>
+        </span>
 
           {/* Date */}
           <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
             <Calendar className="h-3 w-3" />
-            {new Date(job.createdAt).toLocaleDateString()}
+          {new Date(job.createdAt).toLocaleDateString()}
           </div>
-        </div>
+      </div>
 
         {/* Actions */}
         <motion.div
@@ -252,22 +252,22 @@ function JobCard({ job, onDelete, userRole, isDragging }: JobCardProps) {
               View
             </Link>
           </AnimatedButton>
-          {hasAnyRole(userRole, ['ADMIN', 'MANAGER']) && onDelete && (
+        {hasAnyRole(userRole, ['ADMIN', 'MANAGER']) && onDelete && (
             <AnimatedButton
-              size="sm"
-              variant="destructive"
-              className="h-7 text-xs"
-              onClick={async (e) => {
-                e.stopPropagation();
-                const ok = await confirm({
+            size="sm"
+            variant="destructive"
+            className="h-7 text-xs"
+            onClick={async (e) => {
+              e.stopPropagation();
+              const ok = await confirm({
                   title: 'Delete Job',
                   description: 'Are you sure you want to delete this job? This action cannot be undone.',
-                  variant: 'destructive',
-                  confirmText: 'Delete',
-                });
-                if (ok) onDelete(job.id);
-              }}
-            >
+                variant: 'destructive',
+                confirmText: 'Delete',
+              });
+              if (ok) onDelete(job.id);
+            }}
+          >
               <Trash2 className="h-3 w-3" />
             </AnimatedButton>
           )}
@@ -392,7 +392,7 @@ export function JobKanbanBoard({ jobs, onStatusChange, onDelete, userRole }: Kan
 
     const jobId = active.id as string;
     const newStatus = over.id as Job['status'];
-
+    
     const job = jobs.find((j) => j.id === jobId);
     if (!job) return;
 
@@ -415,7 +415,7 @@ export function JobKanbanBoard({ jobs, onStatusChange, onDelete, userRole }: Kan
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {columns.map((column) => {
           const columnJobs = getJobsByStatus(column.status);
-
+          
           return (
             <DroppableColumn
               key={column.id}

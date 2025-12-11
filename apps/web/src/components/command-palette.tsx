@@ -23,6 +23,7 @@ import {
   Bell,
   Zap,
   ArrowRight,
+  QrCode,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/lib/auth';
@@ -107,11 +108,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       group: 'Navigation',
     },
     {
-      id: 'tickets',
-      label: 'View Tickets',
-      icon: <MessageSquare className="h-4 w-4" />,
-      shortcut: 'G T',
-      action: () => navigate('/tickets'),
+      id: 'registration',
+      label: 'Device Registration',
+      icon: <QrCode className="h-4 w-4" />,
+      shortcut: 'G R',
+      action: () => navigate('/registration'),
       group: 'Navigation',
     },
     {
