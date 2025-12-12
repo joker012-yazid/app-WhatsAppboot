@@ -1,14 +1,14 @@
 {
   "pages": {
-    "/settings/page": [
+    "/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/settings/page.js"
+      "static/chunks/app/dashboard/page.js"
     ],
-    "/settings/layout": [
+    "/dashboard/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/settings/layout.js"
+      "static/chunks/app/dashboard/layout.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
@@ -20,16 +20,6 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/login/page.js"
-    ],
-    "/dashboard/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/page.js"
-    ],
-    "/dashboard/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/layout.js"
     ],
     "/chat/page": [
       "static/chunks/webpack.js",
@@ -61,6 +51,11 @@
       "static/chunks/main-app.js",
       "static/chunks/app/customers/layout.js"
     ],
+    "/customers/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/customers/[id]/page.js"
+    ],
     "/devices/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -70,6 +65,11 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/devices/layout.js"
+    ],
+    "/devices/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/devices/[id]/page.js"
     ],
     "/jobs/page": [
       "static/chunks/webpack.js",
@@ -86,15 +86,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/jobs/[id]/page.js"
     ],
-    "/campaigns/page": [
+    "/settings/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/campaigns/page.js"
+      "static/chunks/app/settings/page.js"
     ],
-    "/campaigns/layout": [
+    "/settings/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/campaigns/layout.js"
+      "static/chunks/app/settings/layout.js"
     ],
     "/reports/page": [
       "static/chunks/webpack.js",
@@ -105,6 +105,16 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/reports/layout.js"
+    ],
+    "/campaigns/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/campaigns/page.js"
+    ],
+    "/campaigns/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/campaigns/layout.js"
     ]
   }
 }

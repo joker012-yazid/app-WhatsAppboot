@@ -290,12 +290,19 @@ router.put('/:id', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'), a
         ...('dueDate' in data ? { dueDate: data.dueDate ? new Date(data.dueDate) : null } : {}),
       },
     });
-    if (data.status && data.status !== existing.status) {
+    // Create history entry when status OR diagnosis changes
+    const statusChanged = data.status && data.status !== existing.status;
+    const diagnosisChanged = 'diagnosis' in data && data.diagnosis !== existing.diagnosis;
+    
+    if (statusChanged || diagnosisChanged) {
+      // Include the diagnosis (catatan + fasa) in the history
+      const currentDiagnosis = data.diagnosis || existing.diagnosis || '';
+      
       await prisma.jobStatusHistory.create({
         data: {
           jobId: id,
-          status: data.status as any,
-          notes: `Status updated from ${existing.status} to ${data.status}`,
+          status: (data.status || existing.status) as any,
+          notes: currentDiagnosis || (statusChanged ? `Status updated from ${existing.status} to ${data.status}` : null),
         },
       });
       
@@ -324,6 +331,61 @@ router.get('/:id/history', requireAuth, async (req, res) => {
     orderBy: { createdAt: 'desc' },
   });
   return res.json(rows);
+});
+
+// Delete history entry
+router.delete('/:id/history/:historyId', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+  const { id, historyId } = req.params;
+  try {
+    // Verify history entry belongs to this job
+    const historyEntry = await prisma.jobStatusHistory.findUnique({
+      where: { id: historyId },
+    });
+    
+    if (!historyEntry || historyEntry.jobId !== id) {
+      return res.status(404).json({ message: 'History entry not found' });
+    }
+    
+    await prisma.jobStatusHistory.delete({
+      where: { id: historyId },
+    });
+    
+    return res.status(204).send();
+  } catch (error) {
+    console.error('Delete history error:', error);
+    return res.status(500).json({ message: 'Failed to delete history entry' });
+  }
+});
+
+// Update history entry notes
+router.put('/:id/history/:historyId', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+  const { id, historyId } = req.params;
+  const { notes } = req.body;
+  
+  if (typeof notes !== 'string') {
+    return res.status(400).json({ message: 'Notes must be a string' });
+  }
+  
+  try {
+    // Verify history entry belongs to this job
+    const historyEntry = await prisma.jobStatusHistory.findUnique({
+      where: { id: historyId },
+    });
+    
+    if (!historyEntry || historyEntry.jobId !== id) {
+      return res.status(404).json({ message: 'History entry not found' });
+    }
+    
+    const updated = await prisma.jobStatusHistory.update({
+      where: { id: historyId },
+      data: { notes: notes || null },
+    });
+    
+    return res.json(updated);
+  } catch (error) {
+    console.error('Update history error:', error);
+    return res.status(500).json({ message: 'Failed to update history entry' });
+  }
 });
 
 // Reissue QR token
@@ -381,6 +443,26 @@ router.post(
     return res.status(201).json(saved);
   },
 );
+
+router.put('/:id/photos/:photoId', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+  const { id, photoId } = req.params as { id: string; photoId: string };
+  const { label } = req.body;
+  
+  const photo = await prisma.jobPhoto.findUnique({ where: { id: photoId } });
+  if (!photo || photo.jobId !== id) return res.status(404).json({ message: 'Photo not found' });
+  
+  const updated = await prisma.jobPhoto.update({
+    where: { id: photoId },
+    data: { label: label || null },
+  });
+  
+  const host = req.get('host') || 'localhost:4000';
+  const proto = req.headers['x-forwarded-proto']?.toString() || req.protocol || 'http';
+  return res.json({
+    ...updated,
+    url: `${proto}://${host}${updated.filePath.startsWith('/') ? '' : '/'}${updated.filePath}`,
+  });
+});
 
 router.delete('/:id/photos/:photoId', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
   const { id, photoId } = req.params as { id: string; photoId: string };

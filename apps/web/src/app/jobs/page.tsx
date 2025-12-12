@@ -2,9 +2,9 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import AuthGuard from '@/components/auth-guard';
-import { apiGet, apiPost, apiDelete, apiPut } from '@/lib/api';
+import { apiGet, apiDelete, apiPut } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/toast-provider';
 import { useAuth } from '@/lib/auth';
@@ -13,8 +13,6 @@ import { Wrench, LayoutGrid, List } from 'lucide-react';
 import { SectionHeader } from '@/components/section-header';
 import { JobKanbanBoard } from '@/components/job-kanban-board';
 
-type Customer = { id: string; name: string };
-type Device = { id: string; deviceType: string; model?: string | null; brand?: string | null };
 type Job = {
   id: string;
   title: string;
@@ -32,61 +30,12 @@ type Job = {
 export default function JobsPage() {
   const qc = useQueryClient();
   const { user } = useAuth();
-  const [customerId, setCustomerId] = useState('');
-  const [deviceId, setDeviceId] = useState('');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState<'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'>('NORMAL');
-  const [quotedAmount, setQuotedAmount] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const toast = useToast();
-
-  const customersQuery = useQuery({
-    queryKey: ['customers', 'forJobForm'],
-    queryFn: async () => apiGet<Customer[]>('/api/customers'),
-  });
-
-  const devicesQuery = useQuery({
-    queryKey: ['devices', customerId || 'all-for-job'],
-    enabled: !!customerId,
-    queryFn: async () => apiGet<Device[]>(`/api/devices?customerId=${encodeURIComponent(customerId)}`),
-  });
 
   const jobsQuery = useQuery({
     queryKey: ['jobs'],
     queryFn: async () => apiGet<Job[]>(`/api/jobs`),
-  });
-
-  useEffect(() => {
-    setDeviceId('');
-  }, [customerId]);
-
-  const createMutation = useMutation({
-    mutationFn: async () =>
-      apiPost<{ job: Job; qr_url: string }>(`/api/jobs`, {
-        customerId,
-        deviceId,
-        title,
-        description: description || undefined,
-        priority,
-        quotedAmount: quotedAmount ? Number(quotedAmount) : undefined,
-        dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
-      }),
-    onSuccess: () => {
-      setTitle('');
-      setDescription('');
-      setQuotedAmount('');
-      setDueDate('');
-      qc.invalidateQueries({ queryKey: ['jobs'] });
-      toast.success('Job created');
-    },
-    onError: (e: any) => {
-      const msg = e?.message || 'Failed to create job';
-      setError(msg);
-      toast.error(msg);
-    },
   });
 
   const updateStatusMutation = useMutation({
@@ -110,11 +59,17 @@ export default function JobsPage() {
       await qc.invalidateQueries({ queryKey: ['jobs'] });
       toast.success('Job deleted');
     },
-    onError: (e: any) => toast.error(e?.message || 'Failed to delete job'),
+    onError: (e: any) => {
+      // If job not found, it might have been deleted already - just refresh
+      if (e?.message?.includes('not found') || e?.status === 404) {
+        qc.invalidateQueries({ queryKey: ['jobs'] });
+        toast.info('Job may have already been deleted');
+      } else {
+        toast.error(e?.message || 'Failed to delete job');
+      }
+    },
   });
 
-  const customers = customersQuery.data || [];
-  const devices = devicesQuery.data || [];
   const jobs = jobsQuery.data || [];
 
   const handleStatusChange = async (jobId: string, newStatus: Job['status']) => {
@@ -171,9 +126,9 @@ export default function JobsPage() {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-          {/* Kanban Board - Full Width or 3/4 */}
-          <div className={`${hasAnyRole(user?.role, ['ADMIN', 'MANAGER', 'TECHNICIAN']) ? 'lg:col-span-3' : 'lg:col-span-4'}`}>
+        <div className="grid grid-cols-1 gap-6">
+          {/* Kanban Board - Full Width */}
+          <div>
             {viewMode === 'kanban' ? (
               <div className="rounded-xl border bg-card/80 p-4 shadow-sm backdrop-blur">
                 {jobsQuery.isLoading ? (
@@ -261,120 +216,6 @@ export default function JobsPage() {
               </div>
             )}
           </div>
-
-          {/* New Job Form - Sidebar */}
-          {hasAnyRole(user?.role, ['ADMIN', 'MANAGER', 'TECHNICIAN']) ? (
-            <div className="rounded-xl border bg-card/80 p-5 shadow-sm backdrop-blur lg:col-span-1">
-              <h2 className="mb-3 text-lg font-semibold text-slate-50">New Job</h2>
-              <form
-                className="space-y-3"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  setError(null);
-                  createMutation.mutate();
-                }}
-              >
-                <div className="space-y-1">
-                  <label className="text-sm font-medium" htmlFor="customer">
-                    Customer
-                  </label>
-                  <select
-                    id="customer"
-                    value={customerId}
-                    onChange={(e) => setCustomerId(e.target.value)}
-                    className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/80"
-                    required
-                  >
-                    <option value="">Select customer</option>
-                    {customers.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium" htmlFor="device">
-                    Device
-                  </label>
-                  <select
-                    id="device"
-                    value={deviceId}
-                    onChange={(e) => setDeviceId(e.target.value)}
-                    className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/80"
-                    required
-                    disabled={!customerId || devicesQuery.isLoading}
-                  >
-                    <option value="">
-                      {customerId ? 'Select device' : 'Select customer first'}
-                    </option>
-                    {devices.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {[d.deviceType, d.brand, d.model].filter(Boolean).join(' ')}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium" htmlFor="title">
-                    Title
-                  </label>
-                  <input
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/80"
-                    required
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium" htmlFor="description">
-                    Description
-                  </label>
-                  <textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="h-16 w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/80"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium" htmlFor="priority">
-                    Priority
-                  </label>
-                  <select
-                    id="priority"
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value as any)}
-                    className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/80"
-                  >
-                    {['LOW', 'NORMAL', 'HIGH', 'URGENT'].map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium" htmlFor="quoted">
-                    Quoted (RM)
-                  </label>
-                  <input
-                    id="quoted"
-                    type="number"
-                    step="0.01"
-                    value={quotedAmount}
-                    onChange={(e) => setQuotedAmount(e.target.value)}
-                    className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/80"
-                  />
-                </div>
-                {error ? <p className="text-sm text-red-500">{error}</p> : null}
-                <Button className="w-full" type="submit" disabled={createMutation.isPending || !customerId || !deviceId}>
-                  {createMutation.isPending ? 'Creating...' : 'Create Job'}
-                </Button>
-              </form>
-            </div>
-          ) : null}
         </div>
       </section>
     </AuthGuard>

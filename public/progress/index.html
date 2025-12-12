@@ -594,79 +594,6 @@
           </div>
         </div>
 
-        <!-- Status Card -->
-        <div class="status-card">
-          <div class="status-header">
-            <h2>Current Status</h2>
-            <div id="currentStatus" class="current-status status-PENDING">
-              <span class="status-dot"></span>
-              <span>Pending</span>
-            </div>
-          </div>
-          
-          <div class="progress-steps">
-            <div class="progress-line" id="progressLine"></div>
-            <div class="step" data-step="PENDING">
-              <div class="step-circle">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-              </div>
-              <span class="step-label">Received</span>
-            </div>
-            <div class="step" data-step="QUOTED">
-              <div class="step-circle">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                </svg>
-              </div>
-              <span class="step-label">Quoted</span>
-            </div>
-            <div class="step" data-step="IN_PROGRESS">
-              <div class="step-circle">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-              </div>
-              <span class="step-label">In Progress</span>
-            </div>
-            <div class="step" data-step="COMPLETED">
-              <div class="step-circle">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                </svg>
-              </div>
-              <span class="step-label">Completed</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Photos Card -->
-        <div class="photos-card">
-          <h2>📸 Progress Photos</h2>
-          <div id="photosGrid" class="photos-grid">
-            <!-- Photos will be inserted here -->
-          </div>
-          <div id="noPhotos" class="no-photos" style="display: none;">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-            </svg>
-            <p>No progress photos yet.<br>Photos will appear here as we work on your device.</p>
-          </div>
-        </div>
-
-        <!-- Timeline Card -->
-        <div class="timeline-card">
-          <h2>📋 Status Timeline</h2>
-          <div id="timeline" class="timeline">
-            <!-- Timeline items will be inserted here -->
-          </div>
-          <div id="noTimeline" style="display: none; text-align: center; padding: 20px; color: #64748b;">
-            <p>No status updates yet.</p>
-          </div>
-        </div>
-
         <!-- Info Card -->
         <div class="info-card">
           <h2>ℹ️ Job Information</h2>
@@ -691,10 +618,66 @@
               <span class="info-label">Expected Due</span>
               <span class="info-value" id="dueDate">—</span>
             </div>
-            <div class="info-row" id="diagnosisRow" style="display: none;">
-              <span class="info-label">Diagnosis</span>
-              <span class="info-value" id="diagnosis">—</span>
+          </div>
+        </div>
+
+        <!-- Status Card -->
+        <div class="status-card">
+          <div class="status-header">
+            <h2>Current Status</h2>
+            <div id="currentStatus" class="current-status status-PENDING">
+              <span class="status-dot"></span>
+              <span>Pending</span>
             </div>
+          </div>
+          
+          <div class="progress-steps">
+            <div class="progress-line" id="progressLine"></div>
+            <div class="step" data-step="PENDING">
+              <div class="step-circle">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <span class="step-label">Received</span>
+            </div>
+            <div class="step" data-step="IN_PROGRESS">
+              <div class="step-circle">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+              </div>
+              <span class="step-label">In Progress</span>
+            </div>
+            <div class="step" data-step="COMPLETED">
+              <div class="step-circle">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <span class="step-label">Completed</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timeline Card (with Photos integrated) -->
+        <div class="timeline-card">
+          <h2>📋 Progress & Timeline</h2>
+          <p style="color: #94a3b8; font-size: 13px; margin-bottom: 8px;">Ikuti perkembangan kerja pembaikan barang anda secara terperinci</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">
+            <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(245,158,11,0.15); color: #fbbf24; padding: 4px 10px; border-radius: 20px; font-size: 11px;">📥 Diterima</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(139,92,246,0.15); color: #a78bfa; padding: 4px 10px; border-radius: 20px; font-size: 11px;">🔍 Diagnosis</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(6,182,212,0.15); color: #22d3ee; padding: 4px 10px; border-radius: 20px; font-size: 11px;">🔧 Dibaiki</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(16,185,129,0.15); color: #34d399; padding: 4px 10px; border-radius: 20px; font-size: 11px;">🎉 Siap</span>
+          </div>
+          <div id="timeline" class="timeline">
+            <!-- Timeline items will be inserted here -->
+          </div>
+          <div id="noTimeline" style="display: none; text-align: center; padding: 40px 20px; color: #64748b;">
+            <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
+            <p style="font-size: 16px; font-weight: 500; color: #94a3b8; margin-bottom: 8px;">Belum ada update</p>
+            <p style="font-size: 13px;">Kami akan update progress kerja di sini. Sila refresh page dari masa ke semasa.</p>
           </div>
         </div>
 
@@ -731,13 +714,13 @@
       const contentEl = document.getElementById('content');
       const errorMessageEl = document.getElementById('errorMessage');
 
-      // Status order for progress calculation
-      const statusOrder = ['PENDING', 'QUOTED', 'APPROVED', 'IN_PROGRESS', 'COMPLETED'];
+      // Status order for progress calculation (simplified: Received → In Progress → Completed)
+      const statusOrder = ['PENDING', 'IN_PROGRESS', 'COMPLETED'];
       const statusLabels = {
-        PENDING: 'Pending',
-        QUOTED: 'Quoted',
-        APPROVED: 'Approved',
-        REJECTED: 'Rejected',
+        PENDING: 'Received',
+        QUOTED: 'In Progress',
+        APPROVED: 'In Progress',
+        REJECTED: 'Cancelled',
         IN_PROGRESS: 'In Progress',
         COMPLETED: 'Completed'
       };
@@ -770,14 +753,14 @@
         const steps = document.querySelectorAll('.step');
         const progressLine = document.getElementById('progressLine');
         
-        // Map status to step index
+        // Map status to step index (3 steps: Received, In Progress, Completed)
         const stepMapping = {
           'PENDING': 0,
           'QUOTED': 1,
-          'APPROVED': 2,
+          'APPROVED': 1,
           'REJECTED': 1,
-          'IN_PROGRESS': 2,
-          'COMPLETED': 3
+          'IN_PROGRESS': 1,
+          'COMPLETED': 2
         };
         
         const currentIndex = stepMapping[currentStatus] || 0;
@@ -800,46 +783,298 @@
         progressLine.style.width = `calc(${progressPercent}% - 40px)`;
       }
 
-      function renderPhotos(photos) {
-        const grid = document.getElementById('photosGrid');
-        const noPhotos = document.getElementById('noPhotos');
+      // Phase labels for work progress
+      const phaseLabels = {
+        troubleshoot: { label: 'Troubleshoot', icon: '🔍', desc: 'Sedang mendiagnosis masalah' },
+        repair: { label: 'Repair', icon: '🛠️', desc: 'Sedang membaiki' },
+        order: { label: 'Order Parts', icon: '📦', desc: 'Menunggu alat ganti' },
+        install: { label: 'Pemasangan', icon: '⚙️', desc: 'Memasang komponen' },
+        testing: { label: 'Testing/QA', icon: '✔️', desc: 'Ujian kualiti' }
+      };
+
+      function parseNotes(notes) {
+        if (!notes) return { phase: null, reject: null, text: '' };
         
-        if (!photos || photos.length === 0) {
-          grid.innerHTML = '';
-          noPhotos.style.display = 'block';
-          return;
-        }
+        const phaseMatch = notes.match(/\[PHASE:(\w+)\]/);
+        const rejectMatch = notes.match(/\[REJECT:(.*?)\]/);
+        const cleanText = notes
+          .replace(/\[PHASE:\w+\]\s*/g, '')
+          .replace(/\[REJECT:.*?\]\s*/g, '')
+          .trim();
         
-        noPhotos.style.display = 'none';
-        grid.innerHTML = photos.map(photo => `
-          <div class="photo-item" onclick="openLightbox('${photo.url}')">
-            <img src="${photo.url}" alt="${photo.label || 'Progress photo'}" loading="lazy">
-            ${photo.label ? `<div class="photo-label">${photo.label}</div>` : ''}
-          </div>
-        `).join('');
+        return {
+          phase: phaseMatch ? phaseMatch[1] : null,
+          reject: rejectMatch ? rejectMatch[1] : null,
+          text: cleanText
+        };
       }
 
-      function renderTimeline(history) {
+      function renderTimeline(history, photos, jobDiagnosis) {
         const timeline = document.getElementById('timeline');
         const noTimeline = document.getElementById('noTimeline');
         
-        if (!history || history.length === 0) {
+        // Combine history and photos into a single timeline
+        const timelineItems = [];
+        
+        // Group photos with status updates (photos uploaded within 5 minutes of status update)
+        const TIME_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+        
+        // Add status history items - each item now contains its own catatan/fasa
+        if (history && history.length > 0) {
+          history.forEach((item, idx) => {
+            // Parse the notes field which now contains catatan + fasa
+            const parsed = parseNotes(item.notes);
+            const statusDate = new Date(item.createdAt);
+            
+            // Find photos uploaded around the same time as this status update
+            const relatedPhotos = photos && photos.length > 0 
+              ? photos.filter(photo => {
+                  const photoDate = new Date(photo.createdAt);
+                  const timeDiff = Math.abs(photoDate - statusDate);
+                  // Photos uploaded within 5 minutes before or after status update
+                  return timeDiff <= TIME_WINDOW_MS;
+                })
+              : [];
+            
+            timelineItems.push({
+              type: 'status',
+              date: statusDate,
+              data: item,
+              parsedNotes: parsed, // Store parsed notes for each item
+              photos: relatedPhotos // Attach related photos to this status update
+            });
+          });
+        }
+        
+        // Add standalone photo items (photos not associated with any status update)
+        if (photos && photos.length > 0) {
+          const allGroupedPhotoIds = new Set();
+          timelineItems.forEach(item => {
+            if (item.photos && item.photos.length > 0) {
+              item.photos.forEach(photo => allGroupedPhotoIds.add(photo.id));
+            }
+          });
+          
+          photos.forEach(photo => {
+            if (!allGroupedPhotoIds.has(photo.id)) {
+              timelineItems.push({
+                type: 'photo',
+                date: new Date(photo.createdAt),
+                data: photo
+              });
+            }
+          });
+        }
+        
+        // Sort by date (newest first)
+        timelineItems.sort((a, b) => b.date - a.date);
+        
+        if (timelineItems.length === 0) {
           timeline.innerHTML = '';
           noTimeline.style.display = 'block';
           return;
         }
         
+        // Status icons and descriptions for more detail
+        const statusDetails = {
+          PENDING: { 
+            icon: '📥', 
+            title: 'Barang Diterima', 
+            desc: 'Barang anda telah diterima dan sedang menunggu untuk didiagnosis.',
+            color: '#f59e0b'
+          },
+          QUOTED: { 
+            icon: '🔍', 
+            title: 'Sedang Diagnosis', 
+            desc: 'Technician sedang memeriksa dan mendiagnosis masalah barang anda.',
+            color: '#8b5cf6'
+          },
+          APPROVED: { 
+            icon: '✅', 
+            title: 'Quote Diluluskan', 
+            desc: 'Anda telah meluluskan quote. Kerja pembaikan akan dimulakan.',
+            color: '#10b981'
+          },
+          REJECTED: { 
+            icon: '❌', 
+            title: 'Tidak Dapat Dibaiki', 
+            desc: 'Maaf, barang tidak dapat dibaiki.',
+            color: '#ef4444'
+          },
+          IN_PROGRESS: { 
+            icon: '🔧', 
+            title: 'Sedang Dibaiki', 
+            desc: 'Technician sedang membaiki barang anda.',
+            color: '#06b6d4'
+          },
+          COMPLETED: { 
+            icon: '🎉', 
+            title: 'Siap Untuk Diambil', 
+            desc: 'Barang anda telah siap! Sila datang untuk mengambil.',
+            color: '#10b981'
+          }
+        };
+
         noTimeline.style.display = 'none';
-        timeline.innerHTML = history.map((item, index) => `
-          <div class="timeline-item">
-            <div class="timeline-dot"></div>
-            <div class="timeline-content">
-              <div class="timeline-status">${statusLabels[item.status] || item.status}</div>
-              ${item.notes ? `<div class="timeline-notes">${item.notes}</div>` : ''}
-              <div class="timeline-time">${formatDate(item.createdAt)}</div>
-            </div>
-          </div>
-        `).join('');
+        timeline.innerHTML = timelineItems.map((item, index) => {
+          if (item.type === 'photo') {
+            // Render photo item with more detail
+            const photo = item.data;
+            return `
+              <div class="timeline-item" style="border-left: 3px solid #10b981; margin-left: 8px; padding-left: 20px;">
+                <div class="timeline-dot" style="background: #10b981; left: -11px;"></div>
+                <div class="timeline-content" style="background: linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(16,185,129,0.05) 100%); border: 1px solid rgba(16,185,129,0.2); border-radius: 12px; padding: 16px;">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <span style="font-size: 20px;">📷</span>
+                    <div>
+                      <div style="font-weight: 600; color: #10b981;">Gambar Progress Ditambah</div>
+                      <div style="font-size: 12px; color: #64748b;">Technician telah menambah gambar kerja</div>
+                    </div>
+                  </div>
+                  ${photo.label ? `<div style="background: rgba(16,185,129,0.15); color: #34d399; padding: 6px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;">📝 ${photo.label}</div>` : ''}
+                  <div style="margin-top: 8px;">
+                    <img 
+                      src="${photo.url}" 
+                      alt="${photo.label || 'Progress photo'}" 
+                      loading="lazy"
+                      onclick="openLightbox('${photo.url}')"
+                      style="max-width: 100%; max-height: 200px; border-radius: 8px; cursor: pointer; border: 2px solid rgba(16,185,129,0.3); transition: all 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.2);"
+                      onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 8px 24px rgba(16,185,129,0.3)';"
+                      onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';"
+                    >
+                    <div style="font-size: 11px; color: #64748b; margin-top: 6px;">Klik gambar untuk view penuh</div>
+                  </div>
+                  <div class="timeline-time" style="margin-top: 12px; font-size: 12px;">${formatDate(photo.createdAt)}</div>
+                </div>
+              </div>
+            `;
+          } else {
+            // Render status item with more detail
+            const statusItem = item.data;
+            // Use parsedNotes from each history item (now stored with full catatan + fasa)
+            const parsed = item.parsedNotes || parseNotes(statusItem.notes);
+            const phaseInfo = parsed.phase ? phaseLabels[parsed.phase] : null;
+            const statusInfo = statusDetails[statusItem.status] || { icon: '📋', title: statusItem.status, desc: '', color: '#64748b' };
+            const hasActualCatatan = parsed.text && !parsed.text.includes('Status updated');
+            
+            // Build phase section
+            let phaseSection = '';
+            if (phaseInfo && (statusItem.status === 'IN_PROGRESS' || statusItem.status === 'QUOTED' || statusItem.status === 'APPROVED')) {
+              phaseSection = `
+                <div style="background: linear-gradient(135deg, rgba(6,182,212,0.15) 0%, rgba(6,182,212,0.05) 100%); border: 1px solid rgba(6,182,212,0.3); border-radius: 10px; padding: 12px; margin-top: 10px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 24px;">${phaseInfo.icon}</span>
+                    <div>
+                      <div style="font-weight: 600; color: #22d3ee; font-size: 14px;">Fasa: ${phaseInfo.label}</div>
+                      <div style="font-size: 12px; color: #94a3b8;">${phaseInfo.desc}</div>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }
+            
+            // Build reject section
+            let rejectSection = '';
+            if (parsed.reject && statusItem.status === 'REJECTED') {
+              rejectSection = `
+                <div style="background: linear-gradient(135deg, rgba(239,68,68,0.15) 0%, rgba(239,68,68,0.05) 100%); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; padding: 12px; margin-top: 10px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 24px;">⚠️</span>
+                    <div>
+                      <div style="font-weight: 600; color: #f87171; font-size: 14px;">Sebab: ${parsed.reject}</div>
+                      <div style="font-size: 12px; color: #fca5a5;">Sila hubungi kami untuk maklumat lanjut</div>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }
+            
+            // Build technician notes section
+            let noteSection = '';
+            if (hasActualCatatan) {
+              // Show actual technician catatan (from job.diagnosis) - more prominent
+              noteSection = `
+                <div style="background: linear-gradient(135deg, rgba(6,182,212,0.15) 0%, rgba(6,182,212,0.05) 100%); border: 1px solid rgba(6,182,212,0.3); border-left: 4px solid #06b6d4; padding: 14px 16px; border-radius: 0 10px 10px 0; margin-top: 12px;">
+                  <div style="display: flex; align-items: flex-start; gap: 10px;">
+                    <span style="font-size: 20px;">💬</span>
+                    <div style="flex: 1;">
+                      <div style="font-size: 11px; color: #22d3ee; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">📝 Catatan Technician</div>
+                      <div style="font-size: 15px; color: #f1f5f9; line-height: 1.6; font-weight: 500;">${parsed.text}</div>
+                    </div>
+                  </div>
+                </div>
+              `;
+            } else if (parsed.text && !parsed.text.includes('Status updated')) {
+              // Show other notes that aren't auto-generated
+              noteSection = `
+                <div style="background: rgba(100,116,139,0.1); border-left: 3px solid #64748b; padding: 12px 16px; border-radius: 0 8px 8px 0; margin-top: 10px;">
+                  <div style="display: flex; align-items: flex-start; gap: 8px;">
+                    <span style="font-size: 16px;">💬</span>
+                    <div>
+                      <div style="font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Catatan</div>
+                      <div style="font-size: 14px; color: #e2e8f0; line-height: 1.5;">${parsed.text}</div>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }
+            
+            // Build photos section - show photos related to this status update
+            let photosSection = '';
+            if (item.photos && item.photos.length > 0) {
+              const photosHtml = item.photos.map(photo => `
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid ${statusInfo.color}20;">
+                  ${photo.label ? `<div style="background: rgba(16,185,129,0.15); color: #34d399; padding: 6px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 10px; display: inline-block;">📝 ${photo.label}</div>` : ''}
+                  <div style="margin-top: ${photo.label ? '0' : '10px'};">
+                    <img 
+                      src="${photo.url}" 
+                      alt="${photo.label || 'Progress photo'}" 
+                      loading="lazy"
+                      onclick="openLightbox('${photo.url}')"
+                      style="max-width: 100%; max-height: 200px; border-radius: 8px; cursor: pointer; border: 2px solid ${statusInfo.color}40; transition: all 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.2);"
+                      onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 8px 24px ${statusInfo.color}40';"
+                      onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';"
+                    >
+                    <div style="font-size: 11px; color: #64748b; margin-top: 6px;">Klik gambar untuk view penuh</div>
+                  </div>
+                </div>
+              `).join('');
+              
+              photosSection = `
+                <div style="background: linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(16,185,129,0.05) 100%); border: 1px solid rgba(16,185,129,0.2); border-radius: 10px; padding: 12px; margin-top: 12px;">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <span style="font-size: 18px;">📷</span>
+                    <div style="font-weight: 600; color: #10b981; font-size: 13px;">Gambar Progress (${item.photos.length} foto${item.photos.length > 1 ? 's' : ''})</div>
+                  </div>
+                  ${photosHtml}
+                </div>
+              `;
+            }
+            // Don't show "Status updated from X to Y" auto-messages
+            
+            return `
+              <div class="timeline-item" style="border-left: 3px solid ${statusInfo.color}; margin-left: 8px; padding-left: 20px;">
+                <div class="timeline-dot" style="background: ${statusInfo.color}; left: -11px;"></div>
+                <div class="timeline-content" style="background: linear-gradient(135deg, ${statusInfo.color}15 0%, ${statusInfo.color}08 100%); border: 1px solid ${statusInfo.color}30; border-radius: 12px; padding: 16px;">
+                  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <span style="font-size: 28px;">${statusInfo.icon}</span>
+                    <div>
+                      <div style="font-weight: 700; color: ${statusInfo.color}; font-size: 16px;">${statusInfo.title}</div>
+                      <div style="font-size: 13px; color: #94a3b8; line-height: 1.4;">${statusInfo.desc}</div>
+                    </div>
+                  </div>
+                  ${phaseSection}
+                  ${rejectSection}
+                  ${noteSection}
+                  ${photosSection}
+                  <div class="timeline-time" style="margin-top: 12px; font-size: 12px; color: #64748b;">
+                    🕐 ${formatDate(statusItem.createdAt)}
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+        }).join('');
       }
 
       function openLightbox(imageUrl) {
@@ -910,17 +1145,10 @@
             document.getElementById('dueDateRow').style.display = 'flex';
             document.getElementById('dueDate').textContent = formatDate(job.dueDate);
           }
-          
-          if (job.diagnosis) {
-            document.getElementById('diagnosisRow').style.display = 'flex';
-            document.getElementById('diagnosis').textContent = job.diagnosis;
-          }
 
-          // Render photos
-          renderPhotos(photos);
-
-          // Render timeline
-          renderTimeline(history);
+          // Render combined timeline with photos (includes catatan and fasa kerja)
+          // Pass job.diagnosis so we can show the actual technician notes
+          renderTimeline(history, photos, job.diagnosis);
 
           showContent();
         } catch (error) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import {
@@ -115,30 +115,46 @@ interface JobCardProps {
   isDragging?: boolean;
 }
 
-function JobCard({ job, onDelete, userRole, isDragging }: JobCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging: sortableIsDragging,
-  } = useSortable({
-    id: job.id,
-    data: { job },
-  });
+const JobCard = React.forwardRef<HTMLDivElement, JobCardProps>(
+  ({ job, onDelete, userRole, isDragging }, forwardedRef) => {
+    const [isDeleting, setIsDeleting] = React.useState(false);
+    
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging: sortableIsDragging,
+    } = useSortable({
+      id: job.id,
+      data: { job },
+    });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+    // Combine forwarded ref with dnd-kit ref
+    const ref = React.useCallback(
+      (node: HTMLDivElement | null) => {
+        setNodeRef(node);
+        if (typeof forwardedRef === 'function') {
+          forwardedRef(node);
+        } else if (forwardedRef) {
+          (forwardedRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+        }
+      },
+      [setNodeRef, forwardedRef]
+    );
 
-  const confirm = useConfirm();
-  const priority = priorityConfig[job.priority];
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+    };
 
-  return (
-    <motion.div
-      ref={setNodeRef}
+    const confirm = useConfirm();
+    const priority = priorityConfig[job.priority];
+
+    return (
+      <motion.div
+        ref={ref}
       style={style}
       {...attributes}
       {...listeners}
@@ -246,8 +262,9 @@ function JobCard({ job, onDelete, userRole, isDragging }: JobCardProps) {
             variant="outline"
             className="h-7 flex-1 text-xs"
             asChild
+            onPointerDown={(e) => e.stopPropagation()}
           >
-            <Link href={`/jobs/${job.id}`}>
+            <Link href={`/jobs/${job.id}`} onClick={(e) => e.stopPropagation()}>
               <Eye className="h-3 w-3 mr-1" />
               View
             </Link>
@@ -257,16 +274,29 @@ function JobCard({ job, onDelete, userRole, isDragging }: JobCardProps) {
             size="sm"
             variant="destructive"
             className="h-7 text-xs"
+            onPointerDown={(e) => {
+              // Stop dnd-kit from capturing this event
+              e.stopPropagation();
+            }}
             onClick={async (e) => {
               e.stopPropagation();
+              e.preventDefault();
+              if (isDeleting) return; // Prevent multiple clicks
+              
               const ok = await confirm({
                   title: 'Delete Job',
                   description: 'Are you sure you want to delete this job? This action cannot be undone.',
                 variant: 'destructive',
                 confirmText: 'Delete',
               });
-              if (ok) onDelete(job.id);
+              if (ok && onDelete) {
+                setIsDeleting(true);
+                onDelete(job.id);
+                // Reset after a delay to allow mutation to complete
+                setTimeout(() => setIsDeleting(false), 2000);
+              }
             }}
+            disabled={isDeleting}
           >
               <Trash2 className="h-3 w-3" />
             </AnimatedButton>
@@ -275,7 +305,9 @@ function JobCard({ job, onDelete, userRole, isDragging }: JobCardProps) {
       </div>
     </motion.div>
   );
-}
+});
+
+JobCard.displayName = 'JobCard';
 
 // Droppable Column Component
 interface DroppableColumnProps {

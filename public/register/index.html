@@ -214,6 +214,98 @@
         font-weight: 500;
       }
 
+      .add-device-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+        border: none;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      }
+
+      .add-device-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+      }
+
+      .add-device-btn:active {
+        transform: scale(0.95);
+      }
+
+      .add-device-btn svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .device-card {
+        background: rgba(15, 23, 42, 0.4);
+        border: 2px solid rgba(139, 92, 246, 0.2);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 16px;
+        position: relative;
+        animation: slideIn 0.3s ease-out;
+      }
+
+      .device-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+      }
+
+      .device-card-number {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        color: #a78bfa;
+        font-size: 14px;
+      }
+
+      .remove-device-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: rgba(239, 68, 68, 0.2);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #f87171;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+      }
+
+      .remove-device-btn:hover {
+        background: rgba(239, 68, 68, 0.3);
+        transform: scale(1.1);
+      }
+
+      .remove-device-btn svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
       .form-group {
         margin-bottom: 20px;
       }
@@ -701,101 +793,19 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                 </svg>
               </div>
-              <div>
+              <div style="flex: 1;">
                 <h2>Maklumat Device</h2>
                 <span>Device yang ingin diservis</span>
               </div>
-            </div>
-
-            <div class="form-group">
-              <label for="deviceType">
-                Jenis Device<span class="required">*</span>
-              </label>
-              <select id="deviceType" name="deviceType" required>
-                <option value="">-- Pilih Jenis Device --</option>
-                <option value="laptop">💻 Laptop</option>
-                <option value="desktop">🖥️ Desktop / PC</option>
-                <option value="phone">📱 Telefon</option>
-                <option value="tablet">📲 Tablet</option>
-                <option value="printer">🖨️ Printer</option>
-                <option value="monitor">🖵 Monitor</option>
-                <option value="other">📦 Lain-lain</option>
-              </select>
-              <div id="deviceTypeError" class="error-text">
+              <button type="button" id="addDeviceBtn" class="add-device-btn" title="Tambah Device">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
-                <span></span>
-              </div>
+              </button>
             </div>
 
-            <div class="row">
-              <div class="form-group">
-                <label for="deviceBrand">
-                  Jenama<span class="required">*</span>
-                </label>
-                <input 
-                  type="text" 
-                  id="deviceBrand" 
-                  name="deviceBrand" 
-                  placeholder="Cth: HP, Dell, Asus"
-                  required
-                >
-                <div id="deviceBrandError" class="error-text">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  </svg>
-                  <span></span>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label for="deviceModel">
-                  Model <span class="optional">(Pilihan)</span>
-                </label>
-                <input 
-                  type="text" 
-                  id="deviceModel" 
-                  name="deviceModel" 
-                  placeholder="Cth: Pavilion 14"
-                >
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="serialNumber">
-                Serial Number <span class="optional">(Pilihan)</span>
-              </label>
-              <input 
-                type="text" 
-                id="serialNumber" 
-                name="serialNumber" 
-                placeholder="Nombor siri device (jika ada)"
-              >
-              <div class="help-text">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                Biasanya di bahagian bawah atau belakang device
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="issueDescription">
-                Masalah / Kerosakan<span class="required">*</span>
-              </label>
-              <textarea 
-                id="issueDescription" 
-                name="issueDescription" 
-                placeholder="Terangkan masalah atau kerosakan yang dialami..."
-                required
-              ></textarea>
-              <div id="issueDescriptionError" class="error-text">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <span></span>
-              </div>
+            <div id="devicesContainer">
+              <!-- Device forms will be dynamically added here -->
             </div>
 
             <button type="submit" class="submit-btn" id="submitBtn">
@@ -821,6 +831,232 @@
       const successDetails = document.getElementById('successDetails');
       const submitBtn = document.getElementById('submitBtn');
       const alertEl = document.getElementById('alert');
+      const devicesContainer = document.getElementById('devicesContainer');
+      const addDeviceBtn = document.getElementById('addDeviceBtn');
+      
+      // Device counter
+      let deviceCount = 0;
+
+      // Function to create device form HTML
+      function createDeviceForm(deviceIndex) {
+        return `
+          <div class="device-card" data-device-index="${deviceIndex}">
+            <div class="device-card-header">
+              <div class="device-card-number">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                Device ${deviceIndex + 1}
+              </div>
+              ${deviceCount > 0 ? `
+                <button type="button" class="remove-device-btn" onclick="removeDevice(${deviceIndex})" title="Buang Device">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              ` : ''}
+            </div>
+
+            <div class="form-group">
+              <label for="deviceType_${deviceIndex}">
+                Jenis Device<span class="required">*</span>
+              </label>
+              <select id="deviceType_${deviceIndex}" name="deviceType_${deviceIndex}" required>
+                <option value="">-- Pilih Jenis Device --</option>
+                <option value="laptop">💻 Laptop</option>
+                <option value="desktop">🖥️ Desktop / PC</option>
+                <option value="phone">📱 Telefon</option>
+                <option value="tablet">📲 Tablet</option>
+                <option value="printer">🖨️ Printer</option>
+                <option value="monitor">🖵 Monitor</option>
+                <option value="other">📦 Lain-lain</option>
+              </select>
+              <div id="deviceType_${deviceIndex}_error" class="error-text">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span></span>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="form-group">
+                <label for="deviceBrand_${deviceIndex}">
+                  Jenama<span class="required">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="deviceBrand_${deviceIndex}" 
+                  name="deviceBrand_${deviceIndex}" 
+                  placeholder="Cth: HP, Dell, Asus"
+                  required
+                >
+                <div id="deviceBrand_${deviceIndex}_error" class="error-text">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <span></span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="deviceModel_${deviceIndex}">
+                  Model <span class="optional">(Pilihan)</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="deviceModel_${deviceIndex}" 
+                  name="deviceModel_${deviceIndex}" 
+                  placeholder="Cth: Pavilion 14"
+                >
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="serialNumber_${deviceIndex}">
+                Serial Number <span class="optional">(Pilihan)</span>
+              </label>
+              <input 
+                type="text" 
+                id="serialNumber_${deviceIndex}" 
+                name="serialNumber_${deviceIndex}" 
+                placeholder="Nombor siri device (jika ada)"
+              >
+              <div class="help-text">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Biasanya di bahagian bawah atau belakang device
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="issueDescription_${deviceIndex}">
+                Masalah / Kerosakan<span class="required">*</span>
+              </label>
+              <textarea 
+                id="issueDescription_${deviceIndex}" 
+                name="issueDescription_${deviceIndex}" 
+                placeholder="Terangkan masalah atau kerosakan yang dialami..."
+                required
+              ></textarea>
+              <div id="issueDescription_${deviceIndex}_error" class="error-text">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span></span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Initialize with first device
+      function initializeDevices() {
+        devicesContainer.innerHTML = createDeviceForm(0);
+        deviceCount = 1;
+      }
+
+      // Add new device
+      function addDevice() {
+        devicesContainer.insertAdjacentHTML('beforeend', createDeviceForm(deviceCount));
+        deviceCount++;
+        updateRemoveButtons();
+      }
+
+      // Remove device
+      function removeDevice(index) {
+        const deviceCard = document.querySelector(`[data-device-index="${index}"]`);
+        if (deviceCard && deviceCount > 1) {
+          deviceCard.style.animation = 'slideOut 0.3s ease-out';
+          setTimeout(() => {
+            deviceCard.remove();
+            deviceCount--;
+            renumberDevices();
+            updateRemoveButtons();
+          }, 300);
+        }
+      }
+
+      // Renumber devices after removal
+      function renumberDevices() {
+        const cards = devicesContainer.querySelectorAll('.device-card');
+        cards.forEach((card, index) => {
+          const oldIndex = card.getAttribute('data-device-index');
+          card.setAttribute('data-device-index', index);
+          
+          const numberEl = card.querySelector('.device-card-number');
+          if (numberEl) {
+            numberEl.innerHTML = `
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+              </svg>
+              Device ${index + 1}
+            `;
+          }
+          
+          // Update all IDs and names
+          const inputs = card.querySelectorAll('input, select, textarea');
+          inputs.forEach(input => {
+            const oldId = input.id;
+            const parts = oldId.split('_');
+            const baseName = parts[0];
+            const newId = `${baseName}_${index}`;
+            input.id = newId;
+            input.name = newId;
+            
+            // Update label for attribute
+            const label = card.querySelector(`label[for="${oldId}"]`);
+            if (label) label.setAttribute('for', newId);
+          });
+          
+          // Update error div IDs
+          const errorDivs = card.querySelectorAll('[id$="_error"]');
+          errorDivs.forEach(errorDiv => {
+            const oldErrorId = errorDiv.id;
+            const parts = oldErrorId.split('_');
+            if (parts.length >= 2) {
+              const baseName = parts.slice(0, -1).join('_');
+              const newErrorId = `${baseName}_error`;
+              errorDiv.id = newErrorId;
+            }
+          });
+          
+          // Update remove button
+          const removeBtn = card.querySelector('.remove-device-btn');
+          if (removeBtn) {
+            removeBtn.setAttribute('onclick', `removeDevice(${index})`);
+          }
+        });
+      }
+
+      // Update remove buttons visibility
+      function updateRemoveButtons() {
+        const removeButtons = devicesContainer.querySelectorAll('.remove-device-btn');
+        removeButtons.forEach(btn => {
+          btn.style.display = deviceCount > 1 ? 'flex' : 'none';
+        });
+      }
+
+      // Add slideOut animation
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes slideOut {
+          from {
+            opacity: 1;
+            transform: translateY(0);
+          }
+          to {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+        }
+      `;
+      document.head.appendChild(style);
+
+      // Initialize
+      initializeDevices();
+      addDeviceBtn.addEventListener('click', addDevice);
 
       // Field validation
       const fields = {
@@ -857,31 +1093,6 @@
             }
             return null;
           }
-        },
-        deviceType: {
-          element: document.getElementById('deviceType'),
-          error: document.getElementById('deviceTypeError'),
-          validate: (value) => {
-            if (!value) return 'Sila pilih jenis device';
-            return null;
-          }
-        },
-        deviceBrand: {
-          element: document.getElementById('deviceBrand'),
-          error: document.getElementById('deviceBrandError'),
-          validate: (value) => {
-            if (!value.trim()) return 'Jenama device diperlukan';
-            return null;
-          }
-        },
-        issueDescription: {
-          element: document.getElementById('issueDescription'),
-          error: document.getElementById('issueDescriptionError'),
-          validate: (value) => {
-            if (!value.trim()) return 'Sila terangkan masalah device';
-            if (value.trim().length < 10) return 'Penerangan mesti sekurang-kurangnya 10 huruf';
-            return null;
-          }
         }
       };
 
@@ -913,11 +1124,78 @@
         }
       }
 
+      // Validate device fields
+      function validateDevice(deviceIndex) {
+        let isValid = true;
+        const deviceCard = document.querySelector(`[data-device-index="${deviceIndex}"]`);
+        if (!deviceCard) return false;
+
+        const deviceType = deviceCard.querySelector(`#deviceType_${deviceIndex}`);
+        const deviceBrand = deviceCard.querySelector(`#deviceBrand_${deviceIndex}`);
+        const issueDescription = deviceCard.querySelector(`#issueDescription_${deviceIndex}`);
+
+        // Validate device type
+        if (!deviceType.value) {
+          const errorEl = deviceCard.querySelector(`#deviceType_${deviceIndex}_error`);
+          if (errorEl) {
+            errorEl.querySelector('span').textContent = 'Sila pilih jenis device';
+            errorEl.classList.add('show');
+          }
+          isValid = false;
+        } else {
+          const errorEl = deviceCard.querySelector(`#deviceType_${deviceIndex}_error`);
+          if (errorEl) errorEl.classList.remove('show');
+        }
+
+        // Validate device brand
+        if (!deviceBrand.value.trim()) {
+          const errorEl = deviceCard.querySelector(`#deviceBrand_${deviceIndex}_error`);
+          if (errorEl) {
+            errorEl.querySelector('span').textContent = 'Jenama device diperlukan';
+            errorEl.classList.add('show');
+          }
+          isValid = false;
+        } else {
+          const errorEl = deviceCard.querySelector(`#deviceBrand_${deviceIndex}_error`);
+          if (errorEl) errorEl.classList.remove('show');
+        }
+
+        // Validate issue description
+        if (!issueDescription.value.trim()) {
+          const errorEl = deviceCard.querySelector(`#issueDescription_${deviceIndex}_error`);
+          if (errorEl) {
+            errorEl.querySelector('span').textContent = 'Sila terangkan masalah device';
+            errorEl.classList.add('show');
+          }
+          isValid = false;
+        } else if (issueDescription.value.trim().length < 10) {
+          const errorEl = deviceCard.querySelector(`#issueDescription_${deviceIndex}_error`);
+          if (errorEl) {
+            errorEl.querySelector('span').textContent = 'Penerangan mesti sekurang-kurangnya 10 huruf';
+            errorEl.classList.add('show');
+          }
+          isValid = false;
+        } else {
+          const errorEl = deviceCard.querySelector(`#issueDescription_${deviceIndex}_error`);
+          if (errorEl) errorEl.classList.remove('show');
+        }
+
+        return isValid;
+      }
+
       function validateForm() {
         let isValid = true;
+        
+        // Validate customer fields
         Object.keys(fields).forEach(fieldName => {
           if (!validateField(fieldName)) isValid = false;
         });
+
+        // Validate all devices
+        for (let i = 0; i < deviceCount; i++) {
+          if (!validateDevice(i)) isValid = false;
+        }
+
         return isValid;
       }
 
@@ -948,7 +1226,7 @@
           other: '📦 Lain-lain'
         };
         
-        successDetails.innerHTML = `
+        let detailsHTML = `
           <div class="detail-row">
             <span class="detail-label">Nama</span>
             <span class="detail-value">${data.customerName}</span>
@@ -957,16 +1235,27 @@
             <span class="detail-label">Telefon</span>
             <span class="detail-value">${data.phone}</span>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">Device</span>
-            <span class="detail-value">${deviceTypeLabels[data.deviceType] || data.deviceType} - ${data.brand}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Masalah</span>
-            <span class="detail-value">${data.issue.substring(0, 50)}${data.issue.length > 50 ? '...' : ''}</span>
-          </div>
         `;
+
+        // Show all devices
+        if (data.devices && data.devices.length > 0) {
+          detailsHTML += `
+            <div class="detail-row">
+              <span class="detail-label">Bilangan Device</span>
+              <span class="detail-value">${data.devices.length} device${data.devices.length > 1 ? 's' : ''}</span>
+            </div>
+          `;
+          data.devices.forEach((device, index) => {
+            detailsHTML += `
+              <div class="detail-row">
+                <span class="detail-label">Device ${index + 1}</span>
+                <span class="detail-value">${deviceTypeLabels[device.deviceType] || device.deviceType} - ${device.deviceBrand}</span>
+              </div>
+            `;
+          });
+        }
         
+        successDetails.innerHTML = detailsHTML;
         successState.classList.add('show');
       }
 
@@ -983,17 +1272,28 @@
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<div class="spinner"></div> Menghantar...';
 
+        // Collect all devices
+        const devices = [];
+        for (let i = 0; i < deviceCount; i++) {
+          const deviceCard = document.querySelector(`[data-device-index="${i}"]`);
+          if (deviceCard) {
+            devices.push({
+              deviceType: deviceCard.querySelector(`#deviceType_${i}`).value,
+              deviceBrand: deviceCard.querySelector(`#deviceBrand_${i}`).value.trim(),
+              deviceModel: deviceCard.querySelector(`#deviceModel_${i}`).value.trim() || undefined,
+              serialNumber: deviceCard.querySelector(`#serialNumber_${i}`).value.trim() || undefined,
+              issueDescription: deviceCard.querySelector(`#issueDescription_${i}`).value.trim()
+            });
+          }
+        }
+
         const formData = {
           // Customer data
           name: fields.fullName.element.value.trim(),
           phone: fields.phoneNumber.element.value.trim(),
           email: fields.email.element.value.trim() || undefined,
-          // Device data
-          deviceType: fields.deviceType.element.value,
-          deviceBrand: fields.deviceBrand.element.value.trim(),
-          deviceModel: document.getElementById('deviceModel').value.trim() || undefined,
-          serialNumber: document.getElementById('serialNumber').value.trim() || undefined,
-          issueDescription: fields.issueDescription.element.value.trim()
+          // Devices array
+          devices: devices
         };
 
         try {
@@ -1010,9 +1310,7 @@
             showSuccess({
               customerName: formData.name,
               phone: formData.phone,
-              deviceType: formData.deviceType,
-              brand: formData.deviceBrand,
-              issue: formData.issueDescription
+              devices: devices
             });
           } else {
             showAlert(data.error || data.message || 'Pendaftaran gagal. Sila cuba lagi.');

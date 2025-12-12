@@ -14,18 +14,23 @@ const normalizeTags = (tags?: string[]) =>
     .filter(Boolean)
     .map((tag) => tag.replace(/\s+/g, ' ').toUpperCase());
 
-// Public registration schema (with device)
-const publicRegisterSchema = z.object({
-  // Customer data
-  name: z.string().min(2, 'Nama mesti sekurang-kurangnya 2 huruf'),
-  phone: z.string().min(10, 'Nombor telefon tidak sah').max(15),
-  email: z.string().email().optional().or(z.literal('')),
-  // Device data
+// Device schema
+const deviceSchema = z.object({
   deviceType: z.string().min(1, 'Jenis device diperlukan'),
   deviceBrand: z.string().min(1, 'Jenama device diperlukan'),
   deviceModel: z.string().optional().or(z.literal('')),
   serialNumber: z.string().optional().or(z.literal('')),
   issueDescription: z.string().min(10, 'Penerangan masalah diperlukan'),
+});
+
+// Public registration schema (with devices array)
+const publicRegisterSchema = z.object({
+  // Customer data
+  name: z.string().min(2, 'Nama mesti sekurang-kurangnya 2 huruf'),
+  phone: z.string().min(10, 'Nombor telefon tidak sah').max(15),
+  email: z.string().email().optional().or(z.literal('')),
+  // Devices array (at least 1 device required)
+  devices: z.array(deviceSchema).min(1, 'Sekurang-kurangnya satu device diperlukan'),
 });
 
 // PUBLIC ENDPOINT - Customer self-registration with device (no auth required)
@@ -40,7 +45,7 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    const { name, phone, email, deviceType, deviceBrand, deviceModel, serialNumber, issueDescription } = parsed.data;
+    const { name, phone, email, devices } = parsed.data;
 
     // Clean phone number - remove all non-digits for consistent storage
     const cleanPhone = phone.replace(/\D/g, '');
@@ -74,38 +79,47 @@ router.post('/register', async (req, res) => {
       }
     }
 
-    // Create device for customer
-    const device = await prisma.device.create({
-      data: {
-        customerId: customer.id,
-        deviceType: deviceType,
-        brand: deviceBrand,
-        model: deviceModel || null,
-        serialNumber: serialNumber || null,
-        notes: issueDescription,
-      },
-    });
+    // Create devices and jobs for each device
+    const createdDevices = [];
+    const createdJobs = [];
 
-    // Create a job/ticket for the service request
-    const job = await prisma.job.create({
-      data: {
-        customerId: customer.id,
-        deviceId: device.id,
-        title: `${deviceType} ${deviceBrand}${deviceModel ? ' ' + deviceModel : ''} - ${name}`,
-        description: issueDescription,
-        status: 'PENDING',
-        priority: 'NORMAL',
-        qrToken: crypto.randomUUID(),
-        qrExpiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000), // 30 days
-      },
-    });
+    for (const deviceData of devices) {
+      // Create device for customer
+      const device = await prisma.device.create({
+        data: {
+          customerId: customer.id,
+          deviceType: deviceData.deviceType,
+          brand: deviceData.deviceBrand,
+          model: deviceData.deviceModel || null,
+          serialNumber: deviceData.serialNumber || null,
+          notes: deviceData.issueDescription,
+        },
+      });
+
+      // Create a job/ticket for the service request
+      const job = await prisma.job.create({
+        data: {
+          customerId: customer.id,
+          deviceId: device.id,
+          title: `${deviceData.deviceType} ${deviceData.deviceBrand}${deviceData.deviceModel ? ' ' + deviceData.deviceModel : ''} - ${name}`,
+          description: deviceData.issueDescription,
+          status: 'PENDING',
+          priority: 'NORMAL',
+          qrToken: crypto.randomUUID(),
+          qrExpiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000), // 30 days
+        },
+      });
+
+      createdDevices.push(device);
+      createdJobs.push(job);
+    }
 
     return res.status(201).json({ 
       success: true,
-      message: 'Pendaftaran berjaya!',
+      message: `Pendaftaran berjaya! ${devices.length} device${devices.length > 1 ? 's' : ''} telah didaftarkan.`,
       customerId: customer.id,
-      deviceId: device.id,
-      jobId: job.id,
+      deviceIds: createdDevices.map(d => d.id),
+      jobIds: createdJobs.map(j => j.id),
       isExistingCustomer
     });
   } catch (error) {
