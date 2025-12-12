@@ -12,6 +12,7 @@ const node_fs_1 = __importDefault(require("node:fs"));
 const queues_1 = require("../queues");
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const auth_1 = require("../middleware/auth");
+const workflow_1 = require("../services/workflow");
 const router = (0, express_1.Router)();
 const createSchema = zod_1.z.object({
     customerId: zod_1.z.string().uuid(),
@@ -36,7 +37,7 @@ const updateSchema = zod_1.z.object({
 const buildQrUrl = (req, token) => {
     const host = req.get('host') || 'localhost:4000';
     const proto = req.headers['x-forwarded-proto']?.toString() || req.protocol || 'http';
-    return `${proto}://${host}/public/register/index.html?token=${token}`;
+    return `${proto}://${host}/public/progress/index.html?token=${token}`;
 };
 // Multer storage for job photos (shared uploads at repo root)
 const uploadsDir = node_path_1.default.resolve(process.cwd(), '../../uploads');
@@ -67,21 +68,114 @@ router.get('/register/:token', async (req, res) => {
 });
 router.post('/register/:token', async (req, res) => {
     const token = String(req.params.token);
-    const { name, phone, device_type, model, accept_terms } = req.body || {};
-    if (!accept_terms)
-        return res.status(400).json({ message: 'Terms must be accepted' });
+    const { fullName, phoneNumber, deviceType, deviceModel, deviceNotes, termsAccepted } = req.body || {};
+    // Validate required fields
+    if (!termsAccepted) {
+        return res.status(400).json({ error: 'Terms and conditions must be accepted' });
+    }
+    if (!fullName || !phoneNumber || !deviceType || !deviceModel) {
+        return res.status(400).json({ error: 'All required fields must be filled' });
+    }
     const job = await prisma_1.default.job.findUnique({ where: { qrToken: token } });
     if (!job)
-        return res.status(404).json({ message: 'Invalid or expired token' });
-    if (job.qrExpiresAt && job.qrExpiresAt < new Date())
-        return res.status(410).json({ message: 'Registration link has expired' });
-    if (name && phone) {
-        await prisma_1.default.customer.update({ where: { id: job.customerId }, data: { name, phone } });
+        return res.status(404).json({ error: 'Invalid or expired token' });
+    if (job.qrExpiresAt && job.qrExpiresAt < new Date()) {
+        return res.status(410).json({ error: 'Registration link has expired' });
     }
-    if (device_type || model) {
-        await prisma_1.default.device.update({ where: { id: job.deviceId }, data: { deviceType: device_type || undefined, model: model || undefined } });
+    // Update customer information
+    if (fullName && phoneNumber) {
+        await prisma_1.default.customer.update({
+            where: { id: job.customerId },
+            data: {
+                name: fullName,
+                phone: phoneNumber
+            }
+        });
     }
-    return res.json({ message: 'Registration completed' });
+    // Update device information
+    if (deviceType || deviceModel) {
+        await prisma_1.default.device.update({
+            where: { id: job.deviceId },
+            data: {
+                deviceType: deviceType || undefined,
+                model: deviceModel || undefined,
+                notes: deviceNotes || undefined
+            }
+        });
+    }
+    // Update job status to PENDING (customer has registered)
+    await prisma_1.default.job.update({
+        where: { id: job.id },
+        data: {
+            status: 'PENDING',
+            description: deviceNotes || job.description
+        }
+    });
+    // Send confirmation WhatsApp message
+    await (0, workflow_1.sendRegistrationConfirmation)(job.id);
+    return res.json({
+        success: true,
+        message: 'Registration completed successfully',
+        jobId: job.id
+    });
+});
+// Public progress endpoint - allows customers to view job progress via QR code
+router.get('/progress/:token', async (req, res) => {
+    const token = String(req.params.token);
+    const job = await prisma_1.default.job.findUnique({
+        where: { qrToken: token },
+        include: {
+            customer: true,
+            device: true
+        }
+    });
+    if (!job) {
+        return res.status(404).json({ message: 'Invalid token' });
+    }
+    // Check if token has expired
+    if (job.qrExpiresAt && job.qrExpiresAt < new Date()) {
+        return res.status(410).json({ message: 'Progress link has expired. Please contact the service center for a new link.' });
+    }
+    // Get status history
+    const history = await prisma_1.default.jobStatusHistory.findMany({
+        where: { jobId: job.id },
+        orderBy: { createdAt: 'desc' },
+    });
+    // Get photos with URLs
+    const host = req.get('host') || 'localhost:4000';
+    const proto = req.headers['x-forwarded-proto']?.toString() || req.protocol || 'http';
+    const photosRaw = await prisma_1.default.jobPhoto.findMany({
+        where: { jobId: job.id },
+        orderBy: { createdAt: 'desc' }
+    });
+    const photos = photosRaw.map((p) => ({
+        id: p.id,
+        label: p.label,
+        url: `${proto}://${host}${p.filePath.startsWith('/') ? '' : '/'}${p.filePath}`,
+        createdAt: p.createdAt,
+    }));
+    return res.json({
+        job: {
+            id: job.id,
+            title: job.title,
+            description: job.description,
+            status: job.status,
+            priority: job.priority,
+            diagnosis: job.diagnosis,
+            dueDate: job.dueDate,
+            createdAt: job.createdAt,
+            customer: {
+                name: job.customer.name,
+            },
+            device: {
+                deviceType: job.device.deviceType,
+                brand: job.device.brand,
+                model: job.device.model,
+            },
+        },
+        history,
+        photos,
+    });
 });
 // Authenticated routes
 router.get('/', auth_1.requireAuth, async (req, res) => {
@@ -182,14 +276,24 @@ router.put('/:id', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER
                 ...('dueDate' in data ? { dueDate: data.dueDate ? new Date(data.dueDate) : null } : {}),
             },
         });
-        if (data.status && data.status !== existing.status) {
+        // Create history entry when status OR diagnosis changes
+        const statusChanged = data.status && data.status !== existing.status;
+        const diagnosisChanged = 'diagnosis' in data && data.diagnosis !== existing.diagnosis;
+        if (statusChanged || diagnosisChanged) {
+            // Include the diagnosis (catatan + fasa) in the history
+            const currentDiagnosis = data.diagnosis || existing.diagnosis || '';
             await prisma_1.default.jobStatusHistory.create({
                 data: {
                     jobId: id,
-                    status: data.status,
-                    notes: `Status updated from ${existing.status} to ${data.status}`,
+                    status: (data.status || existing.status),
+                    notes: currentDiagnosis || (statusChanged ? `Status updated from ${existing.status} to ${data.status}` : null),
                 },
             });
+            // Trigger workflow automation (only if status actually changed)
+            if (statusChanged && data.status) {
+                await (0, workflow_1.onJobStatusChange)(id, data.status, existing.status);
+            }
+            // Schedule reminders for quotations
             if (data.status === 'QUOTED') {
                 const DAY = 24 * 60 * 60 * 1000;
                 await (0, queues_1.enqueueReminder)(id, 'QUOTE_DAY_1', DAY);
@@ -211,6 +315,53 @@ router.get('/:id/history', auth_1.requireAuth, async (req, res) => {
         orderBy: { createdAt: 'desc' },
     });
     return res.json(rows);
+});
+// Delete history entry
+router.delete('/:id/history/:historyId', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+    const { id, historyId } = req.params;
+    try {
+        // Verify history entry belongs to this job
+        const historyEntry = await prisma_1.default.jobStatusHistory.findUnique({
+            where: { id: historyId },
+        });
+        if (!historyEntry || historyEntry.jobId !== id) {
+            return res.status(404).json({ message: 'History entry not found' });
+        }
+        await prisma_1.default.jobStatusHistory.delete({
+            where: { id: historyId },
+        });
+        return res.status(204).send();
+    }
+    catch (error) {
+        console.error('Delete history error:', error);
+        return res.status(500).json({ message: 'Failed to delete history entry' });
+    }
+});
+// Update history entry notes
+router.put('/:id/history/:historyId', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+    const { id, historyId } = req.params;
+    const { notes } = req.body;
+    if (typeof notes !== 'string') {
+        return res.status(400).json({ message: 'Notes must be a string' });
+    }
+    try {
+        // Verify history entry belongs to this job
+        const historyEntry = await prisma_1.default.jobStatusHistory.findUnique({
+            where: { id: historyId },
+        });
+        if (!historyEntry || historyEntry.jobId !== id) {
+            return res.status(404).json({ message: 'History entry not found' });
+        }
+        const updated = await prisma_1.default.jobStatusHistory.update({
+            where: { id: historyId },
+            data: { notes: notes || null },
+        });
+        return res.json(updated);
+    }
+    catch (error) {
+        console.error('Update history error:', error);
+        return res.status(500).json({ message: 'Failed to update history entry' });
+    }
 });
 // Reissue QR token
 router.post('/:id/qr/renew', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
@@ -260,6 +411,23 @@ router.post('/:id/photos', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 
         saved.push({ ...rec, url: `${req.protocol}://${req.get('host')}${rel}` });
     }
     return res.status(201).json(saved);
+});
+router.put('/:id/photos/:photoId', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+    const { id, photoId } = req.params;
+    const { label } = req.body;
+    const photo = await prisma_1.default.jobPhoto.findUnique({ where: { id: photoId } });
+    if (!photo || photo.jobId !== id)
+        return res.status(404).json({ message: 'Photo not found' });
+    const updated = await prisma_1.default.jobPhoto.update({
+        where: { id: photoId },
+        data: { label: label || null },
+    });
+    const host = req.get('host') || 'localhost:4000';
+    const proto = req.headers['x-forwarded-proto']?.toString() || req.protocol || 'http';
+    return res.json({
+        ...updated,
+        url: `${proto}://${host}${updated.filePath.startsWith('/') ? '' : '/'}${updated.filePath}`,
+    });
 });
 router.delete('/:id/photos/:photoId', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
     const { id, photoId } = req.params;

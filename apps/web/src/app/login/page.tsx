@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
@@ -39,7 +39,7 @@ const features = [
   },
 ];
 
-export default function LoginPage() {
+function LoginPageContent() {
   const { login, loading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -349,5 +349,17 @@ export default function LoginPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    }>
+      <LoginPageContent />
+    </Suspense>
   );
 }

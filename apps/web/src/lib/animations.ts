@@ -11,11 +11,11 @@ export const duration = {
 
 // Easing presets
 export const easing = {
-  easeOut: [0, 0, 0.2, 1],
-  easeIn: [0.4, 0, 1, 1],
-  easeInOut: [0.4, 0, 0.2, 1],
-  spring: [0.68, -0.55, 0.265, 1.55],
-  bounce: [0.68, -0.6, 0.32, 1.6],
+  easeOut: [0, 0, 0.2, 1] as [number, number, number, number],
+  easeIn: [0.4, 0, 1, 1] as [number, number, number, number],
+  easeInOut: [0.4, 0, 0.2, 1] as [number, number, number, number],
+  spring: [0.68, -0.55, 0.265, 1.55] as [number, number, number, number],
+  bounce: [0.68, -0.6, 0.32, 1.6] as [number, number, number, number],
 };
 
 // Page transition variants

@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const zod_1 = require("zod");
 const client_1 = require("@prisma/client");
+const node_crypto_1 = __importDefault(require("node:crypto"));
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
@@ -13,6 +14,112 @@ const normalizeTags = (tags) => (tags || [])
     .map((tag) => tag.trim())
     .filter(Boolean)
     .map((tag) => tag.replace(/\s+/g, ' ').toUpperCase());
+// Device schema
+const deviceSchema = zod_1.z.object({
+    deviceType: zod_1.z.string().min(1, 'Jenis device diperlukan'),
+    deviceBrand: zod_1.z.string().min(1, 'Jenama device diperlukan'),
+    deviceModel: zod_1.z.string().optional().or(zod_1.z.literal('')),
+    serialNumber: zod_1.z.string().optional().or(zod_1.z.literal('')),
+    issueDescription: zod_1.z.string().min(10, 'Penerangan masalah diperlukan'),
+});
+// Public registration schema (with devices array)
+const publicRegisterSchema = zod_1.z.object({
+    // Customer data
+    name: zod_1.z.string().min(2, 'Nama mesti sekurang-kurangnya 2 huruf'),
+    phone: zod_1.z.string().min(10, 'Nombor telefon tidak sah').max(15),
+    email: zod_1.z.string().email().optional().or(zod_1.z.literal('')),
+    // Devices array (at least 1 device required)
+    devices: zod_1.z.array(deviceSchema).min(1, 'Sekurang-kurangnya satu device diperlukan'),
+});
+// PUBLIC ENDPOINT - Customer self-registration with device (no auth required)
+router.post('/register', async (req, res) => {
+    try {
+        const parsed = publicRegisterSchema.safeParse(req.body);
+        if (!parsed.success) {
+            const firstError = parsed.error.errors[0];
+            return res.status(400).json({
+                message: 'Invalid payload',
+                error: firstError?.message || 'Sila semak maklumat yang dimasukkan'
+            });
+        }
+        const { name, phone, email, devices } = parsed.data;
+        // Clean phone number - remove all non-digits for consistent storage
+        const cleanPhone = phone.replace(/\D/g, '');
+        // Check if customer already exists
+        let customer = await prisma_1.default.customer.findUnique({
+            where: { phone: cleanPhone }
+        }).catch(() => null);
+        const isExistingCustomer = !!customer;
+        if (!customer) {
+            // Create new customer
+            customer = await prisma_1.default.customer.create({
+                data: {
+                    name,
+                    phone: cleanPhone,
+                    email: email || null,
+                    notes: null,
+                    type: 'REGULAR',
+                    tags: ['WALK-IN', 'QR-REGISTERED'],
+                },
+            });
+        }
+        else {
+            // Update customer name if different
+            if (customer.name !== name) {
+                customer = await prisma_1.default.customer.update({
+                    where: { id: customer.id },
+                    data: { name }
+                });
+            }
+        }
+        // Create devices and jobs for each device
+        const createdDevices = [];
+        const createdJobs = [];
+        for (const deviceData of devices) {
+            // Create device for customer
+            const device = await prisma_1.default.device.create({
+                data: {
+                    customerId: customer.id,
+                    deviceType: deviceData.deviceType,
+                    brand: deviceData.deviceBrand,
+                    model: deviceData.deviceModel || null,
+                    serialNumber: deviceData.serialNumber || null,
+                    notes: deviceData.issueDescription,
+                },
+            });
+            // Create a job/ticket for the service request
+            const job = await prisma_1.default.job.create({
+                data: {
+                    customerId: customer.id,
+                    deviceId: device.id,
+                    title: `${deviceData.deviceType} ${deviceData.deviceBrand}${deviceData.deviceModel ? ' ' + deviceData.deviceModel : ''} - ${name}`,
+                    description: deviceData.issueDescription,
+                    status: 'PENDING',
+                    priority: 'NORMAL',
+                    qrToken: node_crypto_1.default.randomUUID(),
+                    qrExpiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000), // 30 days
+                },
+            });
+            createdDevices.push(device);
+            createdJobs.push(job);
+        }
+        return res.status(201).json({
+            success: true,
+            message: `Pendaftaran berjaya! ${devices.length} device${devices.length > 1 ? 's' : ''} telah didaftarkan.`,
+            customerId: customer.id,
+            deviceIds: createdDevices.map(d => d.id),
+            jobIds: createdJobs.map(j => j.id),
+            isExistingCustomer
+        });
+    }
+    catch (error) {
+        console.error('Customer registration error:', error);
+        return res.status(500).json({
+            message: 'Pendaftaran gagal',
+            error: 'Ralat server. Sila cuba lagi.'
+        });
+    }
+});
 // Schemas
 const tagsSchema = zod_1.z.array(zod_1.z.string().min(1)).optional();
 const createSchema = zod_1.z.object({

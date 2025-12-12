@@ -519,7 +519,7 @@ export default function SettingsPage() {
                               </div>
                               <div className="mt-3 space-y-1">
                                 <p className="text-sm font-semibold text-slate-100">Scan this QR with WhatsApp on your phone</p>
-                                <p className="text-xs text-slate-400">On your phone, open WhatsApp > Linked Devices > Link a device.</p>
+                                <p className="text-xs text-slate-400">On your phone, open WhatsApp &gt; Linked Devices &gt; Link a device.</p>
                               </div>
                             </>
                           ) : (

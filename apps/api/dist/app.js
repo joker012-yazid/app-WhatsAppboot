@@ -65,34 +65,36 @@ const createApp = () => {
         app.get('/public/register/index.html', (req, res) => {
             const filePath = node_path_1.default.resolve(publicDir, 'register', 'index.html');
             console.log(`[Route] Request received for /public/register/index.html`);
-            console.log(`[Route] Resolved file path: ${filePath}`);
-            console.log(`[Route] File exists: ${node_fs_1.default.existsSync(filePath)}`);
             if (node_fs_1.default.existsSync(filePath)) {
-                // Use absolute path with res.sendFile
                 res.sendFile(filePath, (err) => {
                     if (err) {
                         console.error(`[Route] Error sending file:`, err);
                         if (!res.headersSent) {
-                            res
-                                .status(500)
-                                .json({ message: 'Error serving file', error: err.message });
+                            res.status(500).json({ message: 'Error serving file', error: err.message });
                         }
-                    }
-                    else {
-                        console.log(`[Route] File sent successfully`);
                     }
                 });
             }
             else {
-                console.error(`[Route] File not found: ${filePath}`);
-                console.error(`[Route] Public dir: ${publicDir}`);
-                console.error(`[Route] Public dir exists: ${node_fs_1.default.existsSync(publicDir)}`);
-                res.status(404).json({
-                    message: 'File not found',
-                    path: filePath,
-                    publicDir: publicDir,
-                    publicDirExists: node_fs_1.default.existsSync(publicDir),
+                res.status(404).json({ message: 'File not found', path: filePath });
+            }
+        });
+        // Explicit route handler for progress/index.html (customer job progress page)
+        app.get('/public/progress/index.html', (req, res) => {
+            const filePath = node_path_1.default.resolve(publicDir, 'progress', 'index.html');
+            console.log(`[Route] Request received for /public/progress/index.html`);
+            if (node_fs_1.default.existsSync(filePath)) {
+                res.sendFile(filePath, (err) => {
+                    if (err) {
+                        console.error(`[Route] Error sending progress file:`, err);
+                        if (!res.headersSent) {
+                            res.status(500).json({ message: 'Error serving file', error: err.message });
+                        }
+                    }
                 });
+            }
+            else {
+                res.status(404).json({ message: 'Progress page not found', path: filePath });
             }
         });
         // Use express.static for other public files
@@ -130,7 +132,7 @@ const createApp = () => {
         res.json({ status: 'ok', timestamp: new Date().toISOString() });
     });
     // Handle 404 - provide helpful message for common web app routes
-    app.use((req, res) => {
+    app.use((req, res, next) => {
         // Log static file requests for debugging
         if (req.path.startsWith('/public/')) {
             const requestedPath = req.path.replace('/public', '');
@@ -181,6 +183,21 @@ const createApp = () => {
             });
         }
         res.status(404).json({ message: 'Not found' });
+    });
+    // Global error handler - must be last middleware
+    app.use((err, req, res, next) => {
+        console.error('[Error]', err);
+        // Check if response was already sent
+        if (res.headersSent) {
+            return next(err);
+        }
+        const status = err.status || err.statusCode || 500;
+        const message = err.message || 'Internal server error';
+        res.status(status).json({
+            success: false,
+            error: message,
+            ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+        });
     });
     return app;
 };

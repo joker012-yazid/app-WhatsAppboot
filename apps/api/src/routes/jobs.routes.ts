@@ -306,8 +306,10 @@ router.put('/:id', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'), a
         },
       });
       
-      // Trigger workflow automation
-      await onJobStatusChange(id, data.status, existing.status);
+      // Trigger workflow automation (only if status actually changed)
+      if (statusChanged && data.status) {
+        await onJobStatusChange(id, data.status, existing.status);
+      }
       
       // Schedule reminders for quotations
       if (data.status === 'QUOTED') {

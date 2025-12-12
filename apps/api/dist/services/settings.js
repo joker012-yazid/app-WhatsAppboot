@@ -34,8 +34,10 @@ exports.settingDefaults = {
         apiKey: '',
         baseUrl: '',
         model: 'gpt-4o-mini',
-        temperature: 0.2,
-        maxTokens: 512,
+        temperature: 0.3,
+        maxTokens: 800,
+        systemPrompt: '',
+        autoReplyEnabled: true,
     },
     backup: {
         manualEnabled: true,
@@ -79,6 +81,8 @@ const aiSchema = zod_1.z.object({
     model: zod_1.z.string().min(1),
     temperature: zod_1.z.number().min(0).max(1),
     maxTokens: zod_1.z.number().min(64).max(4000),
+    systemPrompt: zod_1.z.string().optional().transform((value) => value ?? ''),
+    autoReplyEnabled: zod_1.z.boolean().optional().default(true),
 });
 const backupSchema = zod_1.z.object({
     manualEnabled: zod_1.z.boolean(),

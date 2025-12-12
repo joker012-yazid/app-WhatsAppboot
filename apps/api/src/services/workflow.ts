@@ -331,7 +331,7 @@ export async function sendReminderMessage(
     if (sent) {
       // Mark reminder as sent
       await prisma.reminder.updateMany({
-        where: { jobId, kind: reminderType, sentAt: null },
+        where: { jobId, kind: reminderType, sentAt: { equals: null } },
         data: { sentAt: new Date() },
       });
 
@@ -493,7 +493,7 @@ async function handleAiResponse(
 
     const previousMessages = recentMessages
       .reverse()
-      .map((m) => ({
+      .map((m: { direction: string; content: string }) => ({
         role: (m.direction === 'INBOUND' ? 'customer' : 'agent') as 'customer' | 'agent',
         content: m.content,
       }));
@@ -642,7 +642,7 @@ async function handleNewCustomerAiResponse(phone: string, messageText: string): 
         skip: 1, // Skip the just-logged message
         take: 10,
       })
-    ).reverse().map((m) => ({
+    ).reverse().map((m: { direction: string; content: string }) => ({
       role: (m.direction === 'INBOUND' ? 'customer' : 'agent') as 'customer' | 'agent',
       content: m.content,
     }));

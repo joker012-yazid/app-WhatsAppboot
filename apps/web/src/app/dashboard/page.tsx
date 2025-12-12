@@ -99,8 +99,8 @@ function StatCard({
   isCurrency,
   delay = 0,
 }: StatCardProps) {
-  const isPositive = change && change > 0;
-  const isNegative = change && change < 0;
+  const isPositive = typeof change === 'number' && change > 0;
+  const isNegative = typeof change === 'number' && change < 0;
 
   return (
     <motion.div

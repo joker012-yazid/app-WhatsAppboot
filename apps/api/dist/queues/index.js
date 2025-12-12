@@ -12,6 +12,7 @@ const client_1 = require("@prisma/client");
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const env_1 = __importDefault(require("../config/env"));
 const campaigns_1 = require("../services/campaigns");
+const workflow_1 = require("../services/workflow");
 const connection = new ioredis_1.default(env_1.default.REDIS_URL, {
     maxRetriesPerRequest: null, // Required by BullMQ - must be null
 });
@@ -20,16 +21,19 @@ exports.messageQueue = new bullmq_1.Queue('messages', { connection });
 exports.campaignQueue = new bullmq_1.Queue('campaign-messages', { connection });
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const randomBetween = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-// Process reminders: create JobMessage entries (placeholder for WhatsApp sends)
+// Process reminders: send actual WhatsApp messages
 new bullmq_1.Worker('reminders', async (job) => {
     const { jobId, kind } = job.data;
-    const j = await prisma_1.default.job.findUnique({ where: { id: jobId }, include: { customer: true } });
-    if (!j)
-        return;
-    const content = `Reminder (${kind}): Hi ${j.customer.name}, this is a reminder regarding your job "${j.title}".`;
-    await prisma_1.default.jobMessage.create({ data: { jobId, role: 'AGENT', content } });
-    await prisma_1.default.reminder.create({ data: { jobId, kind } });
-    return { ok: true };
+    // Send the actual WhatsApp reminder message
+    const sent = await (0, workflow_1.sendReminderMessage)(jobId, kind);
+    if (sent) {
+        console.log('[reminder-worker] Reminder sent successfully', { jobId, kind });
+        return { ok: true, sent: true };
+    }
+    else {
+        console.log('[reminder-worker] Failed to send reminder (job may no longer be QUOTED)', { jobId, kind });
+        return { ok: false, sent: false };
+    }
 }, { connection });
 // Process messages: placeholder for actual WhatsApp integration
 new bullmq_1.Worker('messages', async (job) => {

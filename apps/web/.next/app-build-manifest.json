@@ -1,5 +1,21 @@
 {
   "pages": {
+    "/jobs/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/jobs/[id]/page.js"
+    ],
+    "/jobs/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/jobs/layout.js"
+    ],
+    "/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/layout.css",
+      "static/chunks/app/layout.js"
+    ],
     "/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -9,17 +25,6 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/layout.js"
-    ],
-    "/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/layout.css",
-      "static/chunks/app/layout.js"
-    ],
-    "/login/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/login/page.js"
     ],
     "/chat/page": [
       "static/chunks/webpack.js",
@@ -51,11 +56,6 @@
       "static/chunks/main-app.js",
       "static/chunks/app/customers/layout.js"
     ],
-    "/customers/[id]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/customers/[id]/page.js"
-    ],
     "/devices/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -66,35 +66,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/devices/layout.js"
     ],
-    "/devices/[id]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/devices/[id]/page.js"
-    ],
     "/jobs/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/jobs/page.js"
     ],
-    "/jobs/layout": [
+    "/campaigns/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/jobs/layout.js"
+      "static/chunks/app/campaigns/page.js"
     ],
-    "/jobs/[id]/page": [
+    "/campaigns/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/jobs/[id]/page.js"
-    ],
-    "/settings/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/settings/page.js"
-    ],
-    "/settings/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/settings/layout.js"
+      "static/chunks/app/campaigns/layout.js"
     ],
     "/reports/page": [
       "static/chunks/webpack.js",
@@ -106,15 +91,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/reports/layout.js"
     ],
-    "/campaigns/page": [
+    "/settings/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/campaigns/page.js"
+      "static/chunks/app/settings/page.js"
     ],
-    "/campaigns/layout": [
+    "/settings/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/campaigns/layout.js"
+      "static/chunks/app/settings/layout.js"
     ]
   }
 }

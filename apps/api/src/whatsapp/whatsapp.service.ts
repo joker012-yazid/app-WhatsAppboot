@@ -142,7 +142,7 @@ export const getMessagesForChat = (chatId: string): ChatMessage[] => {
 };
 
 const bindSocketEvents = (socket: WASocket) => {
-  const ev = socket.ev as any as BaileysEventMap;
+  const ev = socket.ev;
 
   const mapDisconnectReason = (error?: Boom | Error | unknown): string => {
     const boom = error as Boom | undefined;
@@ -166,7 +166,7 @@ const bindSocketEvents = (socket: WASocket) => {
     }
   };
 
-  ev.on('connection.update', (update) => {
+  ev.on('connection.update', (update: BaileysEventMap['connection.update']) => {
     LOGGER.info({ connection: update.connection, hasQR: Boolean(update.qr) }, '[WhatsApp] connection.update');
     const { connection, qr, lastDisconnect } = update;
 
@@ -217,8 +217,8 @@ const bindSocketEvents = (socket: WASocket) => {
     }
   });
 
-  ev.on('messages.upsert', ({ messages }) => {
-    messages.forEach((m) => {
+  ev.on('messages.upsert', ({ messages }: BaileysEventMap['messages.upsert']) => {
+    messages.forEach((m: WAMessage) => {
       const text = parseText(m);
       if (!text) return;
       const chatId = m.key.remoteJid!;
@@ -226,7 +226,7 @@ const bindSocketEvents = (socket: WASocket) => {
         id: m.key.id || `${Date.now()}`,
         chatId,
         text,
-        timestamp: (m.messageTimestamp?.low ?? m.messageTimestamp?.high ?? Date.now()) * 1000,
+        timestamp: (typeof m.messageTimestamp === 'number' ? m.messageTimestamp : Number(m.messageTimestamp) || Date.now()) * 1000,
         fromMe: Boolean(m.key.fromMe),
       };
       pushMessage(chatMessage);
@@ -353,7 +353,8 @@ export const resetWhatsApp = async () => {
       LOGGER.error({ err }, '[WhatsApp] logout during reset failed');
     }
     try {
-      sock.ev.removeAllListeners();
+      sock.ev.removeAllListeners('connection.update');
+      sock.ev.removeAllListeners('messages.upsert');
     } catch (err) {
       LOGGER.error({ err }, '[WhatsApp] remove listeners during reset failed');
     }

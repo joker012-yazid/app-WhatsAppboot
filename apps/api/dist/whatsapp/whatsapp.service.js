@@ -42,6 +42,7 @@ const node_path_1 = __importDefault(require("node:path"));
 const baileys_1 = __importStar(require("@whiskeysockets/baileys"));
 const pino_1 = __importDefault(require("pino"));
 const env_1 = __importDefault(require("../config/env"));
+const workflow_1 = require("../services/workflow");
 const repoRoot = node_path_1.default.resolve(process.cwd(), '..', '..');
 const SESSION_DIR = node_path_1.default.resolve(repoRoot, env_1.default.WHATSAPP_SESSION_DIR || 'whatsapp-sessions');
 const LOGGER = (0, pino_1.default)({ level: env_1.default.WHATSAPP_LOG_LEVEL || 'info' });
@@ -215,10 +216,17 @@ const bindSocketEvents = (socket) => {
                 id: m.key.id || `${Date.now()}`,
                 chatId,
                 text,
-                timestamp: (m.messageTimestamp?.low ?? m.messageTimestamp?.high ?? Date.now()) * 1000,
+                timestamp: (typeof m.messageTimestamp === 'number' ? m.messageTimestamp : Number(m.messageTimestamp) || Date.now()) * 1000,
                 fromMe: Boolean(m.key.fromMe),
             };
             pushMessage(chatMessage);
+            // Handle incoming customer messages (not from us)
+            if (!m.key.fromMe && text) {
+                const phone = chatId.replace('@s.whatsapp.net', '');
+                (0, workflow_1.handleCustomerResponse)(phone, text).catch((error) => {
+                    LOGGER.error({ error, phone }, '[WhatsApp] Error handling customer response');
+                });
+            }
         });
     });
     if (inMemoryStore?.bind) {
@@ -259,12 +267,42 @@ const startWhatsAppClient = async (forceNewSession) => {
     try {
         node_fs_1.default.mkdirSync(SESSION_DIR, { recursive: true });
         const { state, saveCreds } = await (0, baileys_1.useMultiFileAuthState)(SESSION_DIR);
+        // Fetch latest version info from WhatsApp
+        const { version, isLatest } = await (0, baileys_1.fetchLatestBaileysVersion)();
+        LOGGER.info({ version, isLatest }, '[WhatsApp] Baileys version info');
         sock = (0, baileys_1.default)({
+            version,
             auth: state,
             logger: LOGGER,
             printQRInTerminal: false,
-            browser: ['WhatsApp Bot POS', 'Desktop', '1.0.0'],
+            browser: ['Chrome (Linux)', '', ''],
             markOnlineOnConnect: false,
+            defaultQueryTimeoutMs: undefined,
+            keepAliveIntervalMs: 30000,
+            emitOwnEvents: false,
+            fireInitQueries: true,
+            generateHighQualityLinkPreview: false,
+            syncFullHistory: false,
+            getMessage: async () => undefined,
+            patchMessageBeforeSending: (message) => {
+                const requiresPatch = !!(message.buttonsMessage ||
+                    message.templateMessage ||
+                    message.listMessage);
+                if (requiresPatch) {
+                    message = {
+                        viewOnceMessage: {
+                            message: {
+                                messageContextInfo: {
+                                    deviceListMetadataVersion: 2,
+                                    deviceListMetadata: {},
+                                },
+                                ...message,
+                            },
+                        },
+                    };
+                }
+                return message;
+            },
         });
         bindSocketEvents(sock);
         sock.ev.on('creds.update', saveCreds);
@@ -297,7 +335,8 @@ const resetWhatsApp = async () => {
             LOGGER.error({ err }, '[WhatsApp] logout during reset failed');
         }
         try {
-            sock.ev.removeAllListeners();
+            sock.ev.removeAllListeners('connection.update');
+            sock.ev.removeAllListeners('messages.upsert');
         }
         catch (err) {
             LOGGER.error({ err }, '[WhatsApp] remove listeners during reset failed');
