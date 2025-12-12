@@ -1,21 +1,17 @@
 ﻿import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 
 import { Providers } from './providers';
 
-const fontSans = Inter({
-  subsets: ['latin'],
+// Using system fonts to avoid network requests during build
+const fontSans = {
   variable: '--font-sans',
-  display: 'swap',
-});
+};
 
-const fontMono = JetBrains_Mono({
-  subsets: ['latin'],
+const fontMono = {
   variable: '--font-mono',
-  display: 'swap',
-});
+};
 
 export const metadata: Metadata = {
   title: 'WhatsApp Bot POS SuperApp',
