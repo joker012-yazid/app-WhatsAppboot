@@ -1,51 +1,112 @@
 # WhatsApp Bot POS SuperApp
 
-Monorepo ini ialah sistem aktif yang terdiri daripada API (Express + Prisma di `apps/api`) dan Web (Next.js di `apps/web`). Infrastruktur tempatan menggunakan Postgres dan Redis melalui `docker-compose.yml`. Kod legasi Express + SQLite dalam folder `src/` masih dikekalkan untuk rujukan sahaja dan tidak berjalan melalui skrip utama.
+**Status:** ✅ Aktif & Berfungsi | **Progress:** 75-80% Siap | **Dikemaskini:** 13 Dis 2025
 
-## Local development (ringkas)
+Sistem WhatsApp automation lengkap untuk pengurusan kedai pembaikan dengan POS, job tracking, dan marketing campaigns. Dibangunkan menggunakan monorepo architecture dengan TypeScript backend dan Next.js frontend.
 
-1) Salin konfigurasi asas: `cp .env.example .env` lalu lengkapkan nilai yang diperlukan.
-2) Pasang dependensi: `npm install`
-3) Jalankan kedua-dua API (port 4000) dan Web (port 3000): `npm run dev`
+## 🚀 Quick Start
 
-API mesti boleh dicapai di `http://localhost:4000` supaya UI berfungsi dengan betul. Untuk Postgres + Redis tempatan, gunakan `docker compose up -d postgres redis`.
+### Prasyarat
+- Node.js 20+
+- npm atau yarn
+- Docker & Docker Compose (untuk database)
 
-## Cara Jalankan Projek (Monorepo)
+### Langkah Pantas
 
 ```bash
+# 1. Clone dan install dependencies
+git clone <repo-url>
+cd app-WhatsAppboot
 npm install
 
-# Salin konfigurasi asas jika perlu
+# 2. Setup environment variables
 cp .env.example .env
+# Edit .env dengan konfigurasi anda
 
-# Jana Prisma client
-npm run prisma:generate
-
-# Jalankan kedua-dua API dan Web serentak
-npm start   # alias kepada "npm run dev" -> "npm run dev:monorepo"
-```
-
-Perkhidmatan tersedia di:
-
-| Service | URL | Nota |
-| ------- | --- | ---- |
-| API | http://localhost:4000 | `/health` tersedia untuk semakan cepat |
-| Web | http://localhost:3000 | Next.js App Router UI |
-| Postgres | localhost:5432 | Disediakan oleh `docker compose` |
-| Redis | localhost:6379 | Disediakan oleh `docker compose` |
-
-Jalankan komponen secara berasingan jika perlu:
-
-```bash
-npm run dev:api   # API sahaja
-npm run dev:web   # Web sahaja
-```
-
-Untuk melancarkan Postgres + Redis yang diperlukan oleh API:
-
-```bash
+# 3. Start database services
 docker compose up -d postgres redis
+
+# 4. Generate Prisma Client dan migrate database
+npm run prisma:generate
+npm run prisma:migrate
+
+# 5. Jalankan development server
+npm run dev
+# API: http://localhost:4000
+# Web: http://localhost:3000
 ```
+
+## 📊 Struktur Projek
+
+```
+app-WhatsAppboot/
+├── apps/
+│   ├── api/          # Backend TypeScript (Express + Prisma)
+│   │   ├── src/      # 34 TypeScript files
+│   │   ├── dist/     # Compiled JavaScript
+│   │   └── prisma/   # Database schema
+│   └── web/          # Frontend Next.js
+│       ├── src/      # 58 React/TypeScript files
+│       └── .next/    # Next.js build output
+├── prisma/           # Database schema (root level)
+├── docker/           # Docker configurations
+└── docs/             # Documentation
+```
+
+## 🛠 Tech Stack
+
+### Backend (apps/api)
+- **Runtime:** Node.js 20+ dengan TypeScript
+- **Framework:** Express.js 4.x
+- **Database:** PostgreSQL 16 (Prisma ORM)
+- **Queue:** BullMQ + Redis 7
+- **WhatsApp:** @whiskeysockets/baileys
+- **Auth:** JWT (jsonwebtoken + bcryptjs)
+- **Build:** TypeScript compiler
+
+### Frontend (apps/web)
+- **Framework:** Next.js 14 (App Router)
+- **UI:** TailwindCSS + Shadcn UI
+- **State:** React Query (TanStack Query)
+- **Drag & Drop:** DnD Kit
+- **Icons:** Lucide React
+- **Animations:** Framer Motion
+
+### Infrastructure
+- **Container:** Docker + Docker Compose
+- **Database:** PostgreSQL 16
+- **Cache/Queue:** Redis 7
+- **Monorepo:** npm workspaces
+
+## 📋 Perintah Yang Tersedia
+
+```bash
+# Development
+npm run dev              # Jalankan API + Web serentak
+npm run dev:api          # API sahaja (port 4000)
+npm run dev:web          # Web sahaja (port 3000)
+
+# Build
+npm run build            # Build API + Web
+npm run build -w apps/api   # Build API sahaja
+npm run build -w apps/web   # Build Web sahaja
+
+# Database
+npm run prisma:generate  # Generate Prisma Client
+npm run prisma:migrate   # Run database migrations
+
+# Production
+npm start                # Start production build
+```
+
+## 🌐 Services & Ports
+
+| Service | URL | Status | Nota |
+|---------|-----|--------|------|
+| API | http://localhost:4000 | ✅ Ready | REST API + `/health` endpoint |
+| Web | http://localhost:3000 | ✅ Ready | Next.js App Router UI |
+| PostgreSQL | localhost:5432 | ✅ Ready | Database (docker) |
+| Redis | localhost:6379 | ✅ Ready | Queue & Cache (docker) |
 
 ## Legacy Server (Deprecated)
 
