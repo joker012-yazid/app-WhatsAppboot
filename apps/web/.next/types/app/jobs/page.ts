@@ -1,4 +1,4 @@
-// File: /home/user/app-WhatsAppboot/apps/web/src/app/jobs/page.tsx
+// File: C:\Users\Jokeryazid\Documents\My projek\new whatsappbot\app-WhatsAppboot\apps\web\src\app\jobs\page.tsx
 import * as entry from '../../../../src/app/jobs/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

@@ -1,11 +1,8 @@
 {
-  "/dashboard/page": "app/dashboard/page.js",
-  "/settings/page": "app/settings/page.js",
-  "/registration/page": "app/registration/page.js",
-  "/chat/page": "app/chat/page.js",
-  "/devices/page": "app/devices/page.js",
   "/jobs/page": "app/jobs/page.js",
+  "/devices/page": "app/devices/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
   "/campaigns/page": "app/campaigns/page.js",
-  "/customers/page": "app/customers/page.js",
-  "/reports/page": "app/reports/page.js"
+  "/reports/page": "app/reports/page.js",
+  "/settings/page": "app/settings/page.js"
 }
