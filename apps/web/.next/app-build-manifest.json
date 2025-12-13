@@ -1,14 +1,14 @@
 {
   "pages": {
-    "/jobs/[id]/page": [
+    "/settings/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/jobs/[id]/page.js"
+      "static/chunks/app/settings/page.js"
     ],
-    "/jobs/layout": [
+    "/settings/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/jobs/layout.js"
+      "static/chunks/app/settings/layout.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
@@ -71,6 +71,11 @@
       "static/chunks/main-app.js",
       "static/chunks/app/jobs/page.js"
     ],
+    "/jobs/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/jobs/layout.js"
+    ],
     "/campaigns/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -90,16 +95,6 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/reports/layout.js"
-    ],
-    "/settings/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/settings/page.js"
-    ],
-    "/settings/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/settings/layout.js"
     ]
   }
 }
