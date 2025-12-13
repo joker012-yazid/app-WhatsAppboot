@@ -1,8 +1,5 @@
 {
   "/jobs/page": "app/jobs/page.js",
-  "/devices/page": "app/devices/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/campaigns/page": "app/campaigns/page.js",
-  "/reports/page": "app/reports/page.js",
-  "/settings/page": "app/settings/page.js"
+  "/jobs/[id]/page": "app/jobs/[id]/page.js",
+  "/dashboard/page": "app/dashboard/page.js"
 }

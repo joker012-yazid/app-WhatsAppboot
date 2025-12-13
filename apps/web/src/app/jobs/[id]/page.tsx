@@ -277,8 +277,27 @@ export default function JobDetailPage() {
                   <div className="flex gap-2">
                     <Button
                       type="button"
-                      onClick={() => {
-                        navigator.clipboard?.writeText(qrUrl);
+                      onClick={async () => {
+                        try {
+                          if (navigator.clipboard && navigator.clipboard.writeText) {
+                            await navigator.clipboard.writeText(qrUrl);
+                            toast.success('Link copied to clipboard!');
+                          } else {
+                            // Fallback for older browsers
+                            const textArea = document.createElement('textarea');
+                            textArea.value = qrUrl;
+                            textArea.style.position = 'fixed';
+                            textArea.style.opacity = '0';
+                            document.body.appendChild(textArea);
+                            textArea.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(textArea);
+                            toast.success('Link copied to clipboard!');
+                          }
+                        } catch (err) {
+                          toast.error('Failed to copy link');
+                          console.error('Failed to copy:', err);
+                        }
                       }}
                     >
                       Copy link
