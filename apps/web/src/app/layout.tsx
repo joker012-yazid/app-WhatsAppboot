@@ -18,7 +18,12 @@ export const metadata: Metadata = {
   description: 'Modern WhatsApp automation platform with repair shop management',
   keywords: ['WhatsApp', 'Bot', 'POS', 'Repair Shop', 'CRM'],
   authors: [{ name: 'SuperApp Team' }],
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#0f172a' },

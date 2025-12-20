@@ -41,11 +41,14 @@ const refreshSchema = z.object({ refreshToken: z.string().min(10) });
 const logoutSchema = z.object({ refreshToken: z.string().min(10) });
 
 const loginHandler = async (req: import('express').Request, res: import('express').Response) => {
+  console.log('[AUTH] Login attempt:', { body: req.body, headers: req.headers['content-type'] });
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
+    console.log('[AUTH] Validation failed:', parsed.error.format());
     return sendAuthError(res, 400, 'INVALID_PAYLOAD', 'Email dan kata laluan diperlukan.', parsed.error.format());
   }
   const { email, password } = parsed.data;
+  console.log('[AUTH] Validated credentials:', { email, passwordLength: password.length });
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {

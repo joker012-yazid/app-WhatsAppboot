@@ -6,7 +6,7 @@ import QRCode from 'qrcode';
 import AuthGuard from '@/components/auth-guard';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/toast-provider';
-import { QrCode, Download, Copy, RefreshCw, Share2, Smartphone, CheckCircle } from 'lucide-react';
+import { QrCode, Download, Copy, RefreshCw, Share2, Smartphone } from 'lucide-react';
 
 export default function RegistrationPage() {
   const toast = useToast();
@@ -14,7 +14,6 @@ export default function RegistrationPage() {
   const [registrationUrl, setRegistrationUrl] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Generate QR code on page load
   useEffect(() => {
     generateQRCode();
   }, []);
@@ -22,14 +21,13 @@ export default function RegistrationPage() {
   const generateQRCode = async () => {
     setIsGenerating(true);
     try {
-      // Get the base URL from window location
-      const baseUrl = typeof window !== 'undefined' 
+      const baseUrl = typeof window !== 'undefined'
         ? `${window.location.protocol}//${window.location.hostname}:4000`
         : 'http://localhost:4000';
-      
+
       const url = `${baseUrl}/public/register/index.html`;
       setRegistrationUrl(url);
-      
+
       const qrDataUrl = await QRCode.toDataURL(url, {
         width: 350,
         margin: 2,
@@ -39,7 +37,7 @@ export default function RegistrationPage() {
         },
         errorCorrectionLevel: 'H',
       });
-      
+
       setQrImage(qrDataUrl);
     } catch (error) {
       toast.error('Failed to generate QR code');
@@ -59,8 +57,37 @@ export default function RegistrationPage() {
 
   const copyLink = () => {
     if (!registrationUrl) return;
-    navigator.clipboard.writeText(registrationUrl);
-    toast.success('Link copied! Share via WhatsApp.');
+
+    // Simple fallback method that works everywhere
+    const textArea = document.createElement('textarea');
+    textArea.value = registrationUrl;
+    textArea.style.position = 'fixed';
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.width = '2em';
+    textArea.style.height = '2em';
+    textArea.style.padding = '0';
+    textArea.style.border = 'none';
+    textArea.style.outline = 'none';
+    textArea.style.boxShadow = 'none';
+    textArea.style.background = 'transparent';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+
+      if (successful) {
+        toast.success('Link copied! Share via WhatsApp.');
+      } else {
+        toast.error('Copy failed. Please select and copy the link manually.');
+      }
+    } catch (err) {
+      document.body.removeChild(textArea);
+      toast.error('Copy failed. Please select and copy the link manually.');
+    }
   };
 
   const shareViaWhatsApp = () => {
@@ -77,7 +104,6 @@ export default function RegistrationPage() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-lg"
         >
-          {/* Header */}
           <div className="text-center mb-8">
             <motion.div
               initial={{ scale: 0 }}
@@ -93,14 +119,12 @@ export default function RegistrationPage() {
             </p>
           </div>
 
-          {/* QR Code Card */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 }}
             className="rounded-2xl border border-border bg-card/80 backdrop-blur-lg shadow-2xl overflow-hidden"
           >
-            {/* QR Code Display */}
             <div className="p-8 bg-gradient-to-br from-purple-900/10 to-blue-900/10">
               <div className="flex justify-center">
                 {isGenerating ? (
@@ -114,9 +138,9 @@ export default function RegistrationPage() {
                     transition={{ delay: 0.2, duration: 0.5 }}
                     className="bg-white p-4 rounded-2xl shadow-inner"
                   >
-                    <img 
-                      src={qrImage} 
-                      alt="Registration QR Code" 
+                    <img
+                      src={qrImage}
+                      alt="Registration QR Code"
                       className="w-[320px] h-[320px]"
                     />
                   </motion.div>
@@ -128,42 +152,49 @@ export default function RegistrationPage() {
               </div>
             </div>
 
-            {/* Instructions */}
             <div className="px-8 py-6 border-t border-border/50">
               <h3 className="font-semibold text-foreground mb-4 text-center">Cara Penggunaan</h3>
               <div className="space-y-3">
-                <motion.div 
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="flex items-center gap-3 text-sm"
-                >
+                <div className="flex items-center gap-3 text-sm">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-500/10 text-purple-400 font-semibold">1</div>
                   <p className="text-muted-foreground">Customer scan QR code menggunakan telefon</p>
-                </motion.div>
-                <motion.div 
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="flex items-center gap-3 text-sm"
-                >
+                </div>
+                <div className="flex items-center gap-3 text-sm">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/10 text-blue-400 font-semibold">2</div>
                   <p className="text-muted-foreground">Isi maklumat dalam form pendaftaran</p>
-                </motion.div>
-                <motion.div 
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="flex items-center gap-3 text-sm"
-                >
+                </div>
+                <div className="flex items-center gap-3 text-sm">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-500/10 text-green-400 font-semibold">3</div>
                   <p className="text-muted-foreground">Submit dan pendaftaran selesai!</p>
-                </motion.div>
+                </div>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="px-8 pb-8 pt-2">
+            {/* LINK DISPLAY - CLICK TO SELECT ALL */}
+            {registrationUrl && (
+              <div className="px-8 pb-6">
+                <label className="text-xs font-semibold text-foreground mb-2 block uppercase tracking-wide">
+                  Registration Link - Klik untuk select & copy:
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={registrationUrl}
+                    readOnly
+                    onClick={(e) => {
+                      e.currentTarget.select();
+                      toast.success('Link selected! Tekan Ctrl+C atau Cmd+C untuk copy.');
+                    }}
+                    className="w-full px-4 py-3 bg-muted/70 border-2 border-primary/30 rounded-lg text-sm text-foreground font-mono cursor-pointer hover:bg-muted hover:border-primary/50 transition-all select-all focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  👆 Klik pada link di atas, kemudian tekan <kbd className="px-2 py-1 bg-muted rounded">Ctrl+C</kbd> untuk copy
+                </p>
+              </div>
+            )}
+
+            <div className="px-8 pb-8">
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   onClick={downloadQRCode}
@@ -182,7 +213,7 @@ export default function RegistrationPage() {
                   Copy Link
                 </Button>
               </div>
-              
+
               <div className="mt-3 grid grid-cols-2 gap-3">
                 <Button
                   variant="outline"
@@ -205,7 +236,6 @@ export default function RegistrationPage() {
             </div>
           </motion.div>
 
-          {/* Tips */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -217,7 +247,7 @@ export default function RegistrationPage() {
               <div>
                 <p className="text-sm font-medium text-blue-300">Tips</p>
                 <p className="text-xs text-blue-300/70 mt-1">
-                  Cetak QR code ini dan letak di kaunter untuk customer walk-in scan. 
+                  Cetak QR code ini dan letak di kaunter untuk customer walk-in scan.
                   Atau share link melalui WhatsApp untuk customer yang tidak di kedai.
                 </p>
               </div>
