@@ -267,13 +267,20 @@ router.get('/', requireAuth, async (req, res) => {
     userEmail: currentUser.email,
     role: currentUser.role,
     totalJobsFound: jobs.length,
+    jobsByStatus: jobs.reduce((acc, job) => {
+      acc[job.status] = (acc[job.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>),
     jobDetails: jobs.map(job => ({
       id: job.id,
       title: job.title,
       status: job.status,
       ownerUserId: job.ownerUserId,
       isOwner: job.ownerUserId === currentUser.id,
-      ownerName: job.owner?.name
+      ownerName: job.owner?.name,
+      visibility: job.ownerUserId === currentUser.id ? 'OWNED_BY_USER' :
+                  (job.status === 'AWAITING_QUOTE' && !job.ownerUserId) ? 'AVAILABLE' :
+                  'NOT_VISIBLE'
     }))
   });
 
@@ -515,7 +522,7 @@ router.put('/:id', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) =
       ...('dueDate' in data ? { dueDate: data.dueDate ? new Date(data.dueDate) : null } : {}),
     };
 
-    // Ownership logic: Set owner when moving from AWAITING_QUOTE to QUOTATION_SENT
+    // Ownership logic: Set owner when moving from AWAITING_QUOTE to another status
     console.log('[JOBS] Job update attempt:', {
       jobId: id,
       jobTitle: existing.title,
@@ -528,9 +535,16 @@ router.put('/:id', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) =
     });
 
     // Assign ownership when user moves job from AWAITING_QUOTE to any other status
-    if (existing.status === 'AWAITING_QUOTE' &&
-        data.status !== 'AWAITING_QUOTE' &&
-        !existing.ownerUserId) {
+    // This applies to NON-ADMIN users only (regular users claim jobs by moving them)
+    const shouldClaimJob = (
+      currentUser.role !== 'ADMIN' &&  // Only regular users can claim
+      existing.status === 'AWAITING_QUOTE' &&  // Job must be in AWAITING_QUOTE
+      data.status &&  // Status is being changed
+      data.status !== 'AWAITING_QUOTE' &&  // Moving to a different status
+      !existing.ownerUserId  // Job has no owner
+    );
+
+    if (shouldClaimJob) {
       updateData.ownerUserId = currentUser.id;
       updateData.assignedAt = new Date();
       console.log('[JOBS] ✅ Job SUCCESSFULLY claimed by user:', {
@@ -538,19 +552,27 @@ router.put('/:id', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) =
         jobTitle: existing.title,
         claimedBy: currentUser.id,
         claimedByEmail: currentUser.email,
+        claimedByName: currentUser.name,
         claimedAt: updateData.assignedAt,
         fromStatus: existing.status,
         toStatus: data.status
       });
     } else {
-      console.log('[JOBS] ❌ Job NOT claimed - conditions not met:', {
+      console.log('[JOBS] ❌ Job NOT claimed - conditions:', {
+        shouldClaimJob,
+        isNotAdmin: currentUser.role !== 'ADMIN',
         isFromAwaitingQuote: existing.status === 'AWAITING_QUOTE',
-        isToDifferentStatus: data.status !== 'AWAITING_QUOTE',
+        hasStatusChange: !!data.status,
+        isToDifferentStatus: data.status && data.status !== 'AWAITING_QUOTE',
         hasNoOwner: !existing.ownerUserId,
         currentOwner: existing.ownerUserId,
         fromStatus: existing.status,
         toStatus: data.status,
-        currentUser: currentUser.id
+        currentUser: {
+          id: currentUser.id,
+          role: currentUser.role,
+          email: currentUser.email
+        }
       });
     }
 
@@ -589,14 +611,28 @@ router.put('/:id', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) =
 
     // Verify ownership was properly saved
     if (updateData.ownerUserId) {
+      const verificationPassed = updated.ownerUserId === updateData.ownerUserId;
       console.log('[JOBS] ✅ Ownership verification:', {
         jobId: id,
         jobTitle: updated.title,
         ownerSetInDb: updated.ownerUserId,
         ownerSetInUpdate: updateData.ownerUserId,
         assignedAt: updated.assignedAt,
-        verification: updated.ownerUserId === updateData.ownerUserId ? 'SUCCESS' : 'FAILED'
+        verification: verificationPassed ? 'SUCCESS' : 'FAILED'
       });
+
+      // If verification failed, this is a critical error
+      if (!verificationPassed) {
+        console.error('[JOBS] ❌ CRITICAL: Ownership was not properly saved to database!', {
+          jobId: id,
+          expectedOwnerId: updateData.ownerUserId,
+          actualOwnerId: updated.ownerUserId
+        });
+        return res.status(500).json({
+          message: 'Failed to claim job - ownership was not properly saved',
+          error: 'OWNERSHIP_SAVE_FAILED'
+        });
+      }
     }
 
     // Create history entry when status OR diagnosis changes
@@ -652,12 +688,27 @@ router.put('/:id', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) =
 
     console.log('[JOBS] 📤 Sending response with ownership info:', {
       jobId: id,
+      jobTitle: response.title,
       ownerUserId: response.ownerUserId,
       isOwner: response.isOwner,
       ownerName: response.ownerName,
       status: response.status,
-      currentUserRole: (req.user as any).role
+      assignedAt: response.assignedAt,
+      currentUserRole: (req.user as any).role,
+      currentUserId: (req.user as any).id
     });
+
+    // Log final summary for easy tracking
+    if (shouldClaimJob && response.ownerUserId === currentUser.id) {
+      console.log('[JOBS] 🎉 Job claim completed successfully:', {
+        jobId: id,
+        jobTitle: response.title,
+        ownerId: response.ownerUserId,
+        ownerName: response.ownerName,
+        status: response.status,
+        message: `User ${currentUser.email} successfully claimed job "${response.title}"`
+      });
+    }
 
     return res.json(response);
   } catch (e) {
