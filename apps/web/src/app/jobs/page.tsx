@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/toast-provider';
 import { useAuth } from '@/lib/auth';
 import { hasAnyRole } from '@/lib/roles';
-import { Wrench, LayoutGrid, List } from 'lucide-react';
+import { Wrench, LayoutGrid, List, UserCheck } from 'lucide-react';
 import { SectionHeader } from '@/components/section-header';
 import { JobKanbanBoard } from '@/components/job-kanban-board';
 
@@ -128,9 +128,14 @@ export default function JobsPage() {
 
   const claimJobMutation = useMutation({
     mutationFn: async (jobId: string) => {
-      return claimJob(jobId);
+      console.log('[CLAIM MUTATION] Starting claim for job:', jobId);
+      const result = await claimJob(jobId);
+      console.log('[CLAIM MUTATION] API response:', result);
+      return result;
     },
     onMutate: async (jobId) => {
+      console.log('[CLAIM MUTATION] onMutate - Optimistic update for job:', jobId);
+
       // Cancel any outgoing refetches
       await qc.cancelQueries({ queryKey: ['jobs'] });
 
@@ -142,6 +147,7 @@ export default function JobsPage() {
         if (!old) return old;
         return old.map(job => {
           if (job.id === jobId && user) {
+            console.log('[CLAIM MUTATION] Optimistically setting owner for job:', job.title);
             return {
               ...job,
               ownerUserId: user.id,
@@ -155,11 +161,25 @@ export default function JobsPage() {
 
       return { previousJobs };
     },
-    onSuccess: async (_, jobId) => {
-      toast.success('Job successfully claimed!');
+    onSuccess: async (response: any, jobId) => {
+      console.log('[CLAIM MUTATION] onSuccess - Claim completed for job:', jobId, response);
+
+      // Show success toast with job info
+      const claimedJob = response?.job;
+      if (claimedJob) {
+        toast.success(`🎯 Job "${claimedJob.title}" telah berjaya dituntut! Sekarang ia adalah milik anda.`, {
+          duration: 5000,
+        });
+      } else {
+        toast.success('Job successfully claimed!');
+      }
+
+      // Invalidate and refetch to get latest data
       await qc.invalidateQueries({ queryKey: ['jobs'] });
     },
-    onError: (err: any, variables, context) => {
+    onError: (err: any, jobId, context) => {
+      console.error('[CLAIM MUTATION] onError - Claim failed for job:', jobId, err);
+
       // Rollback on error
       if (context?.previousJobs) {
         qc.setQueryData(['jobs'], context.previousJobs);
@@ -175,7 +195,14 @@ export default function JobsPage() {
   };
 
   const handleClaimJob = async (jobId: string) => {
-    await claimJobMutation.mutateAsync(jobId);
+    console.log('[HANDLE CLAIM] handleClaimJob called with jobId:', jobId);
+    try {
+      await claimJobMutation.mutateAsync(jobId);
+      console.log('[HANDLE CLAIM] Claim mutation completed successfully');
+    } catch (error) {
+      console.error('[HANDLE CLAIM] Claim mutation failed:', error);
+      throw error; // Re-throw so the button can handle it
+    }
   };
 
   return (
@@ -299,6 +326,29 @@ export default function JobsPage() {
                               <Button asChild size="sm" variant="outline">
                                 <Link href={`/jobs/${j.id}`}>View</Link>
                               </Button>
+                              {/* Claim button for available jobs */}
+                              {j.status === 'AWAITING_QUOTE' && !j.ownerUserId && !hasAnyRole(user?.role, ['ADMIN']) && (
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={async () => {
+                                    console.log('[LIST VIEW] Claiming job:', j.id);
+                                    await handleClaimJob(j.id);
+                                  }}
+                                  disabled={claimJobMutation.isPending}
+                                  className="bg-gradient-to-r from-primary to-purple-500"
+                                >
+                                  <UserCheck className="h-3 w-3 mr-1" />
+                                  {claimJobMutation.isPending ? 'Claiming...' : 'Claim'}
+                                </Button>
+                              )}
+                              {/* Owner indicator */}
+                              {j.isOwner && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-1 text-xs font-medium text-emerald-400">
+                                  <UserCheck className="h-3 w-3" />
+                                  My Job
+                                </span>
+                              )}
                               {hasAnyRole(user?.role, ['ADMIN']) ? (
                                 <Button
                                   size="sm"
