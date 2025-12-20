@@ -12,6 +12,7 @@ const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const node_path_1 = __importDefault(require("node:path"));
 const node_fs_1 = __importDefault(require("node:fs"));
 const routes_1 = __importDefault(require("./routes"));
+const requestLogger_1 = require("./middleware/requestLogger");
 // Get directory of current file for reliable path resolution
 // Uses __dirname which is available at runtime in CommonJS
 // This ensures the path is correct regardless of where the process starts
@@ -127,6 +128,9 @@ const createApp = () => {
     app.use(express_1.default.urlencoded({ extended: true }));
     app.use((0, cookie_parser_1.default)());
     app.use((0, morgan_1.default)('dev'));
+    // Add request logging middleware
+    app.use(requestLogger_1.requestLogger);
+    app.use(requestLogger_1.detectRateLimit);
     app.use('/api', routes_1.default);
     app.get('/health', (_req, res) => {
         res.json({ status: 'ok', timestamp: new Date().toISOString() });
