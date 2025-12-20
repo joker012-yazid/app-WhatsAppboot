@@ -207,7 +207,7 @@ router.get('/', requireAuth, async (req, res) => {
   if (currentUser.role === 'ADMIN') {
     // Admin nampak semua jobs
     console.log('[JOBS] 🔍 Admin user - fetching all jobs:', {
-      userId: currentUser.id,
+      userId: currentUser.sub,
       userEmail: currentUser.email,
       role: currentUser.role
     });
@@ -215,7 +215,7 @@ router.get('/', requireAuth, async (req, res) => {
   } else {
     // User biasa - apply ownership logic
     console.log('[JOBS] 🔍 Regular user - applying ownership filter:', {
-      userId: currentUser.id,
+      userId: currentUser.sub,
       userEmail: currentUser.email,
       role: currentUser.role
     });
@@ -228,7 +228,7 @@ router.get('/', requireAuth, async (req, res) => {
       },
       // SEMUA jobs yang user ni adalah owner (regardless of status)
       {
-        ownerUserId: currentUser.id
+        ownerUserId: currentUser.sub
       }
     ];
   }
@@ -263,7 +263,7 @@ router.get('/', requireAuth, async (req, res) => {
 
   // Log debugging info about jobs retrieved
   console.log('[JOBS] 📊 Jobs retrieved:', {
-    userId: currentUser.id,
+    userId: currentUser.sub,
     userEmail: currentUser.email,
     role: currentUser.role,
     totalJobsFound: jobs.length,
@@ -276,9 +276,9 @@ router.get('/', requireAuth, async (req, res) => {
       title: job.title,
       status: job.status,
       ownerUserId: job.ownerUserId,
-      isOwner: job.ownerUserId === currentUser.id,
+      isOwner: job.ownerUserId === currentUser.sub,
       ownerName: job.owner?.name,
-      visibility: job.ownerUserId === currentUser.id ? 'OWNED_BY_USER' :
+      visibility: job.ownerUserId === currentUser.sub ? 'OWNED_BY_USER' :
                   (job.status === 'AWAITING_QUOTE' && !job.ownerUserId) ? 'AVAILABLE' :
                   'NOT_VISIBLE'
     }))
@@ -297,12 +297,12 @@ router.get('/', requireAuth, async (req, res) => {
       thumbnailUrl: thumb,
       photoCount: _count?.photos ?? 0,
       ownerName: j.owner?.name,
-      isOwner: j.ownerUserId === currentUser.id
+      isOwner: j.ownerUserId === currentUser.sub
     };
   });
 
   console.log('[JOBS] ✅ Returning jobs to user:', {
-    userId: currentUser.id,
+    userId: currentUser.sub,
     userEmail: currentUser.email,
     jobsReturned: data.length,
     jobsByStatus: data.reduce((acc, job) => {
@@ -335,7 +335,7 @@ router.get('/debug/:id', requireAuth, async (req, res) => {
     });
   }
 
-  const isOwner = job.ownerUserId === currentUser.id;
+  const isOwner = job.ownerUserId === currentUser.sub;
   const isAdmin = currentUser.role === 'ADMIN';
   const canView = isAdmin || (!job.ownerUserId && job.status === 'AWAITING_QUOTE') || isOwner;
   const canClaim = !job.ownerUserId && job.status === 'AWAITING_QUOTE' && !isAdmin;
@@ -358,7 +358,7 @@ router.get('/debug/:id', requireAuth, async (req, res) => {
       canView,
       canClaim,
       currentUser: {
-        id: currentUser.id,
+        id: currentUser.sub,
         email: currentUser.email,
         username: currentUser.username,
         role: currentUser.role
@@ -459,7 +459,7 @@ router.put('/:id/claim', requireAuth, async (req, res) => {
     const updated = await prisma.job.update({
       where: { id },
       data: {
-        ownerUserId: currentUser.id,
+        ownerUserId: currentUser.sub,
         assignedAt: new Date()
       },
       include: {
@@ -470,7 +470,7 @@ router.put('/:id/claim', requireAuth, async (req, res) => {
     console.log('[JOBS] Job claimed via direct claim:', {
       jobId: id,
       jobTitle: existing.title,
-      claimedBy: currentUser.id,
+      claimedBy: currentUser.sub,
       claimedByEmail: currentUser.email,
       claimedAt: updated.assignedAt
     });
@@ -505,7 +505,7 @@ router.put('/:id', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) =
     // Check ownership permissions
     if (currentUser.role !== 'ADMIN') {
       // If job has an owner, only the owner can update it
-      if (existing.ownerUserId && existing.ownerUserId !== currentUser.id) {
+      if (existing.ownerUserId && existing.ownerUserId !== currentUser.sub) {
         return res.status(403).json({ message: 'Anda bukan owner job ini' });
       }
     }
@@ -529,7 +529,7 @@ router.put('/:id', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) =
       currentOwner: existing.ownerUserId,
       currentStatus: existing.status,
       newStatus: data.status,
-      requestedBy: currentUser.id,
+      requestedBy: currentUser.sub,
       requestedByRole: currentUser.role,
       requestedByEmail: currentUser.email
     });
@@ -545,12 +545,12 @@ router.put('/:id', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) =
     );
 
     if (shouldClaimJob) {
-      updateData.ownerUserId = currentUser.id;
+      updateData.ownerUserId = currentUser.sub;
       updateData.assignedAt = new Date();
       console.log('[JOBS] ✅ Job SUCCESSFULLY claimed by user:', {
         jobId: id,
         jobTitle: existing.title,
-        claimedBy: currentUser.id,
+        claimedBy: currentUser.sub,
         claimedByEmail: currentUser.email,
         claimedByName: currentUser.name,
         claimedAt: updateData.assignedAt,
@@ -569,7 +569,7 @@ router.put('/:id', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) =
         fromStatus: existing.status,
         toStatus: data.status,
         currentUser: {
-          id: currentUser.id,
+          id: currentUser.sub,
           role: currentUser.role,
           email: currentUser.email
         }
@@ -699,7 +699,7 @@ router.put('/:id', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) =
     });
 
     // Log final summary for easy tracking
-    if (shouldClaimJob && response.ownerUserId === currentUser.id) {
+    if (shouldClaimJob && response.ownerUserId === currentUser.sub) {
       console.log('[JOBS] 🎉 Job claim completed successfully:', {
         jobId: id,
         jobTitle: response.title,
@@ -736,7 +736,7 @@ router.delete('/:id/history/:historyId', requireAuth, requireRole('ADMIN', 'USER
   console.log(`[${correlationId}] [JOBS] Delete history request:`, {
     jobId: id,
     historyId,
-    userId: currentUser.id,
+    userId: currentUser.sub,
     userRole: currentUser.role
   });
 
@@ -786,7 +786,7 @@ router.delete('/:id/history/:historyId', requireAuth, requireRole('ADMIN', 'USER
     console.log(`[${correlationId}] [JOBS] ✅ History entry deleted successfully:`, {
       historyId,
       jobId: id,
-      deletedBy: currentUser.id
+      deletedBy: currentUser.sub
     });
 
     // Include correlation ID in response header
@@ -797,7 +797,7 @@ router.delete('/:id/history/:historyId', requireAuth, requireRole('ADMIN', 'USER
       error: error.message,
       jobId: id,
       historyId,
-      userId: currentUser.id,
+      userId: currentUser.sub,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
 
