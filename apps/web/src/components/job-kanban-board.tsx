@@ -127,6 +127,7 @@ interface JobCardProps {
 const JobCard = React.forwardRef<HTMLDivElement, JobCardProps>(
   ({ job, onDelete, onClaimJob, userRole, isDragging }, forwardedRef) => {
     const [isDeleting, setIsDeleting] = React.useState(false);
+    const [isClaiming, setIsClaiming] = React.useState(false);
     
     const {
       attributes,
@@ -304,22 +305,52 @@ const JobCard = React.forwardRef<HTMLDivElement, JobCardProps>(
           </AnimatedButton>
           {/* Claim button for available jobs */}
           {job.status === 'AWAITING_QUOTE' && !job.ownerUserId && !hasAnyRole(userRole, ['ADMIN']) && onClaimJob && (
-            <AnimatedButton
-              size="sm"
-              variant="gradient"
-              className="h-7 text-xs flex-1"
+            <button
+              type="button"
+              disabled={isClaiming}
+              className={`h-7 text-xs flex-1 inline-flex items-center justify-center gap-1 rounded-lg font-medium transition-all
+                bg-gradient-to-r from-primary to-purple-500 text-white shadow-lg hover:shadow-xl hover:shadow-primary/30
+                disabled:opacity-50 disabled:cursor-not-allowed
+                ${isClaiming ? 'animate-pulse' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
               onPointerDown={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+              onMouseDown={(e) => {
                 e.stopPropagation();
               }}
               onClick={async (e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                await onClaimJob(job.id);
+                if (isClaiming) return;
+
+                console.log('[CLAIM] Button clicked for job:', job.id, job.title);
+                setIsClaiming(true);
+                try {
+                  await onClaimJob(job.id);
+                  console.log('[CLAIM] Claim successful for job:', job.id);
+                } catch (error) {
+                  console.error('[CLAIM] Claim failed for job:', job.id, error);
+                } finally {
+                  setIsClaiming(false);
+                }
               }}
             >
-              <UserCheck className="h-3 w-3 mr-1" />
-              Claim Job
-            </AnimatedButton>
+              {isClaiming ? (
+                <>
+                  <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span>Claiming...</span>
+                </>
+              ) : (
+                <>
+                  <UserCheck className="h-3 w-3" />
+                  <span>Claim Job</span>
+                </>
+              )}
+            </button>
           )}
         {hasAnyRole(userRole, ['ADMIN']) && onDelete && (
             <AnimatedButton
