@@ -19,11 +19,11 @@ router.get('/', auth_1.requireAuth, async (_req, res) => {
                 where: { status: 'COMPLETED', updatedAt: { gte: todayStart } },
                 _sum: { approvedAmount: true },
             }),
-            prisma_1.default.job.count({ where: { status: 'PENDING' } }),
-            prisma_1.default.job.count({ where: { status: { in: ['APPROVED', 'IN_PROGRESS'] } } }),
+            prisma_1.default.job.count({ where: { status: 'AWAITING_QUOTE' } }),
+            prisma_1.default.job.count({ where: { status: { in: ['APPROVED', 'REPAIRING'] } } }),
             prisma_1.default.customer.count({ where: { createdAt: { gte: todayStart } } }),
             // Count of high-priority jobs needing immediate attention (not an inventory/stock metric)
-            prisma_1.default.job.count({ where: { priority: 'URGENT', status: { in: ['PENDING', 'APPROVED', 'IN_PROGRESS'] } } }),
+            prisma_1.default.job.count({ where: { priority: 'URGENT', status: { in: ['AWAITING_QUOTE', 'APPROVED', 'REPAIRING'] } } }),
             prisma_1.default.campaign.count({ where: { status: { in: ['SCHEDULED', 'RUNNING'] } } }),
             prisma_1.default.job.findMany({
                 where: { status: 'COMPLETED', updatedAt: { gte: sevenDaysAgo } },
@@ -126,12 +126,12 @@ router.get('/', auth_1.requireAuth, async (_req, res) => {
             salesTrend,
             customerGrowth,
             jobsByStatus: {
-                PENDING: statusCounts.PENDING || 0,
-                QUOTED: statusCounts.QUOTED || 0,
+                AWAITING_QUOTE: statusCounts.AWAITING_QUOTE || 0,
+                QUOTATION_SENT: statusCounts.QUOTATION_SENT || 0,
                 APPROVED: statusCounts.APPROVED || 0,
-                IN_PROGRESS: statusCounts.IN_PROGRESS || 0,
+                REPAIRING: statusCounts.REPAIRING || 0,
                 COMPLETED: statusCounts.COMPLETED || 0,
-                REJECTED: statusCounts.REJECTED || 0,
+                CANCELLED: statusCounts.CANCELLED || 0,
             },
             recentActivities,
         });

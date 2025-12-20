@@ -14,6 +14,8 @@ import fs from 'node:fs';
 
 import router from './routes';
 
+import { requestLogger, detectRateLimit } from './middleware/requestLogger';
+
 // Declare __dirname for TypeScript (available at runtime in CommonJS)
 
 // This ensures reliable path resolution regardless of process.cwd()
@@ -186,6 +188,10 @@ export const createApp = () => {
   app.use(cookieParser());
 
   app.use(morgan('dev'));
+
+  // Add request logging middleware
+  app.use(requestLogger);
+  app.use(detectRateLimit);
 
   app.use('/api', router);
 

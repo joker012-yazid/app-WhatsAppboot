@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isRefreshTokenValid = exports.revokeSession = exports.createSession = exports.verifyPassword = exports.signRefreshToken = exports.signAccessToken = void 0;
+exports.isRefreshTokenValid = exports.revokeSession = exports.createSession = exports.hashPassword = exports.verifyPassword = exports.signRefreshToken = exports.signAccessToken = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const node_crypto_1 = require("node:crypto");
@@ -42,6 +42,8 @@ const signRefreshToken = async (userId, sessionId) => {
 exports.signRefreshToken = signRefreshToken;
 const verifyPassword = async (plain, hash) => bcryptjs_1.default.compare(plain, hash);
 exports.verifyPassword = verifyPassword;
+const hashPassword = async (plain) => bcryptjs_1.default.hash(plain, 10);
+exports.hashPassword = hashPassword;
 const createSession = async (userId) => {
     const ttlMs = (0, time_1.parseDurationMs)(env_1.default.REFRESH_TOKEN_TTL);
     const session = await prisma_1.default.session.create({

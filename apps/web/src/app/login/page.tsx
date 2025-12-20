@@ -20,6 +20,7 @@ import {
 import { AnimatedButton } from '@/components/ui/animated-button';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
+import { apiPost } from '@/lib/api';
 
 const features = [
   {
@@ -43,9 +44,16 @@ function LoginPageContent() {
   const { login, loading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState('admin@example.com');
-  const [password, setPassword] = useState('admin123');
+  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+  const [identifier, setIdentifier] = useState(''); // Accepts either email or username
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -58,24 +66,100 @@ function LoginPageContent() {
     }
   }, [searchParams]);
 
-  const onSubmit = async (e: React.FormEvent) => {
+  const onLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
 
+    // Validate identifier field
+    if (!identifier) {
+      setError('Please enter email or username');
+      setSubmitting(false);
+      return;
+    }
+
     try {
-      await login(email, password);
+      // The login function will handle determining if it's email or username
+      await login(identifier, password);
       setSuccess(true);
       toast.success('Welcome back! Redirecting...', {
         icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
       });
-      
+
       // Delay for animation
       setTimeout(() => {
         router.replace('/dashboard');
       }, 1000);
     } catch (err: any) {
       const msg = err?.message || 'Login failed';
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+
+    // Validation
+    if (!fullName || !username || !email || !password || !confirmPassword) {
+      setError('All fields are required');
+      setSubmitting(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      setSubmitting(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      setSubmitting(false);
+      return;
+    }
+
+    if (username.length < 3) {
+      setError('Username must be at least 3 characters');
+      setSubmitting(false);
+      return;
+    }
+
+    try {
+      await apiPost('/api/auth/register', {
+        username,
+        email,
+        fullName,
+        password,
+        confirmPassword,
+        phone: phone || undefined,
+      });
+
+      setSuccess(true);
+      toast.success('Account registered successfully! Please wait for admin approval.', {
+        icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+      });
+
+      // Reset form
+      setFullName('');
+      setUsername('');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      setPhone('');
+
+      // Switch to login tab after successful registration
+      setTimeout(() => {
+        setActiveTab('login');
+        setSuccess(false);
+      }, 3000);
+
+    } catch (err: any) {
+      const msg = err?.message || 'Registration failed';
       setError(msg);
       toast.error(msg);
     } finally {
@@ -109,103 +193,463 @@ function LoginPageContent() {
             </div>
           </motion.div>
 
-          {/* Header */}
+          {/* Tab Selector */}
           <motion.div
-            className="mb-8"
+            className="mb-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <h2 className="text-3xl font-bold text-foreground mb-2">Welcome back</h2>
-            <p className="text-muted-foreground">
-              Sign in to your account to continue managing your business
-            </p>
+            <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
+              <motion.button
+                type="button"
+                onClick={() => setActiveTab('login')}
+                className={cn(
+                  'relative rounded-md px-4 py-2 text-sm font-medium transition-all duration-200',
+                  activeTab === 'login'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+                whileHover={{ scale: activeTab === 'login' ? 1 : 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Sign In
+              </motion.button>
+              <motion.button
+                type="button"
+                onClick={() => setActiveTab('register')}
+                className={cn(
+                  'relative rounded-md px-4 py-2 text-sm font-medium transition-all duration-200',
+                  activeTab === 'register'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+                whileHover={{ scale: activeTab === 'register' ? 1 : 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Register
+              </motion.button>
+            </div>
           </motion.div>
 
-          {/* Form */}
-          <motion.form
-            onSubmit={onSubmit}
+          {/* Form Content */}
+          <motion.div
             className="space-y-5"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            {/* Email Field */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="email">
-                Email Address
-              </label>
-              <motion.input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={cn(
-                  'w-full rounded-lg border bg-card px-4 py-3 text-sm transition-all duration-200',
-                  'placeholder:text-muted-foreground',
-                  'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary',
-                  error ? 'border-destructive' : 'border-border'
-                )}
-                placeholder="Enter your email"
-                autoComplete="username"
-                required
-                whileFocus={{ scale: 1.01 }}
-              />
-            </div>
+            {/* Login Form */}
+            <AnimatePresence mode="wait">
+              {activeTab === 'login' && (
+                <motion.form
+                  key="login"
+                  onSubmit={onLogin}
+                  className="space-y-5"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {/* Login Header */}
+                  <motion.div
+                    className="mb-6"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 }}
+                  >
+                    <h2 className="text-3xl font-bold text-foreground mb-2">Welcome back</h2>
+                    <p className="text-muted-foreground">
+                      Sign in to your account to continue managing your business
+                    </p>
+                  </motion.div>
 
-            {/* Password Field */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-foreground" htmlFor="password">
-                Password
-              </label>
-                <Link
-                  href="#"
-                  className="text-xs text-primary hover:text-primary/80 transition-colors"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-              <div className="relative">
-                <motion.input
-                id="password"
-                  type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                  className={cn(
-                    'w-full rounded-lg border bg-card px-4 py-3 pr-12 text-sm transition-all duration-200',
-                    'placeholder:text-muted-foreground',
-                    'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary',
-                    error ? 'border-destructive' : 'border-border'
-                  )}
-                  placeholder="Enter your password"
-                autoComplete="current-password"
-                required
-                  whileFocus={{ scale: 1.01 }}
-              />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={showPassword ? 'hide' : 'show'}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      transition={{ duration: 0.15 }}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
-                        <Eye className="h-5 w-5" />
+                  {/* Email or Username Field */}
+                  <motion.div
+                    className="space-y-2"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <label className="text-sm font-medium text-foreground" htmlFor="identifier">
+                      Email or Username
+                    </label>
+                    <motion.input
+                      id="identifier"
+                      type="text"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      className={cn(
+                        'w-full rounded-lg border bg-card px-4 py-3 text-sm transition-all duration-200',
+                        'placeholder:text-muted-foreground',
+                        'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary',
+                        error ? 'border-destructive' : 'border-border'
                       )}
-                    </motion.div>
-                  </AnimatePresence>
-                </button>
-              </div>
-            </div>
+                      placeholder="Enter your email or username"
+                      autoComplete="username"
+                      required
+                      whileFocus={{ scale: 1.01 }}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      You can login using either your email address or username
+                    </p>
+                  </motion.div>
+
+                  {/* Password Field */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium text-foreground" htmlFor="password">
+                      Password
+                    </label>
+                      <Link
+                        href="#"
+                        className="text-xs text-primary hover:text-primary/80 transition-colors"
+                      >
+                        Forgot password?
+                      </Link>
+                    </div>
+                    <div className="relative">
+                      <motion.input
+                      id="password"
+                        type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                        className={cn(
+                          'w-full rounded-lg border bg-card px-4 py-3 pr-12 text-sm transition-all duration-200',
+                          'placeholder:text-muted-foreground',
+                          'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary',
+                          error ? 'border-destructive' : 'border-border'
+                        )}
+                        placeholder="Enter your password"
+                      autoComplete="current-password"
+                      required
+                        whileFocus={{ scale: 1.01 }}
+                    />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <AnimatePresence mode="wait">
+                          <motion.div
+                            key={showPassword ? 'hide' : 'show'}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ duration: 0.15 }}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-5 w-5" />
+                            ) : (
+                              <Eye className="h-5 w-5" />
+                            )}
+                          </motion.div>
+                        </AnimatePresence>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  <AnimatedButton
+                    type="submit"
+                    variant="gradient"
+                    size="lg"
+                    className="w-full"
+                    disabled={submitting || loading || success}
+                    loading={submitting}
+                    loadingText="Signing in..."
+                    rightIcon={!submitting && !success && <ArrowRight className="h-4 w-4" />}
+                  >
+                    {success ? (
+                      <motion.div
+                        className="flex items-center gap-2"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                      >
+                        <CheckCircle2 className="h-5 w-5" />
+                        Success!
+                      </motion.div>
+                    ) : (
+                      'Sign In'
+                    )}
+                  </AnimatedButton>
+                </motion.form>
+              )}
+
+              {/* Register Form */}
+              {activeTab === 'register' && (
+                <motion.form
+                  key="register"
+                  onSubmit={onRegister}
+                  className="space-y-4"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {/* Register Header */}
+                  <motion.div
+                    className="mb-6"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 }}
+                  >
+                    <h2 className="text-3xl font-bold text-foreground mb-2">Create Account</h2>
+                    <p className="text-muted-foreground">
+                      Register for a new account and wait for admin approval
+                    </p>
+                  </motion.div>
+
+                  {/* Full Name */}
+                  <motion.div
+                    className="space-y-2"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <label className="text-sm font-medium text-foreground" htmlFor="fullName">
+                      Full Name
+                    </label>
+                    <motion.input
+                      id="fullName"
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className={cn(
+                        'w-full rounded-lg border bg-card px-4 py-3 text-sm transition-all duration-200',
+                        'placeholder:text-muted-foreground',
+                        'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary',
+                        error ? 'border-destructive' : 'border-border'
+                      )}
+                      placeholder="Enter your full name"
+                      autoComplete="name"
+                      required
+                      whileFocus={{ scale: 1.01 }}
+                    />
+                  </motion.div>
+
+                  {/* Username */}
+                  <motion.div
+                    className="space-y-2"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15 }}
+                  >
+                    <label className="text-sm font-medium text-foreground" htmlFor="regUsername">
+                      Username
+                    </label>
+                    <motion.input
+                      id="regUsername"
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className={cn(
+                        'w-full rounded-lg border bg-card px-4 py-3 text-sm transition-all duration-200',
+                        'placeholder:text-muted-foreground',
+                        'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary',
+                        error ? 'border-destructive' : 'border-border'
+                      )}
+                      placeholder="Choose a username"
+                      autoComplete="username"
+                      required
+                      whileFocus={{ scale: 1.01 }}
+                    />
+                  </motion.div>
+
+                  {/* Email */}
+                  <motion.div
+                    className="space-y-2"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <label className="text-sm font-medium text-foreground" htmlFor="regEmail">
+                      Email Address
+                    </label>
+                    <motion.input
+                      id="regEmail"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className={cn(
+                        'w-full rounded-lg border bg-card px-4 py-3 text-sm transition-all duration-200',
+                        'placeholder:text-muted-foreground',
+                        'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary',
+                        error ? 'border-destructive' : 'border-border'
+                      )}
+                      placeholder="Enter your email"
+                      autoComplete="email"
+                      required
+                      whileFocus={{ scale: 1.01 }}
+                    />
+                  </motion.div>
+
+                  {/* Phone (Optional) */}
+                  <motion.div
+                    className="space-y-2"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25 }}
+                  >
+                    <label className="text-sm font-medium text-foreground" htmlFor="phone">
+                      Phone (Optional)
+                    </label>
+                    <motion.input
+                      id="phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className={cn(
+                        'w-full rounded-lg border bg-card px-4 py-3 text-sm transition-all duration-200',
+                        'placeholder:text-muted-foreground',
+                        'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary',
+                        error ? 'border-destructive' : 'border-border'
+                      )}
+                      placeholder="Enter your phone number"
+                      autoComplete="tel"
+                      whileFocus={{ scale: 1.01 }}
+                    />
+                  </motion.div>
+
+                  {/* Password */}
+                  <motion.div
+                    className="space-y-2"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <label className="text-sm font-medium text-foreground" htmlFor="regPassword">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <motion.input
+                        id="regPassword"
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className={cn(
+                          'w-full rounded-lg border bg-card px-4 py-3 pr-12 text-sm transition-all duration-200',
+                          'placeholder:text-muted-foreground',
+                          'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary',
+                          error ? 'border-destructive' : 'border-border'
+                        )}
+                        placeholder="Create a password (min. 6 characters)"
+                        autoComplete="new-password"
+                        required
+                        whileFocus={{ scale: 1.01 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <AnimatePresence mode="wait">
+                          <motion.div
+                            key={showPassword ? 'hideReg' : 'showReg'}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ duration: 0.15 }}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-5 w-5" />
+                            ) : (
+                              <Eye className="h-5 w-5" />
+                            )}
+                          </motion.div>
+                        </AnimatePresence>
+                      </button>
+                    </div>
+                  </motion.div>
+
+                  {/* Confirm Password */}
+                  <motion.div
+                    className="space-y-2"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 }}
+                  >
+                    <label className="text-sm font-medium text-foreground" htmlFor="confirmPassword">
+                      Confirm Password
+                    </label>
+                    <div className="relative">
+                      <motion.input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className={cn(
+                          'w-full rounded-lg border bg-card px-4 py-3 pr-12 text-sm transition-all duration-200',
+                          'placeholder:text-muted-foreground',
+                          'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary',
+                          error ? 'border-destructive' : 'border-border'
+                        )}
+                        placeholder="Confirm your password"
+                        autoComplete="new-password"
+                        required
+                        whileFocus={{ scale: 1.01 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <AnimatePresence mode="wait">
+                          <motion.div
+                            key={showConfirmPassword ? 'hideConfirm' : 'showConfirm'}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ duration: 0.15 }}
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff className="h-5 w-5" />
+                            ) : (
+                              <Eye className="h-5 w-5" />
+                            )}
+                          </motion.div>
+                        </AnimatePresence>
+                      </button>
+                    </div>
+                  </motion.div>
+
+                  {/* Submit Button */}
+                  <AnimatedButton
+                    type="submit"
+                    variant="gradient"
+                    size="lg"
+                    className="w-full"
+                    disabled={submitting || loading || success}
+                    loading={submitting}
+                    loadingText="Creating account..."
+                    rightIcon={!submitting && !success && <ArrowRight className="h-4 w-4" />}
+                  >
+                    {success ? (
+                      <motion.div
+                        className="flex items-center gap-2"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                      >
+                        <CheckCircle2 className="h-5 w-5" />
+                        Account Created!
+                      </motion.div>
+                    ) : (
+                      'Create Account'
+                    )}
+                  </AnimatedButton>
+
+                  {/* Note about approval */}
+                  <motion.p
+                    className="text-xs text-muted-foreground text-center"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    After registration, your account will require admin approval before you can log in.
+                  </motion.p>
+                </motion.form>
+              )}
+            </AnimatePresence>
 
             {/* Error Message */}
             <AnimatePresence>
@@ -216,36 +660,11 @@ function LoginPageContent() {
                   exit={{ opacity: 0, height: 0 }}
                   className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive"
                 >
-                {error}
+                  {error}
                 </motion.div>
               )}
             </AnimatePresence>
-
-            {/* Submit Button */}
-            <AnimatedButton
-              type="submit"
-              variant="gradient"
-              size="lg"
-              className="w-full"
-              disabled={submitting || loading || success}
-              loading={submitting}
-              loadingText="Signing in..."
-              rightIcon={!submitting && !success && <ArrowRight className="h-4 w-4" />}
-            >
-              {success ? (
-                <motion.div
-                  className="flex items-center gap-2"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  <CheckCircle2 className="h-5 w-5" />
-                  Success!
-                </motion.div>
-              ) : (
-                'Sign In'
-              )}
-            </AnimatedButton>
-          </motion.form>
+          </motion.div>
 
           {/* Footer */}
           <motion.p

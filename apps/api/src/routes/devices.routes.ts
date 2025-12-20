@@ -46,7 +46,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 });
 
 // POST /api/devices
-router.post('/', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+router.post('/', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ message: 'Invalid payload' });
   const data = parsed.data;
@@ -69,7 +69,7 @@ router.post('/', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'), asy
 });
 
 // PUT /api/devices/:id
-router.put('/:id', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+router.put('/:id', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) => {
   const id = String(req.params.id);
   const parsed = updateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ message: 'Invalid payload' });
@@ -91,7 +91,7 @@ router.put('/:id', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'), a
 });
 
 // DELETE /api/devices/:id
-router.delete('/:id', requireAuth, requireRole('ADMIN', 'MANAGER'), async (req, res) => {
+router.delete('/:id', requireAuth, requireRole('ADMIN'), async (req, res) => {
   const id = String(req.params.id);
   try {
     const jobCount = await prisma.job.count({ where: { deviceId: id } });

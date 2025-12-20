@@ -2,6 +2,7 @@
 
 import healthRouter from './health.routes';
 import authRouter from './auth.routes';
+import usersRouter from './users.routes';
 import customersRouter from './customers.routes';
 import devicesRouter from './devices.routes';
 import jobsRouter from './jobs.routes';
@@ -12,11 +13,13 @@ import reportsRouter from './reports.routes';
 import settingsRouter from './settings.routes';
 import backupsRouter from './backups.routes';
 import whatsappRouter from './whatsapp.routes';
+import debugRouter from './debug.routes';
 
 const router = Router();
 
 router.use('/health', healthRouter);
 router.use('/auth', authRouter);
+router.use('/users', usersRouter);
 router.use('/customers', customersRouter);
 router.use('/devices', devicesRouter);
 router.use('/jobs', jobsRouter);
@@ -27,6 +30,7 @@ router.use('/reports', reportsRouter);
 router.use('/settings', settingsRouter);
 router.use('/backups', backupsRouter);
 router.use('/whatsapp', whatsappRouter);
+router.use('/debug', debugRouter);
 
 export default router;
 

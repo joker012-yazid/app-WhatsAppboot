@@ -98,7 +98,7 @@ Kami akan update anda tentang progress pembaikan.
 
 Ref: #{jobId}`,
     // When customer rejects
-    REJECTED: `Terima kasih *{customerName}* atas maklumbalas anda.
+    CANCELLED: `Terima kasih *{customerName}* atas maklumbalas anda.
 
 Quotation untuk {deviceType} anda telah dibatalkan.
 
@@ -219,16 +219,16 @@ async function onJobStatusChange(jobId, newStatus, oldStatus) {
         // Send message based on new status
         let templateKey = null;
         switch (newStatus) {
-            case 'QUOTED':
+            case 'QUOTATION_SENT':
                 templateKey = 'QUOTATION_SENT';
                 break;
             case 'APPROVED':
                 templateKey = 'APPROVED';
                 break;
-            case 'REJECTED':
-                templateKey = 'REJECTED';
+            case 'CANCELLED':
+                templateKey = 'CANCELLED';
                 break;
-            case 'IN_PROGRESS':
+            case 'REPAIRING':
                 templateKey = 'IN_PROGRESS';
                 break;
             case 'COMPLETED':
@@ -275,7 +275,7 @@ async function sendReminderMessage(jobId, reminderType) {
             return false;
         }
         // Don't send reminder if already approved/rejected
-        if (job.status !== 'QUOTED') {
+        if (job.status !== 'QUOTATION_SENT') {
             logger.info({ jobId, status: job.status }, '[Workflow] Job no longer in QUOTED status, skipping reminder');
             return false;
         }
@@ -342,7 +342,7 @@ async function handleCustomerResponse(phone, messageText) {
         const job = await prisma_1.default.job.findFirst({
             where: {
                 customerId: customer.id,
-                status: 'QUOTED',
+                status: 'QUOTATION_SENT',
             },
             orderBy: {
                 createdAt: 'desc',
@@ -389,27 +389,27 @@ async function handleCustomerResponse(phone, messageText) {
                 },
             });
             // Trigger approval message
-            await onJobStatusChange(job.id, 'APPROVED', 'QUOTED');
+            await onJobStatusChange(job.id, 'APPROVED', 'QUOTATION_SENT');
             logger.info({ jobId: job.id, customerId: customer.id }, '[Workflow] Job approved by customer');
         }
         else if (isRejection) {
-            // Update job status to REJECTED
+            // Update job status to CANCELLED
             await prisma_1.default.job.update({
                 where: { id: job.id },
                 data: {
-                    status: 'REJECTED',
+                    status: 'CANCELLED',
                 },
             });
             // Create status history
             await prisma_1.default.jobStatusHistory.create({
                 data: {
                     jobId: job.id,
-                    status: 'REJECTED',
+                    status: 'CANCELLED',
                     notes: 'Customer rejected via WhatsApp',
                 },
             });
             // Trigger rejection message
-            await onJobStatusChange(job.id, 'REJECTED', 'QUOTED');
+            await onJobStatusChange(job.id, 'CANCELLED', 'QUOTATION_SENT');
             logger.info({ jobId: job.id, customerId: customer.id }, '[Workflow] Job rejected by customer');
         }
         else {
@@ -445,7 +445,7 @@ async function handleAiResponse(phone, customer, messageText, job) {
         const aiResponse = await (0, ai_1.generateSalesResponse)(messageText, {
             customerName: customer.name,
             previousMessages,
-            hasQuotation: job?.status === 'QUOTED',
+            hasQuotation: job?.status === 'QUOTATION_SENT',
             deviceInfo: job ? `${job.device.deviceType} ${job.device.model || ''}`.trim() : undefined,
         });
         if (!aiResponse || aiResponse.startsWith('AI stub') || aiResponse.startsWith('AI provider error')) {

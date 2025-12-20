@@ -21,9 +21,11 @@ export default function RegistrationPage() {
   const generateQRCode = async () => {
     setIsGenerating(true);
     try {
-      const baseUrl = typeof window !== 'undefined'
-        ? `${window.location.protocol}//${window.location.hostname}:4000`
-        : 'http://localhost:4000';
+      // Use NEXT_PUBLIC_REGISTRATION_BASE_URL if available, otherwise fallback to old behavior
+      const baseUrl = process.env.NEXT_PUBLIC_REGISTRATION_BASE_URL ||
+        (typeof window !== 'undefined'
+          ? `${window.location.protocol}//${window.location.hostname}:4000`
+          : 'http://localhost:4000');
 
       const url = `${baseUrl}/public/register/index.html`;
       setRegistrationUrl(url);
@@ -136,7 +138,7 @@ export default function RegistrationPage() {
                     initial={{ rotateY: 90, opacity: 0 }}
                     animate={{ rotateY: 0, opacity: 1 }}
                     transition={{ delay: 0.2, duration: 0.5 }}
-                    className="bg-white p-4 rounded-2xl shadow-inner"
+                    className="bg-card p-4 rounded-2xl shadow-inner border border-border"
                   >
                     <img
                       src={qrImage}

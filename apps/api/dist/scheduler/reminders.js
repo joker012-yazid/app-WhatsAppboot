@@ -12,7 +12,7 @@ let reminderInterval = null;
 let sweepRunning = false;
 async function scheduleQuoteReminders() {
     const quoted = await prisma_1.default.jobStatusHistory.findMany({
-        where: { status: 'QUOTED' },
+        where: { status: 'QUOTATION_SENT' },
         orderBy: { createdAt: 'desc' },
     });
     const now = Date.now();

@@ -7,7 +7,7 @@ import redis from '../lib/redis';
 import env from '../config/env';
 import { parseDurationMs } from '../utils/time';
 
-type UserRole = 'ADMIN' | 'TECHNICIAN' | 'CASHIER' | 'MANAGER';
+type UserRole = 'ADMIN' | 'USER';
 
 export const signAccessToken = (userId: string, role: UserRole) => {
   const ttlMs = parseDurationMs(env.ACCESS_TOKEN_TTL);
@@ -39,6 +39,8 @@ export const signRefreshToken = async (userId: string, sessionId: string) => {
 };
 
 export const verifyPassword = async (plain: string, hash: string) => bcrypt.compare(plain, hash);
+
+export const hashPassword = async (plain: string): Promise<string> => bcrypt.hash(plain, 10);
 
 export const createSession = async (userId: string) => {
   const ttlMs = parseDurationMs(env.REFRESH_TOKEN_TTL);

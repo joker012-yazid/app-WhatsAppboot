@@ -360,7 +360,7 @@ export default function ChatPage() {
                     Open WhatsApp on your phone → Linked devices → Link a device
                   </p>
                 </div>
-                <div className="rounded-2xl border border-border bg-white p-4 shadow-lg">
+                <div className="rounded-2xl border border-border bg-card p-4 shadow-lg">
                   <Image
                     src={status!.qrImage!}
                     alt="WhatsApp QR"

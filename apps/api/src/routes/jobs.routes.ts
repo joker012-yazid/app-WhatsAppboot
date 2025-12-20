@@ -26,7 +26,7 @@ const createSchema = z.object({
 const updateSchema = z.object({
   title: z.string().optional(),
   description: z.string().optional().or(z.literal('')),
-  status: z.enum(['PENDING', 'QUOTED', 'APPROVED', 'REJECTED', 'IN_PROGRESS', 'COMPLETED']).optional(),
+  status: z.enum(['AWAITING_QUOTE', 'QUOTATION_SENT', 'APPROVED', 'REPAIRING', 'COMPLETED', 'CANCELLED']).optional(),
   priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']).optional(),
   quotedAmount: z.number().nullable().optional(),
   approvedAmount: z.number().nullable().optional(),
@@ -36,6 +36,12 @@ const updateSchema = z.object({
 
 // Utilities
 const buildQrUrl = (req: import('express').Request, token: string) => {
+  // Use PUBLIC_BASE_URL from environment if available, otherwise fallback to request host
+  const publicBaseUrl = process.env.PUBLIC_BASE_URL;
+  if (publicBaseUrl) {
+    return `${publicBaseUrl}/public/progress/index.html?token=${token}`;
+  }
+  // Fallback to dynamic host detection
   const host = req.get('host') || 'localhost:4000';
   const proto = req.headers['x-forwarded-proto']?.toString() || req.protocol || 'http';
   return `${proto}://${host}/public/progress/index.html?token=${token}`;
@@ -107,11 +113,11 @@ router.post('/register/:token', async (req, res) => {
     });
   }
   
-  // Update job status to PENDING (customer has registered)
+  // Update job status to AWAITING_QUOTE (customer has registered)
   await prisma.job.update({
     where: { id: job.id },
-    data: { 
-      status: 'PENDING',
+    data: {
+      status: 'AWAITING_QUOTE',
       description: deviceNotes || job.description
     }
   });
@@ -153,18 +159,16 @@ router.get('/progress/:token', async (req, res) => {
     orderBy: { createdAt: 'desc' },
   });
   
-  // Get photos with URLs
-  const host = req.get('host') || 'localhost:4000';
-  const proto = req.headers['x-forwarded-proto']?.toString() || req.protocol || 'http';
-  const photosRaw = await prisma.jobPhoto.findMany({ 
-    where: { jobId: job.id }, 
-    orderBy: { createdAt: 'desc' } 
+  // Get photos with URLs (relative paths for proxy compatibility)
+  const photosRaw = await prisma.jobPhoto.findMany({
+    where: { jobId: job.id },
+    orderBy: { createdAt: 'desc' }
   });
-  
+
   const photos = photosRaw.map((p) => ({
     id: p.id,
     label: p.label,
-    url: `${proto}://${host}${p.filePath.startsWith('/') ? '' : '/'}${p.filePath}`,
+    url: p.filePath.startsWith('/') ? p.filePath : `/${p.filePath}`,
     createdAt: p.createdAt,
   }));
   
@@ -195,7 +199,41 @@ router.get('/progress/:token', async (req, res) => {
 // Authenticated routes
 router.get('/', requireAuth, async (req, res) => {
   const { status, customer, from, to } = req.query as Record<string, string | undefined>;
+  const currentUser = req.user as any; // User info dari requireAuth middleware
+
   const where: Prisma.JobWhereInput = {};
+
+  // Filter berdasarkan ownership
+  if (currentUser.role === 'ADMIN') {
+    // Admin nampak semua jobs
+    console.log('[JOBS] 🔍 Admin user - fetching all jobs:', {
+      userId: currentUser.id,
+      userEmail: currentUser.email,
+      role: currentUser.role
+    });
+    // No additional filter needed
+  } else {
+    // User biasa - apply ownership logic
+    console.log('[JOBS] 🔍 Regular user - applying ownership filter:', {
+      userId: currentUser.id,
+      userEmail: currentUser.email,
+      role: currentUser.role
+    });
+
+    where.OR = [
+      // Jobs di AWAITING_QUOTE yang belum ada owner (boleh diambil sesiapa)
+      {
+        status: 'AWAITING_QUOTE',
+        ownerUserId: null
+      },
+      // SEMUA jobs yang user ni adalah owner (regardless of status)
+      {
+        ownerUserId: currentUser.id
+      }
+    ];
+  }
+
+  // Additional filters
   if (status) where.status = status as any;
   if (customer) where.customer = { name: { contains: customer, mode: 'insensitive' } };
   if (from || to) {
@@ -205,30 +243,130 @@ router.get('/', requireAuth, async (req, res) => {
     where.createdAt = created;
   }
 
-  const host = req.get('host') || 'localhost:4000';
-  const proto = req.headers['x-forwarded-proto']?.toString() || req.protocol || 'http';
   const jobs = await prisma.job.findMany({
     where,
     include: {
       customer: true,
       device: true,
+      owner: {
+        select: {
+          id: true,
+          name: true,
+          email: true
+        }
+      },
       photos: { take: 1, orderBy: { createdAt: 'desc' } },
       _count: { select: { photos: true } },
     },
     orderBy: { createdAt: 'desc' },
   });
+
+  // Log debugging info about jobs retrieved
+  console.log('[JOBS] 📊 Jobs retrieved:', {
+    userId: currentUser.id,
+    userEmail: currentUser.email,
+    role: currentUser.role,
+    totalJobsFound: jobs.length,
+    jobDetails: jobs.map(job => ({
+      id: job.id,
+      title: job.title,
+      status: job.status,
+      ownerUserId: job.ownerUserId,
+      isOwner: job.ownerUserId === currentUser.id,
+      ownerName: job.owner?.name
+    }))
+  });
+
   const data = jobs.map((j) => {
-    const thumb = (j as any).photos?.[0]
-      ? `${proto}://${host}${(j as any).photos[0].filePath.startsWith('/') ? '' : '/'}${(j as any).photos[0].filePath}`
+    // Use relative URLs for proxy compatibility
+    const firstPhoto = (j as any).photos?.[0];
+    const thumb = firstPhoto
+      ? (firstPhoto.filePath.startsWith('/') ? firstPhoto.filePath : `/${firstPhoto.filePath}`)
       : null;
     // strip photos array from list payload
     const { photos, _count, ...rest } = j as any;
-    return { ...rest, thumbnailUrl: thumb, photoCount: _count?.photos ?? 0 };
+    return {
+      ...rest,
+      thumbnailUrl: thumb,
+      photoCount: _count?.photos ?? 0,
+      ownerName: j.owner?.name,
+      isOwner: j.ownerUserId === currentUser.id
+    };
   });
+
+  console.log('[JOBS] ✅ Returning jobs to user:', {
+    userId: currentUser.id,
+    userEmail: currentUser.email,
+    jobsReturned: data.length,
+    jobsByStatus: data.reduce((acc, job) => {
+      acc[job.status] = (acc[job.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
+  });
+
   res.json(data);
 });
 
-router.post('/', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+// Debug endpoint for job ownership
+router.get('/debug/:id', requireAuth, async (req, res) => {
+  const id = String(req.params.id);
+  const currentUser = req.user as any;
+
+  const job = await prisma.job.findUnique({
+    where: { id },
+    include: {
+      customer: { select: { name: true } },
+      device: { select: { deviceType: true, brand: true, model: true } },
+      owner: { select: { id: true, name: true, email: true, username: true } }
+    }
+  });
+
+  if (!job) {
+    return res.status(404).json({
+      success: false,
+      message: 'Job not found'
+    });
+  }
+
+  const isOwner = job.ownerUserId === currentUser.id;
+  const isAdmin = currentUser.role === 'ADMIN';
+  const canView = isAdmin || (!job.ownerUserId && job.status === 'AWAITING_QUOTE') || isOwner;
+  const canClaim = !job.ownerUserId && job.status === 'AWAITING_QUOTE' && !isAdmin;
+
+  return res.json({
+    success: true,
+    job: {
+      id: job.id,
+      title: job.title,
+      status: job.status,
+      ownerUserId: job.ownerUserId,
+      assignedAt: job.assignedAt,
+      owner: job.owner,
+      customer: job.customer,
+      device: job.device
+    },
+    permissions: {
+      isOwner,
+      isAdmin,
+      canView,
+      canClaim,
+      currentUser: {
+        id: currentUser.id,
+        email: currentUser.email,
+        username: currentUser.username,
+        role: currentUser.role
+      }
+    },
+    debug: {
+      reasonForCanView: isAdmin ? 'Admin can see all jobs' :
+                           isOwner ? 'User owns this job' :
+                           (!job.ownerUserId && job.status === 'AWAITING_QUOTE') ? 'Job is available for claiming' :
+                           'No permission to view'
+    }
+  });
+});
+
+router.post('/', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ message: 'Invalid payload' });
   const data = parsed.data;
@@ -268,36 +406,207 @@ router.get('/:id', requireAuth, async (req, res) => {
   return res.json({ job, qr_url: qrUrl });
 });
 
-router.put('/:id', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+// Claim a job (for regular users)
+router.put('/:id/claim', requireAuth, async (req, res) => {
+  const id = String(req.params.id);
+  const currentUser = req.user as any;
+
+  try {
+    const existing = await prisma.job.findUnique({
+      where: { id },
+      include: { owner: { select: { id: true, name: true, email: true } } }
+    });
+
+    if (!existing) {
+      return res.status(404).json({
+        success: false,
+        message: 'Job not found'
+      });
+    }
+
+    // Check if job can be claimed
+    if (existing.ownerUserId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Job is already owned by another user',
+        owner: existing.owner
+      });
+    }
+
+    if (existing.status !== 'AWAITING_QUOTE') {
+      return res.status(400).json({
+        success: false,
+        message: 'Job can only be claimed when in AWAITING_QUOTE status',
+        currentStatus: existing.status
+      });
+    }
+
+    if (currentUser.role === 'ADMIN') {
+      return res.status(400).json({
+        success: false,
+        message: 'Admin users cannot claim jobs. Admins can see all jobs by default.'
+      });
+    }
+
+    // Claim the job
+    const updated = await prisma.job.update({
+      where: { id },
+      data: {
+        ownerUserId: currentUser.id,
+        assignedAt: new Date()
+      },
+      include: {
+        owner: { select: { id: true, name: true, email: true, username: true } }
+      }
+    });
+
+    console.log('[JOBS] Job claimed via direct claim:', {
+      jobId: id,
+      jobTitle: existing.title,
+      claimedBy: currentUser.id,
+      claimedByEmail: currentUser.email,
+      claimedAt: updated.assignedAt
+    });
+
+    return res.json({
+      success: true,
+      message: 'Job successfully claimed',
+      job: updated
+    });
+
+  } catch (error) {
+    console.error('[JOBS] Error claiming job:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to claim job',
+      error: error.message
+    });
+  }
+});
+
+router.put('/:id', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) => {
   const id = String(req.params.id);
   const parsed = updateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ message: 'Invalid payload' });
   const data = parsed.data;
+  const currentUser = req.user as any;
 
   try {
     const existing = await prisma.job.findUnique({ where: { id } });
     if (!existing) return res.status(404).json({ message: 'Job not found' });
-    const updated = await prisma.job.update({
-      where: { id },
-      data: {
-        ...('title' in data ? { title: data.title! } : {}),
-        ...('description' in data ? { description: data.description || null } : {}),
-        ...('status' in data ? { status: data.status as any } : {}),
-        ...('priority' in data ? { priority: data.priority as any } : {}),
-        ...('quotedAmount' in data ? { quotedAmount: data.quotedAmount ?? null } : {}),
-        ...('approvedAmount' in data ? { approvedAmount: data.approvedAmount ?? null } : {}),
-        ...('diagnosis' in data ? { diagnosis: data.diagnosis || null } : {}),
-        ...('dueDate' in data ? { dueDate: data.dueDate ? new Date(data.dueDate) : null } : {}),
-      },
+
+    // Check ownership permissions
+    if (currentUser.role !== 'ADMIN') {
+      // If job has an owner, only the owner can update it
+      if (existing.ownerUserId && existing.ownerUserId !== currentUser.id) {
+        return res.status(403).json({ message: 'Anda bukan owner job ini' });
+      }
+    }
+
+    // Prepare update data
+    let updateData: any = {
+      ...('title' in data ? { title: data.title! } : {}),
+      ...('description' in data ? { description: data.description || null } : {}),
+      ...('status' in data ? { status: data.status as any } : {}),
+      ...('priority' in data ? { priority: data.priority as any } : {}),
+      ...('quotedAmount' in data ? { quotedAmount: data.quotedAmount ?? null } : {}),
+      ...('approvedAmount' in data ? { approvedAmount: data.approvedAmount ?? null } : {}),
+      ...('diagnosis' in data ? { diagnosis: data.diagnosis || null } : {}),
+      ...('dueDate' in data ? { dueDate: data.dueDate ? new Date(data.dueDate) : null } : {}),
+    };
+
+    // Ownership logic: Set owner when moving from AWAITING_QUOTE to QUOTATION_SENT
+    console.log('[JOBS] Job update attempt:', {
+      jobId: id,
+      jobTitle: existing.title,
+      currentOwner: existing.ownerUserId,
+      currentStatus: existing.status,
+      newStatus: data.status,
+      requestedBy: currentUser.id,
+      requestedByRole: currentUser.role,
+      requestedByEmail: currentUser.email
     });
+
+    // Assign ownership when user moves job from AWAITING_QUOTE to any other status
+    if (existing.status === 'AWAITING_QUOTE' &&
+        data.status !== 'AWAITING_QUOTE' &&
+        !existing.ownerUserId) {
+      updateData.ownerUserId = currentUser.id;
+      updateData.assignedAt = new Date();
+      console.log('[JOBS] ✅ Job SUCCESSFULLY claimed by user:', {
+        jobId: id,
+        jobTitle: existing.title,
+        claimedBy: currentUser.id,
+        claimedByEmail: currentUser.email,
+        claimedAt: updateData.assignedAt,
+        fromStatus: existing.status,
+        toStatus: data.status
+      });
+    } else {
+      console.log('[JOBS] ❌ Job NOT claimed - conditions not met:', {
+        isFromAwaitingQuote: existing.status === 'AWAITING_QUOTE',
+        isToDifferentStatus: data.status !== 'AWAITING_QUOTE',
+        hasNoOwner: !existing.ownerUserId,
+        currentOwner: existing.ownerUserId,
+        fromStatus: existing.status,
+        toStatus: data.status,
+        currentUser: currentUser.id
+      });
+    }
+
+    // Log what data will be updated
+    console.log('[JOBS] 📝 Applying update data:', {
+      jobId: id,
+      updateData: {
+        status: updateData.status,
+        ownerUserId: updateData.ownerUserId,
+        assignedAt: updateData.assignedAt,
+        diagnosis: updateData.diagnosis,
+        quotedAmount: updateData.quotedAmount
+      }
+    });
+
+    // Use transaction to ensure atomicity
+    const updated = await prisma.$transaction(async (tx) => {
+      const job = await tx.job.update({
+        where: { id },
+        data: updateData,
+      });
+
+      // Verify ownership was properly saved within transaction
+      if (updateData.ownerUserId) {
+        console.log('[JOBS] ✅ Ownership in transaction:', {
+          jobId: id,
+          jobTitle: job.title,
+          ownerSetInDb: job.ownerUserId,
+          ownerSetInUpdate: updateData.ownerUserId,
+          assignedAt: job.assignedAt
+        });
+      }
+
+      return job;
+    });
+
+    // Verify ownership was properly saved
+    if (updateData.ownerUserId) {
+      console.log('[JOBS] ✅ Ownership verification:', {
+        jobId: id,
+        jobTitle: updated.title,
+        ownerSetInDb: updated.ownerUserId,
+        ownerSetInUpdate: updateData.ownerUserId,
+        assignedAt: updated.assignedAt,
+        verification: updated.ownerUserId === updateData.ownerUserId ? 'SUCCESS' : 'FAILED'
+      });
+    }
+
     // Create history entry when status OR diagnosis changes
     const statusChanged = data.status && data.status !== existing.status;
     const diagnosisChanged = 'diagnosis' in data && data.diagnosis !== existing.diagnosis;
-    
+
     if (statusChanged || diagnosisChanged) {
       // Include the diagnosis (catatan + fasa) in the history
       const currentDiagnosis = data.diagnosis || existing.diagnosis || '';
-      
+
       await prisma.jobStatusHistory.create({
         data: {
           jobId: id,
@@ -305,22 +614,54 @@ router.put('/:id', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'), a
           notes: currentDiagnosis || (statusChanged ? `Status updated from ${existing.status} to ${data.status}` : null),
         },
       });
-      
+
       // Trigger workflow automation (only if status actually changed)
       if (statusChanged && data.status) {
         await onJobStatusChange(id, data.status, existing.status);
       }
-      
+
       // Schedule reminders for quotations
-      if (data.status === 'QUOTED') {
+      if (data.status === 'QUOTATION_SENT') {
         const DAY = 24 * 60 * 60 * 1000;
         await enqueueReminder(id, 'QUOTE_DAY_1', DAY);
         await enqueueReminder(id, 'QUOTE_DAY_20', 20 * DAY);
         await enqueueReminder(id, 'QUOTE_DAY_30', 30 * DAY);
       }
     }
-    return res.json(updated);
+
+    // Fetch updated job with owner info for response
+    const jobWithOwner = await prisma.job.findUnique({
+      where: { id },
+      include: {
+        customer: { select: { name: true } },
+        device: { select: { deviceType: true, brand: true, model: true } },
+        owner: { select: { id: true, name: true, email: true } }
+      }
+    });
+
+    if (!jobWithOwner) {
+      return res.status(404).json({ message: 'Job not found after update' });
+    }
+
+    // Add ownership info to the response
+    const response = {
+      ...jobWithOwner,
+      ownerName: jobWithOwner.owner?.name,
+      isOwner: jobWithOwner.ownerUserId === (req.user as any).id
+    };
+
+    console.log('[JOBS] 📤 Sending response with ownership info:', {
+      jobId: id,
+      ownerUserId: response.ownerUserId,
+      isOwner: response.isOwner,
+      ownerName: response.ownerName,
+      status: response.status,
+      currentUserRole: (req.user as any).role
+    });
+
+    return res.json(response);
   } catch (e) {
+    console.error('Update job error:', e);
     return res.status(404).json({ message: 'Job not found' });
   }
 });
@@ -336,31 +677,113 @@ router.get('/:id/history', requireAuth, async (req, res) => {
 });
 
 // Delete history entry
-router.delete('/:id/history/:historyId', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+router.delete('/:id/history/:historyId', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) => {
   const { id, historyId } = req.params;
+  const correlationId = req.correlationId;
+  const currentUser = req.user as any;
+
+  console.log(`[${correlationId}] [JOBS] Delete history request:`, {
+    jobId: id,
+    historyId,
+    userId: currentUser.id,
+    userRole: currentUser.role
+  });
+
   try {
+    // Validate IDs format
+    if (!id || !historyId || id.length < 10 || historyId.length < 10) {
+      console.warn(`[${correlationId}] [JOBS] Invalid IDs:`, { id, historyId });
+      return res.status(400).json({
+        success: false,
+        correlationId,
+        message: 'Invalid job or history ID format'
+      });
+    }
+
     // Verify history entry belongs to this job
     const historyEntry = await prisma.jobStatusHistory.findUnique({
       where: { id: historyId },
     });
-    
-    if (!historyEntry || historyEntry.jobId !== id) {
-      return res.status(404).json({ message: 'History entry not found' });
+
+    if (!historyEntry) {
+      console.warn(`[${correlationId}] [JOBS] History entry not found:`, { historyId });
+      return res.status(404).json({
+        success: false,
+        correlationId,
+        message: 'History entry not found'
+      });
     }
-    
+
+    if (historyEntry.jobId !== id) {
+      console.warn(`[${correlationId}] [JOBS] History entry belongs to different job:`, {
+        historyId,
+        actualJobId: historyEntry.jobId,
+        requestedJobId: id
+      });
+      return res.status(404).json({
+        success: false,
+        correlationId,
+        message: 'History entry not found for this job'
+      });
+    }
+
+    // Delete the history entry
     await prisma.jobStatusHistory.delete({
       where: { id: historyId },
     });
-    
+
+    console.log(`[${correlationId}] [JOBS] ✅ History entry deleted successfully:`, {
+      historyId,
+      jobId: id,
+      deletedBy: currentUser.id
+    });
+
+    // Include correlation ID in response header
+    res.setHeader('X-Correlation-ID', correlationId);
     return res.status(204).send();
   } catch (error) {
-    console.error('Delete history error:', error);
-    return res.status(500).json({ message: 'Failed to delete history entry' });
+    console.error(`[${correlationId}] [JOBS] ❌ Delete history error:`, {
+      error: error.message,
+      jobId: id,
+      historyId,
+      userId: currentUser.id,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+
+    // Check for specific database errors
+    if (error.code === 'P2025') {
+      // Record not found
+      return res.status(404).json({
+        success: false,
+        correlationId,
+        message: 'History entry not found'
+      });
+    }
+
+    if (error.code === 'P2002') {
+      // Foreign key constraint
+      return res.status(409).json({
+        success: false,
+        correlationId,
+        message: 'Cannot delete history entry due to dependencies'
+      });
+    }
+
+    res.setHeader('X-Correlation-ID', correlationId);
+    return res.status(500).json({
+      success: false,
+      correlationId,
+      message: 'Failed to delete history entry',
+      ...(process.env.NODE_ENV === 'development' && {
+        error: error.message,
+        code: error.code
+      })
+    });
   }
 });
 
 // Update history entry notes
-router.put('/:id/history/:historyId', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+router.put('/:id/history/:historyId', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) => {
   const { id, historyId } = req.params;
   const { notes } = req.body;
   
@@ -391,7 +814,7 @@ router.put('/:id/history/:historyId', requireAuth, requireRole('ADMIN', 'MANAGER
 });
 
 // Reissue QR token
-router.post('/:id/qr/renew', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+router.post('/:id/qr/renew', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) => {
   const id = String(req.params.id);
   const job = await prisma.job.findUnique({ where: { id } });
   if (!job) return res.status(404).json({ message: 'Job not found' });
@@ -402,7 +825,7 @@ router.post('/:id/qr/renew', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHN
   return res.json({ qr_url: qrUrl });
 });
 
-router.delete('/:id', requireAuth, requireRole('ADMIN', 'MANAGER'), async (req, res) => {
+router.delete('/:id', requireAuth, requireRole('ADMIN'), async (req, res) => {
   const id = String(req.params.id);
   try {
     await prisma.job.delete({ where: { id } });
@@ -415,12 +838,11 @@ router.delete('/:id', requireAuth, requireRole('ADMIN', 'MANAGER'), async (req, 
 // Photos
 router.get('/:id/photos', requireAuth, async (req, res) => {
   const id = String(req.params.id);
-  const host = req.get('host') || 'localhost:4000';
-  const proto = req.headers['x-forwarded-proto']?.toString() || req.protocol || 'http';
   const rows = await prisma.jobPhoto.findMany({ where: { jobId: id }, orderBy: { createdAt: 'desc' } });
+  // Return relative URLs for proxy compatibility
   const data = rows.map((p) => ({
     ...p,
-    url: `${proto}://${host}${p.filePath.startsWith('/') ? '' : '/'}${p.filePath}`,
+    url: p.filePath.startsWith('/') ? p.filePath : `/${p.filePath}`,
   }));
   return res.json(data);
 });
@@ -428,7 +850,7 @@ router.get('/:id/photos', requireAuth, async (req, res) => {
 router.post(
   '/:id/photos',
   requireAuth,
-  requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'),
+  requireRole('ADMIN', 'USER'),
   upload.array('photos', 6),
   async (req, res) => {
     const id = String(req.params.id);
@@ -440,33 +862,33 @@ router.post(
     for (const f of files) {
       const rel = `/uploads/${path.basename(f.path)}`;
       const rec = await prisma.jobPhoto.create({ data: { jobId: id, label, filePath: rel } });
-      saved.push({ ...rec, url: `${req.protocol}://${req.get('host')}${rel}` });
+      // Return relative URL for proxy compatibility
+      saved.push({ ...rec, url: rel });
     }
     return res.status(201).json(saved);
   },
 );
 
-router.put('/:id/photos/:photoId', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+router.put('/:id/photos/:photoId', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) => {
   const { id, photoId } = req.params as { id: string; photoId: string };
   const { label } = req.body;
-  
+
   const photo = await prisma.jobPhoto.findUnique({ where: { id: photoId } });
   if (!photo || photo.jobId !== id) return res.status(404).json({ message: 'Photo not found' });
-  
+
   const updated = await prisma.jobPhoto.update({
     where: { id: photoId },
     data: { label: label || null },
   });
-  
-  const host = req.get('host') || 'localhost:4000';
-  const proto = req.headers['x-forwarded-proto']?.toString() || req.protocol || 'http';
+
+  // Return relative URL for proxy compatibility
   return res.json({
     ...updated,
-    url: `${proto}://${host}${updated.filePath.startsWith('/') ? '' : '/'}${updated.filePath}`,
+    url: updated.filePath.startsWith('/') ? updated.filePath : `/${updated.filePath}`,
   });
 });
 
-router.delete('/:id/photos/:photoId', requireAuth, requireRole('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+router.delete('/:id/photos/:photoId', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) => {
   const { id, photoId } = req.params as { id: string; photoId: string };
   const photo = await prisma.jobPhoto.findUnique({ where: { id: photoId } });
   if (!photo || photo.jobId !== id) return res.status(404).json({ message: 'Photo not found' });

@@ -92,7 +92,7 @@ const handleError = (res: import('express').Response, error: unknown) => {
   return res.status(500).json({ message: 'Internal server error' });
 };
 
-router.use(requireAuth, requireRole('ADMIN', 'MANAGER'));
+router.use(requireAuth, requireRole('ADMIN'));
 
 router.get('/', async (req, res) => {
   const parsedStatus = statusQuerySchema.safeParse(req.query);

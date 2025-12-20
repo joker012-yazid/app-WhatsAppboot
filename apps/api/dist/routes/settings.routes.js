@@ -6,11 +6,11 @@ const ai_1 = require("../services/ai");
 const backups_1 = require("../scheduler/backups");
 const settings_1 = require("../services/settings");
 const router = (0, express_1.Router)();
-router.get('/', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER'), async (_req, res) => {
+router.get('/', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN'), async (_req, res) => {
     const settings = await (0, settings_1.getAllSettings)();
     return res.json(settings);
 });
-router.put('/:key', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER'), async (req, res) => {
+router.put('/:key', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN'), async (req, res) => {
     const keyResult = settings_1.settingKeySchema.safeParse(req.params.key);
     if (!keyResult.success) {
         return res.status(400).json({ message: 'Unknown settings group' });

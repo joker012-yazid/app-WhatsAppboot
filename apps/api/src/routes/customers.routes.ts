@@ -103,7 +103,7 @@ router.post('/register', async (req, res) => {
           deviceId: device.id,
           title: `${deviceData.deviceType} ${deviceData.deviceBrand}${deviceData.deviceModel ? ' ' + deviceData.deviceModel : ''} - ${name}`,
           description: deviceData.issueDescription,
-          status: 'PENDING',
+          status: 'AWAITING_QUOTE',
           priority: 'NORMAL',
           qrToken: crypto.randomUUID(),
           qrExpiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000), // 30 days
@@ -165,7 +165,7 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // POST /api/customers
-router.post('/', requireAuth, requireRole('ADMIN', 'MANAGER'), async (req, res) => {
+router.post('/', requireAuth, requireRole('ADMIN'), async (req, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ message: 'Invalid payload' });
   const { name, phone, email, notes, type, tags } = parsed.data;
@@ -202,7 +202,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 });
 
 // PUT /api/customers/:id
-router.put('/:id', requireAuth, requireRole('ADMIN', 'MANAGER'), async (req, res) => {
+router.put('/:id', requireAuth, requireRole('ADMIN'), async (req, res) => {
   const id = String(req.params.id);
   const parsed = updateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ message: 'Invalid payload' });
@@ -229,7 +229,7 @@ router.put('/:id', requireAuth, requireRole('ADMIN', 'MANAGER'), async (req, res
 });
 
 // DELETE /api/customers/:id
-router.delete('/:id', requireAuth, requireRole('ADMIN', 'MANAGER'), async (req, res) => {
+router.delete('/:id', requireAuth, requireRole('ADMIN'), async (req, res) => {
   const id = String(req.params.id);
   try {
     const [deviceCount, jobCount] = await Promise.all([

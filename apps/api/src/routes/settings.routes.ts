@@ -7,12 +7,12 @@ import { getAllSettings, saveSetting, settingKeySchema, settingSchemas, SettingK
 
 const router = Router();
 
-router.get('/', requireAuth, requireRole('ADMIN', 'MANAGER'), async (_req, res) => {
+router.get('/', requireAuth, requireRole('ADMIN'), async (_req, res) => {
   const settings = await getAllSettings();
   return res.json(settings);
 });
 
-router.put('/:key', requireAuth, requireRole('ADMIN', 'MANAGER'), async (req, res) => {
+router.put('/:key', requireAuth, requireRole('ADMIN'), async (req, res) => {
   const keyResult = settingKeySchema.safeParse(req.params.key);
   if (!keyResult.success) {
     return res.status(400).json({ message: 'Unknown settings group' });

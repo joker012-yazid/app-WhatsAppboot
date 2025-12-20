@@ -105,7 +105,7 @@ export default function DeviceDetailPage() {
             <Button variant="outline" asChild>
               <Link href="/devices">Back</Link>
             </Button>
-            {hasAnyRole(user?.role, ['ADMIN','MANAGER']) ? (
+            {hasAnyRole(user?.role, ['ADMIN']) ? (
               <Button
                 variant="destructive"
                 disabled={!!d?.jobs && d.jobs.length > 0 || deleteMutation.isPending}
@@ -128,7 +128,7 @@ export default function DeviceDetailPage() {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <div className="md:col-span-2 rounded-xl border bg-card p-4">
             <h2 className="mb-3 text-lg font-semibold">Edit Device</h2>
-            {!hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN']) ? (
+            {!hasAnyRole(user?.role, ['ADMIN','USER']) ? (
               <p className="mb-3 text-sm text-amber-700">You have read-only access. Editing is restricted to Admin/Manager/Technician.</p>
             ) : null}
             {d?.jobs && d.jobs.length > 0 ? (
@@ -153,7 +153,7 @@ export default function DeviceDetailPage() {
                     onChange={(e) => setDeviceType(e.target.value)}
                     className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
                     required
-                    disabled={!hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN'])}
+                    disabled={!hasAnyRole(user?.role, ['ADMIN','USER'])}
                   />
                 </div>
                 <div className="space-y-1">
@@ -165,7 +165,7 @@ export default function DeviceDetailPage() {
                     value={brand}
                     onChange={(e) => setBrand(e.target.value)}
                     className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
-                    disabled={!hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN'])}
+                    disabled={!hasAnyRole(user?.role, ['ADMIN','USER'])}
                   />
                 </div>
               </div>
@@ -179,7 +179,7 @@ export default function DeviceDetailPage() {
                     value={model}
                     onChange={(e) => setModel(e.target.value)}
                     className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
-                    disabled={!hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN'])}
+                    disabled={!hasAnyRole(user?.role, ['ADMIN','USER'])}
                   />
                 </div>
                 <div className="space-y-1">
@@ -191,7 +191,7 @@ export default function DeviceDetailPage() {
                     value={serialNumber}
                     onChange={(e) => setSerialNumber(e.target.value)}
                     className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
-                    disabled={!hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN'])}
+                    disabled={!hasAnyRole(user?.role, ['ADMIN','USER'])}
                   />
                 </div>
               </div>
@@ -204,11 +204,11 @@ export default function DeviceDetailPage() {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
-                  disabled={!hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN'])}
+                  disabled={!hasAnyRole(user?.role, ['ADMIN','USER'])}
                 />
               </div>
               {error ? <p className="text-sm text-red-500">{error}</p> : null}
-              {hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN']) ? (
+              {hasAnyRole(user?.role, ['ADMIN','USER']) ? (
                 <Button type="submit" disabled={updateMutation.isPending}>
                   {updateMutation.isPending ? 'Saving…' : 'Save changes'}
                 </Button>

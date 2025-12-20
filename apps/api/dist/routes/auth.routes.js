@@ -20,24 +20,58 @@ const cookieOptions = (maxAge) => ({
 });
 const sendAuthError = (res, status, errorCode, message, details) => res.status(status).json({ success: false, errorCode, message, details });
 const loginSchema = zod_1.z.object({
-    email: zod_1.z.string().email(),
+    loginType: zod_1.z.enum(['ADMIN', 'USER']).default('USER'),
+    email: zod_1.z.string().email().optional(),
+    username: zod_1.z.string().optional(),
     password: zod_1.z.string().min(6),
+}).refine((data) => {
+    if (data.loginType === 'ADMIN') {
+        return data.email && data.email.length > 0;
+    }
+    else {
+        return data.username && data.username.length > 0;
+    }
+}, {
+    message: "Email required for Admin, Username required for User",
+    path: ["loginType"]
 });
 const refreshSchema = zod_1.z.object({ refreshToken: zod_1.z.string().min(10) });
 const logoutSchema = zod_1.z.object({ refreshToken: zod_1.z.string().min(10) });
 const loginHandler = async (req, res) => {
+    console.log('[AUTH] Login attempt:', { body: req.body, headers: req.headers['content-type'] });
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
-        return sendAuthError(res, 400, 'INVALID_PAYLOAD', 'Email dan kata laluan diperlukan.', parsed.error.format());
+        console.log('[AUTH] Validation failed:', parsed.error.format());
+        return sendAuthError(res, 400, 'INVALID_PAYLOAD', 'Validation failed', parsed.error.format());
     }
-    const { email, password } = parsed.data;
-    const user = await prisma_1.default.user.findUnique({ where: { email } });
+    const { loginType, email, username, password } = parsed.data;
+    console.log('[AUTH] Validated credentials:', { loginType, identifier: email || username, passwordLength: password.length });
+    let user;
+    if (loginType === 'ADMIN') {
+        // Admin login with email
+        if (!email) {
+            return sendAuthError(res, 400, 'INVALID_PAYLOAD', 'Email required for Admin login');
+        }
+        user = await prisma_1.default.user.findUnique({ where: { email } });
+    }
+    else {
+        // User login with username
+        if (!username) {
+            return sendAuthError(res, 400, 'INVALID_PAYLOAD', 'Username required for User login');
+        }
+        user = await prisma_1.default.user.findUnique({ where: { username } });
+    }
     if (!user) {
-        return sendAuthError(res, 401, 'INVALID_CREDENTIALS', 'Invalid email or password');
+        const field = loginType === 'ADMIN' ? 'email' : 'username';
+        return sendAuthError(res, 401, 'INVALID_CREDENTIALS', `Invalid ${field} or password`);
+    }
+    // Check user status
+    if (user.status !== 'ACTIVE') {
+        return sendAuthError(res, 401, 'ACCOUNT_INACTIVE', 'Account is not active. Please contact admin.');
     }
     const ok = await (0, auth_2.verifyPassword)(password, user.passwordHash);
     if (!ok) {
-        return sendAuthError(res, 401, 'INVALID_CREDENTIALS', 'Invalid email or password');
+        return sendAuthError(res, 401, 'INVALID_CREDENTIALS', 'Invalid credentials');
     }
     const session = await (0, auth_2.createSession)(user.id);
     const accessToken = (0, auth_2.signAccessToken)(user.id, user.role);
@@ -48,7 +82,14 @@ const loginHandler = async (req, res) => {
     res.cookie('refresh_token', refreshToken, cookieOptions(refreshTtl));
     return res.json({
         success: true,
-        user: { id: user.id, name: user.name, email: user.email, role: user.role },
+        user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            username: user.username,
+            role: user.role,
+            status: user.status
+        },
         accessToken,
         refreshToken,
     });
@@ -99,14 +140,94 @@ const logoutHandler = async (req, res) => {
     res.clearCookie('refresh_token', cookieOptions(0));
     return res.json({ success: true });
 };
+const registerSchema = zod_1.z.object({
+    username: zod_1.z.string().min(3, 'Username minimum 3 characters'),
+    password: zod_1.z.string().min(6, 'Password minimum 6 characters'),
+    confirmPassword: zod_1.z.string(),
+    email: zod_1.z.string().email('Invalid email format'),
+    fullName: zod_1.z.string().min(1, 'Full name is required'),
+    phone: zod_1.z.string().optional(),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"]
+});
+const registerHandler = async (req, res) => {
+    console.log('[AUTH] Registration attempt:', { body: req.body });
+    const parsed = registerSchema.safeParse(req.body);
+    if (!parsed.success) {
+        console.log('[AUTH] Registration validation failed:', parsed.error.format());
+        return sendAuthError(res, 400, 'INVALID_PAYLOAD', 'Validation failed', parsed.error.format());
+    }
+    const { username, password, email, fullName, phone } = parsed.data;
+    try {
+        // Check if username already exists
+        const existingUsername = await prisma_1.default.user.findUnique({ where: { username } });
+        if (existingUsername) {
+            return sendAuthError(res, 409, 'USERNAME_EXISTS', 'Username already exists');
+        }
+        // Check if email already exists
+        const existingEmail = await prisma_1.default.user.findUnique({ where: { email } });
+        if (existingEmail) {
+            return sendAuthError(res, 409, 'EMAIL_EXISTS', 'Email already exists');
+        }
+        // Hash password
+        const passwordHash = await new Promise((resolve, reject) => {
+            const bcrypt = require('bcrypt');
+            bcrypt.hash(password, 10, (err, hash) => {
+                if (err)
+                    reject(err);
+                else
+                    resolve(hash);
+            });
+        });
+        // Create user with PENDING status
+        const user = await prisma_1.default.user.create({
+            data: {
+                username,
+                email,
+                name: fullName,
+                passwordHash,
+                role: 'USER',
+                status: 'PENDING'
+            }
+        });
+        console.log('[AUTH] User registered successfully:', { username, email, status: 'PENDING' });
+        return res.status(201).json({
+            success: true,
+            message: 'Account registered successfully. Please wait for admin approval.',
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                name: user.name,
+                status: user.status
+            }
+        });
+    }
+    catch (error) {
+        console.error('[AUTH] Registration error:', error);
+        return sendAuthError(res, 500, 'REGISTRATION_FAILED', 'Failed to register user');
+    }
+};
 const meHandler = async (req, res) => {
     const userId = req.user.sub;
     const user = await prisma_1.default.user.findUnique({ where: { id: userId } });
     if (!user)
         return sendAuthError(res, 404, 'USER_NOT_FOUND', 'User not found');
-    return res.json({ success: true, id: user.id, email: user.email, name: user.name, role: user.role });
+    return res.json({
+        success: true,
+        user: {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            name: user.name,
+            role: user.role,
+            status: user.status
+        }
+    });
 };
 router.post('/login', loginHandler);
+router.post('/register', registerHandler);
 router.post('/refresh', refreshHandler);
 router.post('/logout', logoutHandler);
 router.get('/me', auth_1.requireAuth, meHandler);

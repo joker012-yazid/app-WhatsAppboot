@@ -12,7 +12,7 @@ type AuthContextValue = {
   error: string | null;
   accessToken: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -54,11 +54,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const fetchMe = useCallback(async () => {
-    const me = await apiGet<{ success?: boolean; id: string; name: string; email: string; role: string }>('/api/auth/me');
-    setUser(me);
+    const response = await apiGet<{ success: boolean; user: { id: string; name: string; email: string; role: string } }>('/api/auth/me');
+    console.log('[AUTH] fetchMe response:', response);
+    const user = response.user || response; // Handle both old and new response formats
+    setUser(user);
     setStatus('authenticated');
     setError(null);
-    return me;
+    return user;
   }, []);
 
   const tryRefresh = useCallback(async () => {
@@ -81,15 +83,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [clearTokens, loadStoredTokens, storeTokens]);
 
-  const login = useCallback<AuthContextValue['login']>(async (email, password) => {
+  const login = useCallback<AuthContextValue['login']>(async (identifier, password) => {
     setError(null);
     setStatus('authenticating');
     try {
+      // Determine if identifier is email or username
+      const isEmail = identifier.includes('@');
+
+      // Build request body
+      const requestBody: any = {
+        password,
+      };
+
+      // Add either email or username
+      if (isEmail) {
+        requestBody.email = identifier;
+      } else {
+        requestBody.username = identifier;
+      }
+
       const res = await apiPost<{
         user: { id: string; name: string; email: string; role: string };
         accessToken?: string;
         refreshToken?: string;
-      }>('/api/auth/login', { email, password });
+      }>('/api/auth/login', requestBody);
       if (res?.accessToken) {
         storeTokens(res.accessToken, res.refreshToken ?? null);
         setAccessToken(res.accessToken);

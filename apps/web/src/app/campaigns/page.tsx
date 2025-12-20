@@ -117,15 +117,15 @@ export default function CampaignsPage() {
   const statusClass = (status: string) => {
     switch (status) {
       case 'RUNNING':
-        return 'bg-emerald-100 text-emerald-700';
+        return 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300';
       case 'PAUSED':
-        return 'bg-yellow-100 text-yellow-700';
+        return 'bg-amber-500/20 text-amber-700 dark:text-amber-300';
       case 'COMPLETED':
-        return 'bg-blue-100 text-blue-700';
+        return 'bg-blue-500/20 text-blue-700 dark:text-blue-300';
       case 'CANCELLED':
-        return 'bg-gray-200 text-gray-700';
+        return 'bg-muted text-muted-foreground';
       default:
-        return 'bg-slate-100 text-slate-700';
+        return 'bg-muted text-muted-foreground';
     }
   };
 

@@ -92,7 +92,7 @@ export default function CustomersPage() {
           />
         </div>
 
-        {!hasAnyRole(user?.role, ['ADMIN', 'MANAGER']) ? (
+        {!hasAnyRole(user?.role, ['ADMIN', 'ADMIN']) ? (
           <div className="rounded-md border border-amber-400/60 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
             You have read-only access to customers. Contact an administrator for edit permissions.
           </div>
@@ -111,7 +111,7 @@ export default function CustomersPage() {
                 </div>
                 <p className="text-sm font-medium text-slate-100">No customers yet</p>
                 <p className="text-xs text-slate-400">When you add customers, they will appear here.</p>
-                {hasAnyRole(user?.role, ['ADMIN', 'MANAGER']) ? (
+                {hasAnyRole(user?.role, ['ADMIN', 'ADMIN']) ? (
                   <Button size="sm" className="mt-2" asChild>
                     <Link href="/customers">Add your first customer</Link>
                   </Button>
@@ -144,7 +144,7 @@ export default function CustomersPage() {
                             <Button asChild size="sm" variant="outline">
                               <a href={`/customers/${c.id}`}>View</a>
                             </Button>
-                            {hasAnyRole(user?.role, ['ADMIN', 'MANAGER']) ? (
+                            {hasAnyRole(user?.role, ['ADMIN', 'ADMIN']) ? (
                               <Button
                                 size="sm"
                                 variant="destructive"
@@ -178,7 +178,7 @@ export default function CustomersPage() {
             )}
           </div>
 
-          {hasAnyRole(user?.role, ['ADMIN', 'MANAGER']) ? (
+          {hasAnyRole(user?.role, ['ADMIN', 'ADMIN']) ? (
             <div className="rounded-xl border bg-card/80 p-5 shadow-sm backdrop-blur">
               <h2 className="mb-3 text-lg font-semibold text-slate-50">New customer</h2>
               <form

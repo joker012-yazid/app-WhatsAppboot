@@ -5,17 +5,17 @@ import { createBackup, getBackupFile, listBackups, restoreBackup } from '../serv
 
 const router = Router();
 
-router.get('/', requireAuth, requireRole('ADMIN', 'MANAGER'), async (_req, res) => {
+router.get('/', requireAuth, requireRole('ADMIN'), async (_req, res) => {
   const backups = await listBackups();
   return res.json(backups);
 });
 
-router.post('/', requireAuth, requireRole('ADMIN', 'MANAGER'), async (_req, res) => {
+router.post('/', requireAuth, requireRole('ADMIN'), async (_req, res) => {
   const backup = await createBackup({ manual: true });
   return res.status(201).json(backup);
 });
 
-router.get('/:filename/download', requireAuth, requireRole('ADMIN', 'MANAGER'), async (req, res) => {
+router.get('/:filename/download', requireAuth, requireRole('ADMIN'), async (req, res) => {
   try {
     const { path } = await getBackupFile(req.params.filename);
     return res.download(path, req.params.filename);
@@ -24,7 +24,7 @@ router.get('/:filename/download', requireAuth, requireRole('ADMIN', 'MANAGER'), 
   }
 });
 
-router.post('/:filename/restore', requireAuth, requireRole('ADMIN', 'MANAGER'), async (req, res) => {
+router.post('/:filename/restore', requireAuth, requireRole('ADMIN'), async (req, res) => {
   try {
     const result = await restoreBackup(req.params.filename);
     return res.json({

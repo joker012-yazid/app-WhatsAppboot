@@ -5,7 +5,7 @@ import env from '../config/env';
 
 export type AccessPayload = {
   sub: string; // userId
-  role: 'ADMIN' | 'TECHNICIAN' | 'CASHIER' | 'MANAGER';
+  role: 'ADMIN' | 'USER';
   iat?: number;
   exp?: number;
 };

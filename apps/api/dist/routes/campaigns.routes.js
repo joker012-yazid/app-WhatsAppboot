@@ -65,7 +65,7 @@ const handleError = (res, error) => {
     console.error('[campaign] unexpected error', error);
     return res.status(500).json({ message: 'Internal server error' });
 };
-router.use(auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER'));
+router.use(auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN'));
 router.get('/', async (req, res) => {
     const parsedStatus = statusQuerySchema.safeParse(req.query);
     if (!parsedStatus.success)

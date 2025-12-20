@@ -1,5 +1,10 @@
 // Always hit the backend API (port 4000 by default)
-const getApiBase = () => process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+// When NEXT_PUBLIC_API_BASE_URL is empty string, use empty string (not localhost:4000)
+// This makes all requests relative URLs that route through Next.js proxy
+const getApiBase = () => {
+  // Use ?? instead of || to allow empty string
+  return process.env.NEXT_PUBLIC_API_BASE_URL ?? process.env.NEXT_PUBLIC_API_URL ?? '';
+};
 
 export const API_BASE = getApiBase();
 
@@ -142,11 +147,18 @@ export const apiGet = <T = unknown>(path: string) => apiFetch<T>(path, { method:
 export const apiPut = <T = unknown>(path: string, body?: unknown) =>
   apiFetch<T>(path, { method: 'PUT', body });
 
-export const apiDelete = <T = unknown>(path: string) => apiFetch<T>(path, { method: 'DELETE' });
+export const apiDelete = <T = unknown>(path: string, body?: unknown) =>
+  apiFetch<T>(path, { method: 'DELETE', body });
 
 export async function apiUpload<T = unknown>(path: string, form: FormData): Promise<T> {
+  const storage = getStorage();
+  const accessToken = storage?.getItem(ACCESS_TOKEN_KEY) || null;
+
   const res = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
+    headers: {
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
     body: form,
     credentials: 'include',
   });
@@ -158,3 +170,12 @@ export async function apiUpload<T = unknown>(path: string, form: FormData): Prom
   }
   return data;
 }
+
+// Job-specific API functions
+export const claimJob = async (jobId: string) => {
+  return apiPut(`/api/jobs/${jobId}/claim`);
+};
+
+export const debugJob = async (jobId: string) => {
+  return apiGet(`/api/jobs/debug/${jobId}`);
+};

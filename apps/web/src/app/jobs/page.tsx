@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState } from 'react';
 import AuthGuard from '@/components/auth-guard';
-import { apiGet, apiDelete, apiPut } from '@/lib/api';
+import { apiGet, apiDelete, apiPut, claimJob } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/toast-provider';
 import { useAuth } from '@/lib/auth';
@@ -16,7 +16,7 @@ import { JobKanbanBoard } from '@/components/job-kanban-board';
 type Job = {
   id: string;
   title: string;
-  status: 'PENDING' | 'QUOTED' | 'APPROVED' | 'REJECTED' | 'IN_PROGRESS' | 'COMPLETED';
+  status: 'AWAITING_QUOTE' | 'QUOTATION_SENT' | 'APPROVED' | 'REPAIRING' | 'COMPLETED' | 'CANCELLED';
   priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
   customer: { id: string; name: string };
   device: { id: string; deviceType: string; brand?: string | null; model?: string | null };
@@ -25,6 +25,9 @@ type Job = {
   photoCount?: number;
   quotedAmount?: number | null;
   description?: string | null;
+  ownerUserId?: string | null;
+  ownerName?: string | null;
+  isOwner?: boolean;
 };
 
 export default function JobsPage() {
@@ -40,12 +43,29 @@ export default function JobsPage() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ jobId, status }: { jobId: string; status: Job['status'] }) => {
+      const job = jobs.find(j => j.id === jobId);
       console.log('Updating job:', jobId, 'to status:', status);
+
+      // Check if this is a job claim (from AWAITING_QUOTE to QUOTATION_SENT)
+      if (job && job.status === 'AWAITING_QUOTE' && status === 'QUOTATION_SENT' && !job.ownerUserId) {
+        console.log('Job claim detected for:', job.title);
+      }
+
       return apiPut(`/api/jobs/${jobId}`, { status });
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ['jobs'] });
-      toast.success('Job status updated');
+
+      const job = jobs.find(j => j.id === variables.jobId);
+
+      // Check if job was claimed (moved from AWAITING_QUOTE to QUOTATION_SENT)
+      if (job && job.status === 'AWAITING_QUOTE' && variables.status === 'QUOTATION_SENT' && !job.ownerUserId) {
+        toast.success(`🎯 Job "${job.title}" telah berjaya dituntut! Sekarang ia adalah milik anda.`, {
+          duration: 5000,
+        });
+      } else {
+        toast.success('Job status updated');
+      }
     },
     onError: (e: any) => {
       console.error('Update error:', e);
@@ -70,10 +90,27 @@ export default function JobsPage() {
     },
   });
 
+  const claimJobMutation = useMutation({
+    mutationFn: async (jobId: string) => {
+      return claimJob(jobId);
+    },
+    onSuccess: (_, jobId) => {
+      toast.success('Job successfully claimed!');
+      qc.invalidateQueries({ queryKey: ['jobs'] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Failed to claim job');
+    },
+  });
+
   const jobs = jobsQuery.data || [];
 
   const handleStatusChange = async (jobId: string, newStatus: Job['status']) => {
     await updateStatusMutation.mutateAsync({ jobId, status: newStatus });
+  };
+
+  const handleClaimJob = async (jobId: string) => {
+    await claimJobMutation.mutateAsync(jobId);
   };
 
   return (
@@ -120,7 +157,7 @@ export default function JobsPage() {
           />
         </div>
 
-        {!hasAnyRole(user?.role, ['ADMIN', 'MANAGER', 'TECHNICIAN']) ? (
+        {!hasAnyRole(user?.role, ['ADMIN', 'USER']) ? (
           <div className="rounded-md border border-amber-400/60 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
             You have read-only access to jobs. Contact an administrator for edit permissions.
           </div>
@@ -145,6 +182,7 @@ export default function JobsPage() {
                   <JobKanbanBoard
                     jobs={jobs}
                     onStatusChange={handleStatusChange}
+                    onClaimJob={handleClaimJob}
                     onDelete={(id) => deleteMutation.mutate(id)}
                     userRole={user?.role}
                   />
@@ -196,7 +234,7 @@ export default function JobsPage() {
                               <Button asChild size="sm" variant="outline">
                                 <Link href={`/jobs/${j.id}`}>View</Link>
                               </Button>
-                              {hasAnyRole(user?.role, ['ADMIN', 'MANAGER']) ? (
+                              {hasAnyRole(user?.role, ['ADMIN']) ? (
                                 <Button
                                   size="sm"
                                   variant="destructive"

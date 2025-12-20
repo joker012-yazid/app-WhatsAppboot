@@ -18,7 +18,7 @@ type JobDetail = {
     id: string;
     title: string;
     description?: string | null;
-    status: 'PENDING' | 'QUOTED' | 'APPROVED' | 'REJECTED' | 'IN_PROGRESS' | 'COMPLETED';
+    status: 'AWAITING_QUOTE' | 'QUOTATION_SENT' | 'APPROVED' | 'CANCELLED' | 'REPAIRING' | 'COMPLETED';
     priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
     quotedAmount?: number | null;
     approvedAmount?: number | null;
@@ -46,18 +46,18 @@ export default function JobDetailPage() {
   const job = q.data?.job;
   const qrUrl = q.data?.qr_url || '';
 
-  const [status, setStatus] = useState<JobDetail['job']['status']>('PENDING');
+  const [status, setStatus] = useState<JobDetail['job']['status']>('AWAITING_QUOTE');
   const [priority, setPriority] = useState<JobDetail['job']['priority']>('NORMAL');
   const [dueDate, setDueDate] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const statusOptions: JobDetail['job']['status'][] = [
-    'PENDING',
-    'QUOTED',
+    'AWAITING_QUOTE',
+    'QUOTATION_SENT',
     'APPROVED',
-    'REJECTED',
-    'IN_PROGRESS',
+    'CANCELLED',
+    'REPAIRING',
     'COMPLETED',
   ];
 
@@ -126,7 +126,35 @@ export default function JobDetailPage() {
       await refetchHistory();
       toast.success('History entry deleted');
     },
-    onError: (e: any) => toast.error(e?.message || 'Failed to delete history entry'),
+    onError: (e: any) => {
+      console.error('Delete history error:', {
+        status: e?.status,
+        message: e?.message,
+        historyId,
+        jobId: id
+      });
+
+      // Handle different error types appropriately
+      if (e?.status === 404 || e?.message?.includes('not found')) {
+        // History entry doesn't exist - refresh and show info message
+        refetchHistory();
+        toast.info('History entry may have already been deleted');
+      } else if (e?.status === 502 || e?.message?.includes('Bad Gateway')) {
+        // Gateway error - show retry option
+        toast.error('Network issue - Please try again', {
+          action: {
+            label: 'Retry',
+            onClick: () => deleteHistoryMutation.mutate(historyId)
+          }
+        });
+      } else if (e?.status === 401 || e?.message?.includes('Unauthorized')) {
+        // Authentication issue
+        toast.error('Session expired - Please refresh and login again');
+      } else {
+        // Generic error
+        toast.error(e?.message || 'Failed to delete history entry');
+      }
+    },
   });
 
   const updateHistoryMutation = useMutation({
@@ -307,7 +335,7 @@ export default function JobDetailPage() {
                         Open link
                       </a>
                     </Button>
-                    {hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN']) ? (
+                    {hasAnyRole(user?.role, ['ADMIN','USER']) ? (
                       <Button variant="secondary" type="button" onClick={() => renewQr.mutate()} disabled={renewQr.isPending}>
                         {renewQr.isPending ? 'Reissuing…' : 'Reissue QR'}
                       </Button>
@@ -328,16 +356,16 @@ export default function JobDetailPage() {
               {/* Main Status Selection */}
               <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
                 {[
-                  { value: 'PENDING', label: 'Diterima', icon: '📥', color: 'amber' },
-                  { value: 'IN_PROGRESS', label: 'Sedang Dibaiki', icon: '🔧', color: 'cyan' },
-                  { value: 'COMPLETED', label: 'Siap Ambil', icon: '✅', color: 'green' },
-                  { value: 'REJECTED', label: 'Tidak Dapat Dibaiki', icon: '❌', color: 'red' },
+                  { value: 'AWAITING_QUOTE', label: 'Menunggu Quote', icon: '📝', color: 'amber' },
+                  { value: 'QUOTATION_SENT', label: 'Quote Dihantar', icon: '📤', color: 'blue' },
+                  { value: 'APPROVED', label: 'Disetujui', icon: '✅', color: 'green' },
+                  { value: 'REPAIRING', label: 'Sedang Dibaiki', icon: '🔧', color: 'cyan' },
                 ].map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
-                    onClick={() => hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN']) && setStatus(opt.value as any)}
-                    disabled={!hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN'])}
+                    onClick={() => hasAnyRole(user?.role, ['ADMIN','USER']) && setStatus(opt.value as any)}
+                    disabled={!hasAnyRole(user?.role, ['ADMIN','USER'])}
                     className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-center transition-all ${
                       status === opt.value
                         ? opt.color === 'amber' ? 'border-amber-500 bg-amber-500/20 text-amber-300'
@@ -417,7 +445,7 @@ export default function JobDetailPage() {
                         setFiles(list);
                       }}
                       className="md:col-span-2 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground file:mr-4 file:rounded-md file:border-0 file:bg-cyan-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-cyan-700"
-                      disabled={!hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN'])}
+                      disabled={!hasAnyRole(user?.role, ['ADMIN','USER'])}
                     />
                     <input
                       type="text"
@@ -425,7 +453,7 @@ export default function JobDetailPage() {
                       value={label}
                       onChange={(e) => setLabel(e.target.value)}
                       className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-                      disabled={!hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN'])}
+                      disabled={!hasAnyRole(user?.role, ['ADMIN','USER'])}
                     />
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">PNG/JPG/WebP up to 5 MB each. Max 6 files. <span className="text-slate-500">Boleh skip jika tiada photos untuk upload.</span></p>
@@ -436,8 +464,8 @@ export default function JobDetailPage() {
                     </div>
                   )}
                 </div>
-                {/* Work Phase - Only show when IN_PROGRESS */}
-                {(status === 'IN_PROGRESS' || status === 'QUOTED' || status === 'APPROVED') && (
+                {/* Work Phase - Only show when REPAIRING */}
+                {(status === 'REPAIRING' || status === 'QUOTATION_SENT' || status === 'APPROVED') && (
                   <div className="rounded-lg border border-cyan-500/30 bg-cyan-950/20 p-4">
                     <h3 className="mb-3 text-sm font-semibold text-cyan-300">🔧 Fasa Kerja Semasa</h3>
                     <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
@@ -459,12 +487,12 @@ export default function JobDetailPage() {
                             key={phase.id}
                             type="button"
                             onClick={() => {
-                              if (!hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN'])) return;
+                              if (!hasAnyRole(user?.role, ['ADMIN','USER'])) return;
                               // Update diagnosis with phase marker
                               const cleanDiagnosis = diagnosis.replace(/\[PHASE:\w+\]\s*/g, '');
                               setDiagnosis(`[PHASE:${phase.id}] ${cleanDiagnosis}`);
                             }}
-                            disabled={!hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN'])}
+                            disabled={!hasAnyRole(user?.role, ['ADMIN','USER'])}
                             className={`flex flex-col items-center gap-1 rounded-lg border p-2 text-center transition-all ${
                               isActive
                                 ? 'border-cyan-400 bg-cyan-500/30 text-cyan-200 ring-2 ring-cyan-500/50'
@@ -482,8 +510,8 @@ export default function JobDetailPage() {
                   </div>
                 )}
 
-                {/* Cannot Repair Section - Only show when REJECTED */}
-                {status === 'REJECTED' && (
+                {/* Cannot Repair Section - Only show when CANCELLED */}
+                {status === 'CANCELLED' && (
                   <div className="rounded-lg border border-red-500/30 bg-red-950/20 p-4">
                     <h3 className="mb-2 text-sm font-semibold text-red-300">❌ Sebab Tidak Dapat Dibaiki</h3>
                     <p className="mb-2 text-xs text-red-400">Sila nyatakan sebab kenapa barang ini tidak dapat dibaiki:</p>
@@ -499,7 +527,7 @@ export default function JobDetailPage() {
                           key={reason}
                           type="button"
                           onClick={() => {
-                            if (!hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN'])) return;
+                            if (!hasAnyRole(user?.role, ['ADMIN','USER'])) return;
                             const cleanDiagnosis = diagnosis.replace(/\[REJECT:.*?\]\s*/g, '');
                             setDiagnosis(`[REJECT:${reason}] ${cleanDiagnosis}`);
                           }}
@@ -526,7 +554,7 @@ export default function JobDetailPage() {
                       value={priority}
                       onChange={(e) => setPriority(e.target.value as any)}
                       className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-                      disabled={!hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN'])}
+                      disabled={!hasAnyRole(user?.role, ['ADMIN','USER'])}
                     >
                       {priorityOptions.map((p) => {
                         const priorityLabels: Record<string, string> = {
@@ -553,7 +581,7 @@ export default function JobDetailPage() {
                       value={dueDate}
                       onChange={(e) => setDueDate(e.target.value)}
                       className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
-                      disabled={!hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN'])}
+                      disabled={!hasAnyRole(user?.role, ['ADMIN','USER'])}
                     />
                   </div>
                 </div>
@@ -574,7 +602,7 @@ export default function JobDetailPage() {
                     }}
                     placeholder="Masukkan catatan kerja, masalah yang ditemui, parts yang diganti, dll..."
                     className="h-28 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
-                    disabled={!hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN'])}
+                    disabled={!hasAnyRole(user?.role, ['ADMIN','USER'])}
                   />
                   <p className="text-xs text-muted-foreground">
                     Catatan ini akan dipaparkan kepada customer dalam timeline progress.
@@ -585,7 +613,7 @@ export default function JobDetailPage() {
                   <p className="text-sm text-red-500">{error}</p>
                 ) : null}
                 
-                {hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN']) ? (
+                {hasAnyRole(user?.role, ['ADMIN','USER']) ? (
                   <div className="flex gap-2">
                     <Button 
                       type="submit" 
@@ -616,7 +644,7 @@ export default function JobDetailPage() {
                         <img src={p.url} alt={p.label || 'Job photo'} className="h-32 w-full rounded-md object-cover border border-slate-700" />
                         <figcaption className="flex items-center justify-between text-xs text-muted-foreground">
                           <span className="truncate">{p.label || '—'}</span>
-                          {hasAnyRole(user?.role, ['ADMIN','MANAGER','TECHNICIAN']) ? (
+                          {hasAnyRole(user?.role, ['ADMIN','USER']) ? (
                             <button
                               className="rounded border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-red-400 hover:bg-red-500/20 transition-colors"
                               onClick={async () => {
@@ -658,18 +686,18 @@ export default function JobDetailPage() {
                   <span className="text-muted-foreground">Status:</span>
                   <span className={`font-medium ${
                     job?.status === 'COMPLETED' ? 'text-green-400' :
-                    job?.status === 'IN_PROGRESS' ? 'text-cyan-400' :
-                    job?.status === 'REJECTED' ? 'text-red-400' :
+                    job?.status === 'REPAIRING' ? 'text-cyan-400' :
+                    job?.status === 'CANCELLED' ? 'text-red-400' :
                     job?.status === 'APPROVED' ? 'text-emerald-400' :
                     'text-amber-400'
                   }`}>
                     {(() => {
                       const labels: Record<string, string> = {
-                        PENDING: 'Checked-In',
-                        QUOTED: 'Diagnosing',
+                        AWAITING_QUOTE: 'Checked-In',
+                        QUOTATION_SENT: 'Diagnosing',
                         APPROVED: 'Approved',
-                        REJECTED: 'Declined',
-                        IN_PROGRESS: 'In Repair',
+                        CANCELLED: 'Declined',
+                        REPAIRING: 'In Repair',
                         COMPLETED: 'Closed',
                       };
                       return labels[job?.status || ''] || job?.status || '-';
@@ -908,7 +936,7 @@ export default function JobDetailPage() {
                                   </div>
                                 )}
                                 
-                                {hasAnyRole(user?.role, ['ADMIN', 'MANAGER', 'TECHNICIAN']) && (
+                                {hasAnyRole(user?.role, ['ADMIN', 'ADMIN', 'USER']) && (
                                   <div className="flex gap-2 mt-2">
                                     <Button
                                       size="sm"

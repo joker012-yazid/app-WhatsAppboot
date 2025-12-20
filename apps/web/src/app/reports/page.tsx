@@ -2,6 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+import {
   Activity,
   AlertTriangle,
   BarChart3,
@@ -230,22 +239,43 @@ export default function ReportsPage() {
                   <span className="font-medium">Revenue trend</span>
                   <span className="text-muted-foreground">Last {data.range.days} days</span>
                 </div>
-                <div className="mt-4 flex h-40 items-end gap-3">
-                  {data.sales.perDay.map((point) => {
-                    const height = Math.max((point.revenue / maxRevenue) * 100, 6);
-                    return (
-                      <div key={point.date} className="flex flex-1 flex-col items-center gap-2">
-                        <div className="flex h-32 w-full items-end justify-center rounded bg-primary/10">
-                          <div
-                            className="w-full rounded bg-primary"
-                            style={{ height: `${height}%` }}
-                            title={`${formatCurrency(point.revenue)} / ${point.jobs} jobs`}
-                          />
-                        </div>
-                        <p className="text-[11px] text-muted-foreground">{dateFormatter.format(new Date(point.date))}</p>
-                      </div>
-                    );
-                  })}
+                <div className="mt-4 h-40">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={data.sales.perDay}
+                      margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 11 }}
+                        tickFormatter={(value) => dateFormatter.format(new Date(value))}
+                        stroke="hsl(var(--muted-foreground))"
+                      />
+                      <YAxis
+                        hide
+                        domain={[0, 'dataMax']}
+                      />
+                      <Tooltip
+                        formatter={(value: number, name: string) => [
+                          name === 'revenue' ? formatCurrency(value) : value,
+                          name === 'revenue' ? 'Revenue' : 'Jobs'
+                        ]}
+                        labelFormatter={(label) => dateFormatter.format(new Date(label))}
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                        }}
+                      />
+                      <Bar
+                        dataKey="revenue"
+                        fill="hsl(var(--primary))"
+                        radius={[4, 4, 0, 0]}
+                        maxBarSize={40}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
               <div className="rounded-xl border bg-card p-4">
@@ -378,22 +408,41 @@ export default function ReportsPage() {
                   <span className="font-medium">Acquisition trend</span>
                   <BarChart3 className="h-4 w-4 text-primary" />
                 </div>
-                <div className="mt-4 flex h-32 items-end gap-3">
-                  {data.customers.trend.map((point) => {
-                    const height = Math.max((point.newCustomers / maxCustomerAdds) * 100, 8);
-                    return (
-                      <div key={point.date} className="flex flex-1 flex-col items-center gap-2">
-                        <div className="flex h-24 w-full items-end justify-center rounded bg-muted/40">
-                          <div
-                            className="w-full rounded bg-primary/70"
-                            style={{ height: `${height}%` }}
-                            title={`${point.newCustomers} new customers`}
-                          />
-                        </div>
-                        <p className="text-[11px] text-muted-foreground">{dateFormatter.format(new Date(point.date))}</p>
-                      </div>
-                    );
-                  })}
+                <div className="mt-4 h-32">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={data.customers.trend}
+                      margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 11 }}
+                        tickFormatter={(value) => dateFormatter.format(new Date(value))}
+                        stroke="hsl(var(--muted-foreground))"
+                      />
+                      <YAxis
+                        hide
+                        domain={[0, 'dataMax']}
+                      />
+                      <Tooltip
+                        formatter={(value: number) => [value, 'New Customers']}
+                        labelFormatter={(label) => dateFormatter.format(new Date(label))}
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                        }}
+                      />
+                      <Bar
+                        dataKey="newCustomers"
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.7}
+                        radius={[4, 4, 0, 0]}
+                        maxBarSize={40}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
             </section>

@@ -30,11 +30,11 @@ router.get('/', requireAuth, async (_req, res) => {
         where: { status: 'COMPLETED', updatedAt: { gte: todayStart } },
         _sum: { approvedAmount: true },
       }),
-      prisma.job.count({ where: { status: 'PENDING' } }),
-      prisma.job.count({ where: { status: { in: ['APPROVED', 'IN_PROGRESS'] } } }),
+      prisma.job.count({ where: { status: 'AWAITING_QUOTE' } }),
+      prisma.job.count({ where: { status: { in: ['APPROVED', 'REPAIRING'] } } }),
       prisma.customer.count({ where: { createdAt: { gte: todayStart } } }),
       // Count of high-priority jobs needing immediate attention (not an inventory/stock metric)
-      prisma.job.count({ where: { priority: 'URGENT', status: { in: ['PENDING', 'APPROVED', 'IN_PROGRESS'] } } }),
+      prisma.job.count({ where: { priority: 'URGENT', status: { in: ['AWAITING_QUOTE', 'APPROVED', 'REPAIRING'] } } }),
       prisma.campaign.count({ where: { status: { in: ['SCHEDULED', 'RUNNING'] } } }),
       prisma.job.findMany({
         where: { status: 'COMPLETED', updatedAt: { gte: sevenDaysAgo } },
@@ -150,12 +150,12 @@ router.get('/', requireAuth, async (_req, res) => {
       salesTrend,
       customerGrowth,
       jobsByStatus: {
-        PENDING: statusCounts.PENDING || 0,
-        QUOTED: statusCounts.QUOTED || 0,
+        AWAITING_QUOTE: statusCounts.AWAITING_QUOTE || 0,
+        QUOTATION_SENT: statusCounts.QUOTATION_SENT || 0,
         APPROVED: statusCounts.APPROVED || 0,
-        IN_PROGRESS: statusCounts.IN_PROGRESS || 0,
+        REPAIRING: statusCounts.REPAIRING || 0,
         COMPLETED: statusCounts.COMPLETED || 0,
-        REJECTED: statusCounts.REJECTED || 0,
+        CANCELLED: statusCounts.CANCELLED || 0,
       },
       recentActivities,
     });

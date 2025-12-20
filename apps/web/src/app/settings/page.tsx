@@ -19,6 +19,13 @@ import {
   ShieldCheck,
   Smartphone,
   Sparkles,
+  Users,
+  UserCheck,
+  UserX,
+  Edit,
+  Trash2,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -31,6 +38,7 @@ import { hasAnyRole } from '@/lib/roles';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { SectionHeader } from '@/components/section-header';
 import { useWhatsappSession } from '@/hooks/use-whatsapp-session';
+import UserManagementTab from '@/components/user-management-tab';
 import { cn } from '@/lib/utils';
 
 const defaultGeneral = {
@@ -94,7 +102,8 @@ export default function SettingsPage() {
   const toast = useToast();
   const { user, status: authStatus, loading: authLoading } = useAuth();
   const router = useRouter();
-  const canEdit = hasAnyRole(user?.role, ['ADMIN', 'MANAGER']);
+  const canEdit = hasAnyRole(user?.role, ['ADMIN']);
+const isAdmin = hasAnyRole(user?.role, ['ADMIN']);
   const qc = useQueryClient();
 
   const [general, setGeneral] = useState(defaultGeneral);
@@ -103,7 +112,7 @@ export default function SettingsPage() {
   const [backup, setBackup] = useState(defaultBackup);
   const [keywordsText, setKeywordsText] = useState('STOP, UNSUBSCRIBE');
   const [savingKey, setSavingKey] = useState<SettingKey | null>(null);
-  const [activeTab, setActiveTab] = useState<'general' | 'whatsapp' | 'ai' | 'backup'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'whatsapp' | 'ai' | 'backup' | 'users'>('general');
   const [debugOpen, setDebugOpen] = useState(false);
   const {
     status: waStatus,
@@ -280,6 +289,7 @@ export default function SettingsPage() {
                   { id: 'whatsapp', label: 'WhatsApp' },
                   { id: 'ai', label: 'AI & Automation' },
                   { id: 'backup', label: 'Backup' },
+                  ...(isAdmin ? [{ id: 'users', label: 'User Management' }] : []),
                 ]}
                 value={activeTab}
                 onValueChange={(id) => setActiveTab(id as typeof activeTab)}
@@ -1010,6 +1020,11 @@ export default function SettingsPage() {
                   )}
                 </div>
               </section>
+            ) : null}
+
+            {/* User Management Tab - Admin only */}
+            {activeTab === 'users' && isAdmin ? (
+              <UserManagementTab />
             ) : null}
           </div>
         )}

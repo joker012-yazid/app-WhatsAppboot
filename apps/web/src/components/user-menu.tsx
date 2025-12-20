@@ -86,7 +86,7 @@ export function UserMenu() {
             {user.name || 'User'}
           </p>
           <p className="text-[10px] text-muted-foreground leading-tight">
-            {user.role || 'Member'}
+            {user.role}
           </p>
         </div>
 

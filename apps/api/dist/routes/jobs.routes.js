@@ -26,7 +26,7 @@ const createSchema = zod_1.z.object({
 const updateSchema = zod_1.z.object({
     title: zod_1.z.string().optional(),
     description: zod_1.z.string().optional().or(zod_1.z.literal('')),
-    status: zod_1.z.enum(['PENDING', 'QUOTED', 'APPROVED', 'REJECTED', 'IN_PROGRESS', 'COMPLETED']).optional(),
+    status: zod_1.z.enum(['AWAITING_QUOTE', 'QUOTATION_SENT', 'APPROVED', 'REPAIRING', 'COMPLETED', 'CANCELLED']).optional(),
     priority: zod_1.z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']).optional(),
     quotedAmount: zod_1.z.number().nullable().optional(),
     approvedAmount: zod_1.z.number().nullable().optional(),
@@ -35,6 +35,12 @@ const updateSchema = zod_1.z.object({
 });
 // Utilities
 const buildQrUrl = (req, token) => {
+    // Use PUBLIC_BASE_URL from environment if available, otherwise fallback to request host
+    const publicBaseUrl = process.env.PUBLIC_BASE_URL;
+    if (publicBaseUrl) {
+        return `${publicBaseUrl}/public/progress/index.html?token=${token}`;
+    }
+    // Fallback to dynamic host detection
     const host = req.get('host') || 'localhost:4000';
     const proto = req.headers['x-forwarded-proto']?.toString() || req.protocol || 'http';
     return `${proto}://${host}/public/progress/index.html?token=${token}`;
@@ -103,11 +109,11 @@ router.post('/register/:token', async (req, res) => {
             }
         });
     }
-    // Update job status to PENDING (customer has registered)
+    // Update job status to AWAITING_QUOTE (customer has registered)
     await prisma_1.default.job.update({
         where: { id: job.id },
         data: {
-            status: 'PENDING',
+            status: 'AWAITING_QUOTE',
             description: deviceNotes || job.description
         }
     });
@@ -141,9 +147,7 @@ router.get('/progress/:token', async (req, res) => {
         where: { jobId: job.id },
         orderBy: { createdAt: 'desc' },
     });
-    // Get photos with URLs
-    const host = req.get('host') || 'localhost:4000';
-    const proto = req.headers['x-forwarded-proto']?.toString() || req.protocol || 'http';
+    // Get photos with URLs (relative paths for proxy compatibility)
     const photosRaw = await prisma_1.default.jobPhoto.findMany({
         where: { jobId: job.id },
         orderBy: { createdAt: 'desc' }
@@ -151,7 +155,7 @@ router.get('/progress/:token', async (req, res) => {
     const photos = photosRaw.map((p) => ({
         id: p.id,
         label: p.label,
-        url: `${proto}://${host}${p.filePath.startsWith('/') ? '' : '/'}${p.filePath}`,
+        url: p.filePath.startsWith('/') ? p.filePath : `/${p.filePath}`,
         createdAt: p.createdAt,
     }));
     return res.json({
@@ -180,7 +184,28 @@ router.get('/progress/:token', async (req, res) => {
 // Authenticated routes
 router.get('/', auth_1.requireAuth, async (req, res) => {
     const { status, customer, from, to } = req.query;
+    const currentUser = req.user; // User info dari requireAuth middleware
     const where = {};
+    // Filter berdasarkan ownership
+    if (currentUser.role === 'ADMIN') {
+        // Admin nampak semua jobs
+        // No additional filter needed
+    }
+    else {
+        // User biasa - apply ownership logic
+        where.OR = [
+            // Jobs di AWAITING_QUOTE yang belum ada owner (boleh diambil sesiapa)
+            {
+                status: 'AWAITING_QUOTE',
+                ownerUserId: null
+            },
+            // Jobs yang user ni adalah owner
+            {
+                ownerUserId: currentUser.id
+            }
+        ];
+    }
+    // Additional filters
     if (status)
         where.status = status;
     if (customer)
@@ -193,29 +218,42 @@ router.get('/', auth_1.requireAuth, async (req, res) => {
             created.lte = new Date(to);
         where.createdAt = created;
     }
-    const host = req.get('host') || 'localhost:4000';
-    const proto = req.headers['x-forwarded-proto']?.toString() || req.protocol || 'http';
     const jobs = await prisma_1.default.job.findMany({
         where,
         include: {
             customer: true,
             device: true,
+            owner: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true
+                }
+            },
             photos: { take: 1, orderBy: { createdAt: 'desc' } },
             _count: { select: { photos: true } },
         },
         orderBy: { createdAt: 'desc' },
     });
     const data = jobs.map((j) => {
-        const thumb = j.photos?.[0]
-            ? `${proto}://${host}${j.photos[0].filePath.startsWith('/') ? '' : '/'}${j.photos[0].filePath}`
+        // Use relative URLs for proxy compatibility
+        const firstPhoto = j.photos?.[0];
+        const thumb = firstPhoto
+            ? (firstPhoto.filePath.startsWith('/') ? firstPhoto.filePath : `/${firstPhoto.filePath}`)
             : null;
         // strip photos array from list payload
         const { photos, _count, ...rest } = j;
-        return { ...rest, thumbnailUrl: thumb, photoCount: _count?.photos ?? 0 };
+        return {
+            ...rest,
+            thumbnailUrl: thumb,
+            photoCount: _count?.photos ?? 0,
+            ownerName: j.owner?.name,
+            isOwner: j.ownerUserId === currentUser.id
+        };
     });
     res.json(data);
 });
-router.post('/', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+router.post('/', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'USER'), async (req, res) => {
     const parsed = createSchema.safeParse(req.body);
     if (!parsed.success)
         return res.status(400).json({ message: 'Invalid payload' });
@@ -253,28 +291,45 @@ router.get('/:id', auth_1.requireAuth, async (req, res) => {
     const qrUrl = buildQrUrl(req, job.qrToken);
     return res.json({ job, qr_url: qrUrl });
 });
-router.put('/:id', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+router.put('/:id', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'USER'), async (req, res) => {
     const id = String(req.params.id);
     const parsed = updateSchema.safeParse(req.body);
     if (!parsed.success)
         return res.status(400).json({ message: 'Invalid payload' });
     const data = parsed.data;
+    const currentUser = req.user;
     try {
         const existing = await prisma_1.default.job.findUnique({ where: { id } });
         if (!existing)
             return res.status(404).json({ message: 'Job not found' });
+        // Check ownership permissions
+        if (currentUser.role !== 'ADMIN') {
+            // If job has an owner, only the owner can update it
+            if (existing.ownerUserId && existing.ownerUserId !== currentUser.id) {
+                return res.status(403).json({ message: 'Anda bukan owner job ini' });
+            }
+        }
+        // Prepare update data
+        let updateData = {
+            ...('title' in data ? { title: data.title } : {}),
+            ...('description' in data ? { description: data.description || null } : {}),
+            ...('status' in data ? { status: data.status } : {}),
+            ...('priority' in data ? { priority: data.priority } : {}),
+            ...('quotedAmount' in data ? { quotedAmount: data.quotedAmount ?? null } : {}),
+            ...('approvedAmount' in data ? { approvedAmount: data.approvedAmount ?? null } : {}),
+            ...('diagnosis' in data ? { diagnosis: data.diagnosis || null } : {}),
+            ...('dueDate' in data ? { dueDate: data.dueDate ? new Date(data.dueDate) : null } : {}),
+        };
+        // Ownership logic: Set owner when moving from AWAITING_QUOTE to QUOTATION_SENT
+        if (data.status === 'QUOTATION_SENT' &&
+            existing.status === 'AWAITING_QUOTE' &&
+            !existing.ownerUserId) {
+            updateData.ownerUserId = currentUser.id;
+            updateData.assignedAt = new Date();
+        }
         const updated = await prisma_1.default.job.update({
             where: { id },
-            data: {
-                ...('title' in data ? { title: data.title } : {}),
-                ...('description' in data ? { description: data.description || null } : {}),
-                ...('status' in data ? { status: data.status } : {}),
-                ...('priority' in data ? { priority: data.priority } : {}),
-                ...('quotedAmount' in data ? { quotedAmount: data.quotedAmount ?? null } : {}),
-                ...('approvedAmount' in data ? { approvedAmount: data.approvedAmount ?? null } : {}),
-                ...('diagnosis' in data ? { diagnosis: data.diagnosis || null } : {}),
-                ...('dueDate' in data ? { dueDate: data.dueDate ? new Date(data.dueDate) : null } : {}),
-            },
+            data: updateData,
         });
         // Create history entry when status OR diagnosis changes
         const statusChanged = data.status && data.status !== existing.status;
@@ -294,7 +349,7 @@ router.put('/:id', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER
                 await (0, workflow_1.onJobStatusChange)(id, data.status, existing.status);
             }
             // Schedule reminders for quotations
-            if (data.status === 'QUOTED') {
+            if (data.status === 'QUOTATION_SENT') {
                 const DAY = 24 * 60 * 60 * 1000;
                 await (0, queues_1.enqueueReminder)(id, 'QUOTE_DAY_1', DAY);
                 await (0, queues_1.enqueueReminder)(id, 'QUOTE_DAY_20', 20 * DAY);
@@ -304,6 +359,7 @@ router.put('/:id', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER
         return res.json(updated);
     }
     catch (e) {
+        console.error('Update job error:', e);
         return res.status(404).json({ message: 'Job not found' });
     }
 });
@@ -317,7 +373,7 @@ router.get('/:id/history', auth_1.requireAuth, async (req, res) => {
     return res.json(rows);
 });
 // Delete history entry
-router.delete('/:id/history/:historyId', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+router.delete('/:id/history/:historyId', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'USER'), async (req, res) => {
     const { id, historyId } = req.params;
     try {
         // Verify history entry belongs to this job
@@ -338,7 +394,7 @@ router.delete('/:id/history/:historyId', auth_1.requireAuth, (0, auth_1.requireR
     }
 });
 // Update history entry notes
-router.put('/:id/history/:historyId', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+router.put('/:id/history/:historyId', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'USER'), async (req, res) => {
     const { id, historyId } = req.params;
     const { notes } = req.body;
     if (typeof notes !== 'string') {
@@ -364,7 +420,7 @@ router.put('/:id/history/:historyId', auth_1.requireAuth, (0, auth_1.requireRole
     }
 });
 // Reissue QR token
-router.post('/:id/qr/renew', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+router.post('/:id/qr/renew', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'USER'), async (req, res) => {
     const id = String(req.params.id);
     const job = await prisma_1.default.job.findUnique({ where: { id } });
     if (!job)
@@ -375,7 +431,7 @@ router.post('/:id/qr/renew', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN'
     const qrUrl = buildQrUrl(req, updated.qrToken);
     return res.json({ qr_url: qrUrl });
 });
-router.delete('/:id', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER'), async (req, res) => {
+router.delete('/:id', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN'), async (req, res) => {
     const id = String(req.params.id);
     try {
         await prisma_1.default.job.delete({ where: { id } });
@@ -388,16 +444,15 @@ router.delete('/:id', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANA
 // Photos
 router.get('/:id/photos', auth_1.requireAuth, async (req, res) => {
     const id = String(req.params.id);
-    const host = req.get('host') || 'localhost:4000';
-    const proto = req.headers['x-forwarded-proto']?.toString() || req.protocol || 'http';
     const rows = await prisma_1.default.jobPhoto.findMany({ where: { jobId: id }, orderBy: { createdAt: 'desc' } });
+    // Return relative URLs for proxy compatibility
     const data = rows.map((p) => ({
         ...p,
-        url: `${proto}://${host}${p.filePath.startsWith('/') ? '' : '/'}${p.filePath}`,
+        url: p.filePath.startsWith('/') ? p.filePath : `/${p.filePath}`,
     }));
     return res.json(data);
 });
-router.post('/:id/photos', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER', 'TECHNICIAN'), upload.array('photos', 6), async (req, res) => {
+router.post('/:id/photos', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'USER'), upload.array('photos', 6), async (req, res) => {
     const id = String(req.params.id);
     const job = await prisma_1.default.job.findUnique({ where: { id } });
     if (!job)
@@ -408,11 +463,12 @@ router.post('/:id/photos', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 
     for (const f of files) {
         const rel = `/uploads/${node_path_1.default.basename(f.path)}`;
         const rec = await prisma_1.default.jobPhoto.create({ data: { jobId: id, label, filePath: rel } });
-        saved.push({ ...rec, url: `${req.protocol}://${req.get('host')}${rel}` });
+        // Return relative URL for proxy compatibility
+        saved.push({ ...rec, url: rel });
     }
     return res.status(201).json(saved);
 });
-router.put('/:id/photos/:photoId', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+router.put('/:id/photos/:photoId', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'USER'), async (req, res) => {
     const { id, photoId } = req.params;
     const { label } = req.body;
     const photo = await prisma_1.default.jobPhoto.findUnique({ where: { id: photoId } });
@@ -422,14 +478,13 @@ router.put('/:id/photos/:photoId', auth_1.requireAuth, (0, auth_1.requireRole)('
         where: { id: photoId },
         data: { label: label || null },
     });
-    const host = req.get('host') || 'localhost:4000';
-    const proto = req.headers['x-forwarded-proto']?.toString() || req.protocol || 'http';
+    // Return relative URL for proxy compatibility
     return res.json({
         ...updated,
-        url: `${proto}://${host}${updated.filePath.startsWith('/') ? '' : '/'}${updated.filePath}`,
+        url: updated.filePath.startsWith('/') ? updated.filePath : `/${updated.filePath}`,
     });
 });
-router.delete('/:id/photos/:photoId', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'MANAGER', 'TECHNICIAN'), async (req, res) => {
+router.delete('/:id/photos/:photoId', auth_1.requireAuth, (0, auth_1.requireRole)('ADMIN', 'USER'), async (req, res) => {
     const { id, photoId } = req.params;
     const photo = await prisma_1.default.jobPhoto.findUnique({ where: { id: photoId } });
     if (!photo || photo.jobId !== id)

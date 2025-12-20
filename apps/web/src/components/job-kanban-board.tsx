@@ -25,9 +25,13 @@ import {
   Trash2,
   Eye,
   User,
+  UserCircle,
+  UserCheck,
   Smartphone,
   Calendar,
   DollarSign,
+  Briefcase,
+  HandMetal,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AnimatedButton } from './ui/animated-button';
@@ -37,7 +41,7 @@ import { hasAnyRole } from '@/lib/roles';
 type Job = {
   id: string;
   title: string;
-  status: 'PENDING' | 'QUOTED' | 'APPROVED' | 'REJECTED' | 'IN_PROGRESS' | 'COMPLETED';
+  status: 'AWAITING_QUOTE' | 'QUOTATION_SENT' | 'APPROVED' | 'REPAIRING' | 'COMPLETED' | 'CANCELLED';
   priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
   customer: { id: string; name: string };
   device: { id: string; deviceType: string; brand?: string | null; model?: string | null };
@@ -46,6 +50,9 @@ type Job = {
   photoCount?: number;
   quotedAmount?: number | null;
   description?: string | null;
+  ownerUserId?: string | null;
+  ownerName?: string | null;
+  isOwner?: boolean;
 };
 
 type KanbanColumn = {
@@ -57,48 +64,49 @@ type KanbanColumn = {
   bgGradient: string;
 };
 
-const columns: KanbanColumn[] = [
-  { 
-    id: 'PENDING', 
-    title: 'Awaiting Quote', 
-    status: 'PENDING',
+// Use Object.freeze to ensure the columns array cannot be modified
+const columns: KanbanColumn[] = Object.freeze([
+  {
+    id: 'AWAITING_QUOTE',
+    title: 'Awaiting Quote',
+    status: 'AWAITING_QUOTE',
     icon: <Clock className="h-4 w-4" />,
     color: 'text-amber-400',
     bgGradient: 'from-amber-500/20 to-orange-500/10',
   },
-  { 
-    id: 'QUOTED', 
-    title: 'Quotation Sent', 
-    status: 'QUOTED',
+  {
+    id: 'QUOTATION_SENT',
+    title: 'Quotation Sent',
+    status: 'QUOTATION_SENT',
     icon: <Package className="h-4 w-4" />,
     color: 'text-blue-400',
     bgGradient: 'from-blue-500/20 to-cyan-500/10',
   },
-  { 
-    id: 'APPROVED', 
-    title: 'Approved', 
+  {
+    id: 'APPROVED',
+    title: 'Approved',
     status: 'APPROVED',
     icon: <CheckCircle2 className="h-4 w-4" />,
     color: 'text-violet-400',
     bgGradient: 'from-violet-500/20 to-purple-500/10',
   },
-  { 
-    id: 'IN_PROGRESS', 
-    title: 'Repairing', 
-    status: 'IN_PROGRESS',
+  {
+    id: 'REPAIRING',
+    title: 'Repairing',
+    status: 'REPAIRING',
     icon: <PlayCircle className="h-4 w-4" />,
     color: 'text-orange-400',
     bgGradient: 'from-orange-500/20 to-red-500/10',
   },
-  { 
-    id: 'COMPLETED', 
-    title: 'Completed', 
+  {
+    id: 'COMPLETED',
+    title: 'Completed',
     status: 'COMPLETED',
     icon: <CheckCircle2 className="h-4 w-4" />,
     color: 'text-emerald-400',
     bgGradient: 'from-emerald-500/20 to-green-500/10',
   },
-];
+]);
 
 const priorityConfig = {
   LOW: { color: 'bg-slate-500', label: 'Low', dot: 'bg-slate-400' },
@@ -111,12 +119,13 @@ const priorityConfig = {
 interface JobCardProps {
   job: Job;
   onDelete?: (id: string) => void;
+  onClaimJob?: (id: string) => Promise<void>;
   userRole?: string;
   isDragging?: boolean;
 }
 
 const JobCard = React.forwardRef<HTMLDivElement, JobCardProps>(
-  ({ job, onDelete, userRole, isDragging }, forwardedRef) => {
+  ({ job, onDelete, onClaimJob, userRole, isDragging }, forwardedRef) => {
     const [isDeleting, setIsDeleting] = React.useState(false);
     
     const {
@@ -199,6 +208,30 @@ const JobCard = React.forwardRef<HTMLDivElement, JobCardProps>(
         </div>
       )}
 
+      {/* Ownership Indicators */}
+      <div className="px-3 pt-2">
+        {job.status === 'AWAITING_QUOTE' && !job.ownerUserId ? (
+          <div className="flex items-center gap-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 px-2 py-1">
+            <HandMetal className="h-3 w-3 text-amber-400" />
+            <span className="text-xs font-medium text-amber-400">Available - Drag to claim</span>
+          </div>
+        ) : job.isOwner ? (
+          <div className="flex items-center gap-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/30 px-2 py-1">
+            <UserCheck className="h-3 w-3 text-emerald-300" />
+            <span className="text-xs font-bold text-emerald-300">Job Saya</span>
+            <div className="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse"></div>
+          </div>
+        ) : job.ownerName ? (
+          <div className="flex items-center gap-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 px-2 py-1">
+            <div className="h-6 w-6 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
+              <UserCircle className="h-4 w-4 text-blue-400" />
+            </div>
+            <span className="text-xs font-medium text-blue-400">{job.ownerName}</span>
+            <div className="text-xs text-blue-500/70">Owner</div>
+          </div>
+        ) : null}
+      </div>
+
       <div className="p-3">
       {/* Title */}
       <Link href={`/jobs/${job.id}`}>
@@ -240,7 +273,7 @@ const JobCard = React.forwardRef<HTMLDivElement, JobCardProps>(
               priority.color
             )}
           >
-            <span className={cn('h-1.5 w-1.5 rounded-full bg-white', job.priority === 'URGENT' && 'animate-pulse')} />
+            <span className={cn('h-1.5 w-1.5 rounded-full bg-primary-foreground', job.priority === 'URGENT' && 'animate-pulse')} />
             {priority.label}
         </span>
 
@@ -269,7 +302,26 @@ const JobCard = React.forwardRef<HTMLDivElement, JobCardProps>(
               View
             </Link>
           </AnimatedButton>
-        {hasAnyRole(userRole, ['ADMIN', 'MANAGER']) && onDelete && (
+          {/* Claim button for available jobs */}
+          {job.status === 'AWAITING_QUOTE' && !job.ownerUserId && !hasAnyRole(userRole, ['ADMIN']) && onClaimJob && (
+            <AnimatedButton
+              size="sm"
+              variant="gradient"
+              className="h-7 text-xs flex-1"
+              onPointerDown={(e) => {
+                e.stopPropagation();
+              }}
+              onClick={async (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                await onClaimJob(job.id);
+              }}
+            >
+              <UserCheck className="h-3 w-3 mr-1" />
+              Claim Job
+            </AnimatedButton>
+          )}
+        {hasAnyRole(userRole, ['ADMIN']) && onDelete && (
             <AnimatedButton
             size="sm"
             variant="destructive"
@@ -315,13 +367,32 @@ interface DroppableColumnProps {
   jobs: Job[];
   activeId: string | null;
   onDelete: (id: string) => void;
+  onClaimJob?: (id: string) => Promise<void>;
   userRole?: string;
 }
 
-function DroppableColumn({ column, jobs, activeId, onDelete, userRole }: DroppableColumnProps) {
+function DroppableColumn({ column, jobs, activeId, onDelete, onClaimJob, userRole }: DroppableColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: column.status,
   });
+
+  // Calculate job breakdown for columns beyond Awaiting Quote
+  const jobBreakdown = React.useMemo(() => {
+    if (column.status === 'AWAITING_QUOTE') {
+      return null;
+    }
+
+    const breakdown = jobs.reduce((acc, job) => {
+      if (!job.ownerName) {
+        acc.unassigned++;
+      } else {
+        acc.users[job.ownerName] = (acc.users[job.ownerName] || 0) + 1;
+      }
+      return acc;
+    }, { unassigned: 0, users: {} as Record<string, number> });
+
+    return breakdown;
+  }, [jobs, column.status]);
 
   return (
     <div className="flex flex-col h-full">
@@ -341,17 +412,44 @@ function DroppableColumn({ column, jobs, activeId, onDelete, userRole }: Droppab
           </div>
           <h3 className="font-bold text-sm text-foreground">{column.title}</h3>
         </div>
-        <motion.span
-          className={cn(
-            'rounded-full bg-card/80 border border-border px-2.5 py-1 text-xs font-bold',
-            column.color
+        <div className="flex items-center gap-2">
+          <motion.span
+            className={cn(
+              'rounded-full bg-card/80 border border-border px-2.5 py-1 text-xs font-bold',
+              column.color
+            )}
+            key={jobs.length}
+            initial={{ scale: 1.2 }}
+            animate={{ scale: 1 }}
+          >
+            {jobs.length}
+          </motion.span>
+
+          {/* User breakdown for assigned columns */}
+          {jobBreakdown && (
+            <div className="flex -space-x-1">
+              {jobBreakdown.unassigned > 0 && (
+                <div className="h-6 w-6 rounded-full bg-muted border border-border flex items-center justify-center">
+                  <Briefcase className="h-3 w-3 text-muted-foreground" />
+                </div>
+              )}
+              {Object.entries(jobBreakdown.users).slice(0, 3).map(([name, count], index) => (
+                <div
+                  key={name}
+                  className="h-6 w-6 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-medium text-primary"
+                  title={`${name}: ${count} jobs`}
+                >
+                  {name.charAt(0).toUpperCase()}
+                </div>
+              ))}
+              {Object.keys(jobBreakdown.users).length > 3 && (
+                <div className="h-6 w-6 rounded-full bg-muted/50 border border-muted flex items-center justify-center text-xs font-medium">
+                  +{Object.keys(jobBreakdown.users).length - 3}
+                </div>
+              )}
+            </div>
           )}
-          key={jobs.length}
-          initial={{ scale: 1.2 }}
-          animate={{ scale: 1 }}
-        >
-          {jobs.length}
-        </motion.span>
+        </div>
       </motion.div>
 
       {/* Drop Zone */}
@@ -379,6 +477,7 @@ function DroppableColumn({ column, jobs, activeId, onDelete, userRole }: Droppab
                   key={job.id}
                   job={job}
                   onDelete={onDelete}
+                  onClaimJob={onClaimJob}
                   userRole={userRole}
                   isDragging={job.id === activeId}
                 />
@@ -395,11 +494,12 @@ function DroppableColumn({ column, jobs, activeId, onDelete, userRole }: Droppab
 interface KanbanBoardProps {
   jobs: Job[];
   onStatusChange: (jobId: string, newStatus: Job['status']) => Promise<void>;
+  onClaimJob?: (jobId: string) => Promise<void>;
   onDelete: (jobId: string) => void;
   userRole?: string;
 }
 
-export function JobKanbanBoard({ jobs, onStatusChange, onDelete, userRole }: KanbanBoardProps) {
+export function JobKanbanBoard({ jobs, onStatusChange, onClaimJob, onDelete, userRole }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -420,16 +520,45 @@ export function JobKanbanBoard({ jobs, onStatusChange, onDelete, userRole }: Kan
     const { active, over } = event;
     setActiveId(null);
 
-    if (!over) return;
+    if (!over) {
+      console.log('[KANBAN] No droppable target');
+      return;
+    }
 
     const jobId = active.id as string;
-    const newStatus = over.id as Job['status'];
-    
+    const newStatus = over.id as string;
+
+    console.log('[KANBAN] Drag end details:', {
+      jobId,
+      activeId: active.id,
+      overId: over.id,
+      newStatus,
+      isStatusValid: ['AWAITING_QUOTE', 'QUOTATION_SENT', 'APPROVED', 'REPAIRING', 'COMPLETED'].includes(newStatus),
+      overData: over.data,
+      allColumns: columns.map(c => ({ id: c.id, status: c.status }))
+    });
+
+    // Only proceed if the target is a valid column
+    if (!['AWAITING_QUOTE', 'QUOTATION_SENT', 'APPROVED', 'REPAIRING', 'COMPLETED'].includes(newStatus)) {
+      console.error('[KANBAN] Invalid status detected:', newStatus);
+      return;
+    }
+
     const job = jobs.find((j) => j.id === jobId);
-    if (!job) return;
+    if (!job) {
+      console.error('[KANBAN] Job not found:', jobId);
+      return;
+    }
 
     if (job.status !== newStatus) {
-      await onStatusChange(jobId, newStatus);
+      console.log('[KANBAN] Updating job status:', {
+        jobId,
+        oldStatus: job.status,
+        newStatus
+      });
+      await onStatusChange(jobId, newStatus as Job['status']);
+    } else {
+      console.log('[KANBAN] Status unchanged, skipping update');
     }
   };
 
@@ -455,6 +584,7 @@ export function JobKanbanBoard({ jobs, onStatusChange, onDelete, userRole }: Kan
               jobs={columnJobs}
               activeId={activeId}
               onDelete={onDelete}
+              onClaimJob={onClaimJob}
               userRole={userRole}
             />
           );

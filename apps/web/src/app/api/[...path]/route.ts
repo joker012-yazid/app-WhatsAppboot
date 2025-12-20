@@ -11,7 +11,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+// Use separate env var for server-side proxy to avoid conflict with client-side NEXT_PUBLIC_API_BASE_URL
+const API_BASE = process.env.API_BACKEND_URL || process.env.BACKEND_API_URL || 'http://localhost:4000';
 
 // Helper to handle params (Next.js 15+ params is a Promise)
 async function getPath(params: { path: string[] } | Promise<{ path: string[] }>): Promise<string[]> {
@@ -84,7 +85,15 @@ async function proxyRequest(
     let body: BodyInit | undefined;
     if (method !== 'GET' && method !== 'HEAD') {
       try {
-        body = await request.text();
+        const contentType = request.headers.get('content-type') || '';
+
+        // For multipart/form-data (file uploads), use blob
+        if (contentType.includes('multipart/form-data')) {
+          body = await request.blob();
+        } else {
+          // For JSON and other content types, use text
+          body = await request.text();
+        }
       } catch {
         // No body
       }

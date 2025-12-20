@@ -33,7 +33,7 @@ const buildDaySequence = (start: Date, end: Date) => {
   return days;
 };
 
-const jobStatuses = ['PENDING', 'QUOTED', 'APPROVED', 'IN_PROGRESS', 'COMPLETED', 'REJECTED'];
+const jobStatuses = ['AWAITING_QUOTE', 'QUOTATION_SENT', 'APPROVED', 'REPAIRING', 'COMPLETED', 'CANCELLED'];
 const jobPriorities = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
 
 router.get('/summary', requireAuth, async (req, res) => {
