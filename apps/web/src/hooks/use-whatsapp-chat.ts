@@ -110,7 +110,9 @@ export function useWhatsappChat() {
   const selectChat = useCallback(
     (chatId: string) => {
       setState((s) => ({ ...s, selectedChatId: chatId }));
-      loadMessages(chatId).catch(() => {});
+      loadMessages(chatId).catch((error) => {
+        console.error('[WhatsApp][selectChat] Failed to load messages:', error);
+      });
     },
     [loadMessages],
   );
