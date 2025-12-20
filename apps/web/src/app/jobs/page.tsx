@@ -53,8 +53,40 @@ export default function JobsPage() {
 
       return apiPut(`/api/jobs/${jobId}`, { status });
     },
-    onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ['jobs'] });
+    onMutate: async ({ jobId, status }) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await qc.cancelQueries({ queryKey: ['jobs'] });
+
+      // Snapshot the previous value
+      const previousJobs = qc.getQueryData<Job[]>(['jobs']);
+
+      // Optimistically update to the new value
+      qc.setQueryData<Job[]>(['jobs'], (old) => {
+        if (!old) return old;
+        return old.map(job => {
+          if (job.id === jobId) {
+            const isBeingClaimed = job.status === 'AWAITING_QUOTE' && status !== 'AWAITING_QUOTE' && !job.ownerUserId;
+            return {
+              ...job,
+              status,
+              // Optimistically set owner if this is a claim
+              ...(isBeingClaimed && user ? {
+                ownerUserId: user.id,
+                ownerName: user.name || user.username,
+                isOwner: true,
+              } : {})
+            };
+          }
+          return job;
+        });
+      });
+
+      // Return a context object with the snapshotted value
+      return { previousJobs };
+    },
+    onSuccess: async (data, variables) => {
+      // Refetch to get the latest data from server
+      await qc.invalidateQueries({ queryKey: ['jobs'] });
 
       const job = jobs.find(j => j.id === variables.jobId);
 
@@ -67,7 +99,11 @@ export default function JobsPage() {
         toast.success('Job status updated');
       }
     },
-    onError: (e: any) => {
+    onError: (e: any, variables, context) => {
+      // Rollback to the previous value on error
+      if (context?.previousJobs) {
+        qc.setQueryData(['jobs'], context.previousJobs);
+      }
       console.error('Update error:', e);
       toast.error(e?.message || 'Failed to update job status');
     },
@@ -94,11 +130,40 @@ export default function JobsPage() {
     mutationFn: async (jobId: string) => {
       return claimJob(jobId);
     },
-    onSuccess: (_, jobId) => {
-      toast.success('Job successfully claimed!');
-      qc.invalidateQueries({ queryKey: ['jobs'] });
+    onMutate: async (jobId) => {
+      // Cancel any outgoing refetches
+      await qc.cancelQueries({ queryKey: ['jobs'] });
+
+      // Snapshot the previous value
+      const previousJobs = qc.getQueryData<Job[]>(['jobs']);
+
+      // Optimistically update the job
+      qc.setQueryData<Job[]>(['jobs'], (old) => {
+        if (!old) return old;
+        return old.map(job => {
+          if (job.id === jobId && user) {
+            return {
+              ...job,
+              ownerUserId: user.id,
+              ownerName: user.name || user.username,
+              isOwner: true,
+            };
+          }
+          return job;
+        });
+      });
+
+      return { previousJobs };
     },
-    onError: (err: any) => {
+    onSuccess: async (_, jobId) => {
+      toast.success('Job successfully claimed!');
+      await qc.invalidateQueries({ queryKey: ['jobs'] });
+    },
+    onError: (err: any, variables, context) => {
+      // Rollback on error
+      if (context?.previousJobs) {
+        qc.setQueryData(['jobs'], context.previousJobs);
+      }
       toast.error(err?.message || 'Failed to claim job');
     },
   });
