@@ -496,6 +496,183 @@ router.put('/:id/claim', requireAuth, async (req, res) => {
   }
 });
 
+// ============================================================================
+// Helper Functions for Job Update (Refactored for clarity)
+// ============================================================================
+
+/**
+ * Check if the current user has permission to update this job
+ */
+function checkUpdatePermissions(job: any, currentUser: any): { allowed: boolean; error?: string } {
+  if (currentUser.role === 'ADMIN') {
+    return { allowed: true };
+  }
+
+  // If job has an owner, only the owner can update it
+  if (job.ownerUserId && job.ownerUserId !== currentUser.sub) {
+    return { allowed: false, error: 'Anda bukan owner job ini' };
+  }
+
+  return { allowed: true };
+}
+
+/**
+ * Build the update data object from request payload
+ */
+function buildUpdateData(data: any): any {
+  return {
+    ...('title' in data ? { title: data.title! } : {}),
+    ...('description' in data ? { description: data.description || null } : {}),
+    ...('status' in data ? { status: data.status as any } : {}),
+    ...('priority' in data ? { priority: data.priority as any } : {}),
+    ...('quotedAmount' in data ? { quotedAmount: data.quotedAmount ?? null } : {}),
+    ...('approvedAmount' in data ? { approvedAmount: data.approvedAmount ?? null } : {}),
+    ...('diagnosis' in data ? { diagnosis: data.diagnosis || null } : {}),
+    ...('dueDate' in data ? { dueDate: data.dueDate ? new Date(data.dueDate) : null } : {}),
+  };
+}
+
+/**
+ * Determine if the job should be claimed by the current user
+ * Returns ownership data to add to the update, or null if job should not be claimed
+ */
+function determineOwnershipClaim(
+  existingJob: any,
+  requestData: any,
+  currentUser: any
+): { shouldClaim: boolean; ownershipData?: any } {
+  const shouldClaim = (
+    currentUser.role !== 'ADMIN' &&
+    existingJob.status === 'AWAITING_QUOTE' &&
+    requestData.status &&
+    requestData.status !== 'AWAITING_QUOTE' &&
+    !existingJob.ownerUserId
+  );
+
+  if (shouldClaim) {
+    console.log('[JOBS] ✅ Job will be claimed by user:', {
+      jobId: existingJob.id,
+      jobTitle: existingJob.title,
+      claimedBy: currentUser.sub,
+      claimedByEmail: currentUser.email,
+      fromStatus: existingJob.status,
+      toStatus: requestData.status
+    });
+
+    return {
+      shouldClaim: true,
+      ownershipData: {
+        ownerUserId: currentUser.sub,
+        assignedAt: new Date()
+      }
+    };
+  }
+
+  return { shouldClaim: false };
+}
+
+/**
+ * Verify that ownership was properly saved to the database
+ */
+function verifyOwnershipSaved(
+  updatedJob: any,
+  expectedOwnerId: string | null
+): { success: boolean; error?: string } {
+  if (!expectedOwnerId) {
+    return { success: true };
+  }
+
+  const verificationPassed = updatedJob.ownerUserId === expectedOwnerId;
+
+  console.log('[JOBS] ✅ Ownership verification:', {
+    jobId: updatedJob.id,
+    ownerSetInDb: updatedJob.ownerUserId,
+    expectedOwnerId,
+    verification: verificationPassed ? 'SUCCESS' : 'FAILED'
+  });
+
+  if (!verificationPassed) {
+    console.error('[JOBS] ❌ CRITICAL: Ownership was not properly saved!', {
+      jobId: updatedJob.id,
+      expectedOwnerId,
+      actualOwnerId: updatedJob.ownerUserId
+    });
+    return {
+      success: false,
+      error: 'Failed to claim job - ownership was not properly saved'
+    };
+  }
+
+  return { success: true };
+}
+
+/**
+ * Handle post-update operations: history, workflows, and reminders
+ */
+async function handlePostUpdateOperations(
+  jobId: string,
+  existingJob: any,
+  requestData: any
+): Promise<void> {
+  const statusChanged = requestData.status && requestData.status !== existingJob.status;
+  const diagnosisChanged = 'diagnosis' in requestData && requestData.diagnosis !== existingJob.diagnosis;
+
+  if (!statusChanged && !diagnosisChanged) {
+    return;
+  }
+
+  // Create history entry
+  const currentDiagnosis = requestData.diagnosis || existingJob.diagnosis || '';
+  await prisma.jobStatusHistory.create({
+    data: {
+      jobId,
+      status: (requestData.status || existingJob.status) as any,
+      notes: currentDiagnosis || (statusChanged ? `Status updated from ${existingJob.status} to ${requestData.status}` : null),
+    },
+  });
+
+  // Trigger workflow automation (only if status actually changed)
+  if (statusChanged && requestData.status) {
+    await onJobStatusChange(jobId, requestData.status, existingJob.status);
+  }
+
+  // Schedule reminders for quotations
+  if (requestData.status === 'QUOTATION_SENT') {
+    const DAY = 24 * 60 * 60 * 1000;
+    await enqueueReminder(jobId, 'QUOTE_DAY_1', DAY);
+    await enqueueReminder(jobId, 'QUOTE_DAY_20', 20 * DAY);
+    await enqueueReminder(jobId, 'QUOTE_DAY_30', 30 * DAY);
+  }
+}
+
+/**
+ * Fetch and build the job response with ownership info
+ */
+async function buildJobResponse(jobId: string, currentUserId: string): Promise<any> {
+  const jobWithOwner = await prisma.job.findUnique({
+    where: { id: jobId },
+    include: {
+      customer: { select: { name: true } },
+      device: { select: { deviceType: true, brand: true, model: true } },
+      owner: { select: { id: true, name: true, email: true } }
+    }
+  });
+
+  if (!jobWithOwner) {
+    return null;
+  }
+
+  return {
+    ...jobWithOwner,
+    ownerName: jobWithOwner.owner?.name,
+    isOwner: jobWithOwner.ownerUserId === currentUserId
+  };
+}
+
+// ============================================================================
+// Route Handlers
+// ============================================================================
+
 router.put('/:id', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) => {
   const id = String(req.params.id);
   const parsed = updateSchema.safeParse(req.body);
@@ -504,215 +681,50 @@ router.put('/:id', requireAuth, requireRole('ADMIN', 'USER'), async (req, res) =
   const currentUser = req.user as any;
 
   try {
+    // 1. Fetch existing job
     const existing = await prisma.job.findUnique({ where: { id } });
     if (!existing) return res.status(404).json({ message: 'Job not found' });
 
-    // Check ownership permissions
-    if (currentUser.role !== 'ADMIN') {
-      // If job has an owner, only the owner can update it
-      if (existing.ownerUserId && existing.ownerUserId !== currentUser.sub) {
-        return res.status(403).json({ message: 'Anda bukan owner job ini' });
-      }
+    // 2. Check permissions
+    const permissionCheck = checkUpdatePermissions(existing, currentUser);
+    if (!permissionCheck.allowed) {
+      return res.status(403).json({ message: permissionCheck.error });
     }
 
-    // Prepare update data
-    let updateData: any = {
-      ...('title' in data ? { title: data.title! } : {}),
-      ...('description' in data ? { description: data.description || null } : {}),
-      ...('status' in data ? { status: data.status as any } : {}),
-      ...('priority' in data ? { priority: data.priority as any } : {}),
-      ...('quotedAmount' in data ? { quotedAmount: data.quotedAmount ?? null } : {}),
-      ...('approvedAmount' in data ? { approvedAmount: data.approvedAmount ?? null } : {}),
-      ...('diagnosis' in data ? { diagnosis: data.diagnosis || null } : {}),
-      ...('dueDate' in data ? { dueDate: data.dueDate ? new Date(data.dueDate) : null } : {}),
-    };
+    // 3. Build update data
+    let updateData = buildUpdateData(data);
 
-    // Ownership logic: Set owner when moving from AWAITING_QUOTE to another status
-    console.log('[JOBS] Job update attempt:', {
-      jobId: id,
-      jobTitle: existing.title,
-      currentOwner: existing.ownerUserId,
-      currentStatus: existing.status,
-      newStatus: data.status,
-      requestedBy: currentUser.sub,
-      requestedByRole: currentUser.role,
-      requestedByEmail: currentUser.email
-    });
-
-    // Assign ownership when user moves job from AWAITING_QUOTE to any other status
-    // This applies to NON-ADMIN users only (regular users claim jobs by moving them)
-    const shouldClaimJob = (
-      currentUser.role !== 'ADMIN' &&  // Only regular users can claim
-      existing.status === 'AWAITING_QUOTE' &&  // Job must be in AWAITING_QUOTE
-      data.status &&  // Status is being changed
-      data.status !== 'AWAITING_QUOTE' &&  // Moving to a different status
-      !existing.ownerUserId  // Job has no owner
-    );
-
-    if (shouldClaimJob) {
-      updateData.ownerUserId = currentUser.sub;
-      updateData.assignedAt = new Date();
-      console.log('[JOBS] ✅ Job SUCCESSFULLY claimed by user:', {
-        jobId: id,
-        jobTitle: existing.title,
-        claimedBy: currentUser.sub,
-        claimedByEmail: currentUser.email,
-        claimedByName: currentUser.name,
-        claimedAt: updateData.assignedAt,
-        fromStatus: existing.status,
-        toStatus: data.status
-      });
-    } else {
-      console.log('[JOBS] ❌ Job NOT claimed - conditions:', {
-        shouldClaimJob,
-        isNotAdmin: currentUser.role !== 'ADMIN',
-        isFromAwaitingQuote: existing.status === 'AWAITING_QUOTE',
-        hasStatusChange: !!data.status,
-        isToDifferentStatus: data.status && data.status !== 'AWAITING_QUOTE',
-        hasNoOwner: !existing.ownerUserId,
-        currentOwner: existing.ownerUserId,
-        fromStatus: existing.status,
-        toStatus: data.status,
-        currentUser: {
-          id: currentUser.sub,
-          role: currentUser.role,
-          email: currentUser.email
-        }
-      });
+    // 4. Determine if job should be claimed
+    const claimResult = determineOwnershipClaim(existing, data, currentUser);
+    if (claimResult.shouldClaim && claimResult.ownershipData) {
+      updateData = { ...updateData, ...claimResult.ownershipData };
     }
 
-    // Log what data will be updated
-    console.log('[JOBS] 📝 Applying update data:', {
-      jobId: id,
-      updateData: {
-        status: updateData.status,
-        ownerUserId: updateData.ownerUserId,
-        assignedAt: updateData.assignedAt,
-        diagnosis: updateData.diagnosis,
-        quotedAmount: updateData.quotedAmount
-      }
-    });
-
-    // Use transaction to ensure atomicity
-    const updated = await prisma.$transaction(async (tx) => {
-      const job = await tx.job.update({
-        where: { id },
-        data: updateData,
-      });
-
-      // Verify ownership was properly saved within transaction
-      if (updateData.ownerUserId) {
-        console.log('[JOBS] ✅ Ownership in transaction:', {
-          jobId: id,
-          jobTitle: job.title,
-          ownerSetInDb: job.ownerUserId,
-          ownerSetInUpdate: updateData.ownerUserId,
-          assignedAt: job.assignedAt
-        });
-      }
-
-      return job;
-    });
-
-    // Verify ownership was properly saved
-    if (updateData.ownerUserId) {
-      const verificationPassed = updated.ownerUserId === updateData.ownerUserId;
-      console.log('[JOBS] ✅ Ownership verification:', {
-        jobId: id,
-        jobTitle: updated.title,
-        ownerSetInDb: updated.ownerUserId,
-        ownerSetInUpdate: updateData.ownerUserId,
-        assignedAt: updated.assignedAt,
-        verification: verificationPassed ? 'SUCCESS' : 'FAILED'
-      });
-
-      // If verification failed, this is a critical error
-      if (!verificationPassed) {
-        console.error('[JOBS] ❌ CRITICAL: Ownership was not properly saved to database!', {
-          jobId: id,
-          expectedOwnerId: updateData.ownerUserId,
-          actualOwnerId: updated.ownerUserId
-        });
-        return res.status(500).json({
-          message: 'Failed to claim job - ownership was not properly saved',
-          error: 'OWNERSHIP_SAVE_FAILED'
-        });
-      }
-    }
-
-    // Create history entry when status OR diagnosis changes
-    const statusChanged = data.status && data.status !== existing.status;
-    const diagnosisChanged = 'diagnosis' in data && data.diagnosis !== existing.diagnosis;
-
-    if (statusChanged || diagnosisChanged) {
-      // Include the diagnosis (catatan + fasa) in the history
-      const currentDiagnosis = data.diagnosis || existing.diagnosis || '';
-
-      await prisma.jobStatusHistory.create({
-        data: {
-          jobId: id,
-          status: (data.status || existing.status) as any,
-          notes: currentDiagnosis || (statusChanged ? `Status updated from ${existing.status} to ${data.status}` : null),
-        },
-      });
-
-      // Trigger workflow automation (only if status actually changed)
-      if (statusChanged && data.status) {
-        await onJobStatusChange(id, data.status, existing.status);
-      }
-
-      // Schedule reminders for quotations
-      if (data.status === 'QUOTATION_SENT') {
-        const DAY = 24 * 60 * 60 * 1000;
-        await enqueueReminder(id, 'QUOTE_DAY_1', DAY);
-        await enqueueReminder(id, 'QUOTE_DAY_20', 20 * DAY);
-        await enqueueReminder(id, 'QUOTE_DAY_30', 30 * DAY);
-      }
-    }
-
-    // Fetch updated job with owner info for response
-    const jobWithOwner = await prisma.job.findUnique({
+    // 5. Update job in database
+    const updated = await prisma.job.update({
       where: { id },
-      include: {
-        customer: { select: { name: true } },
-        device: { select: { deviceType: true, brand: true, model: true } },
-        owner: { select: { id: true, name: true, email: true } }
-      }
+      data: updateData,
     });
 
-    if (!jobWithOwner) {
-      return res.status(404).json({ message: 'Job not found after update' });
+    // 6. Verify ownership was saved correctly (if applicable)
+    const ownershipVerification = verifyOwnershipSaved(
+      updated,
+      updateData.ownerUserId || null
+    );
+    if (!ownershipVerification.success) {
+      return res.status(500).json({
+        message: ownershipVerification.error,
+        error: 'OWNERSHIP_SAVE_FAILED'
+      });
     }
 
-    // Add ownership info to the response
-    const response = {
-      ...jobWithOwner,
-      ownerName: jobWithOwner.owner?.name,
-      isOwner: jobWithOwner.ownerUserId === (req.user as any).id
-    };
+    // 7. Handle post-update operations (history, workflows, reminders)
+    await handlePostUpdateOperations(id, existing, data);
 
-    console.log('[JOBS] 📤 Sending response with ownership info:', {
-      jobId: id,
-      jobTitle: response.title,
-      ownerUserId: response.ownerUserId,
-      isOwner: response.isOwner,
-      ownerName: response.ownerName,
-      status: response.status,
-      assignedAt: response.assignedAt,
-      currentUserRole: (req.user as any).role,
-      currentUserId: (req.user as any).id
-    });
-
-    // Log final summary for easy tracking
-    if (shouldClaimJob && response.ownerUserId === currentUser.sub) {
-      console.log('[JOBS] 🎉 Job claim completed successfully:', {
-        jobId: id,
-        jobTitle: response.title,
-        ownerId: response.ownerUserId,
-        ownerName: response.ownerName,
-        status: response.status,
-        message: `User ${currentUser.email} successfully claimed job "${response.title}"`
-      });
+    // 8. Build and return response
+    const response = await buildJobResponse(id, currentUser.id);
+    if (!response) {
+      return res.status(404).json({ message: 'Job not found after update' });
     }
 
     return res.json(response);
