@@ -147,7 +147,12 @@ router.get('/progress/:token', async (req, res) => {
   if (!job) {
     return res.status(404).json({ message: 'Invalid token' });
   }
-  
+
+  // Validate required relations exist
+  if (!job.customer || !job.device) {
+    return res.status(500).json({ message: 'Job data is incomplete. Please contact the service center.' });
+  }
+
   // Check if token has expired
   if (job.qrExpiresAt && job.qrExpiresAt < new Date()) {
     return res.status(410).json({ message: 'Progress link has expired. Please contact the service center for a new link.' });
